@@ -1,128 +1,143 @@
-# Solana Countdown Timer
+# Treasury Vault Timer
 
-A beautiful React-based countdown timer that automatically resets when purchases are made on a specified Solana token. Built with modern web technologies and Solana Web3.js integration.
+A real-time countdown timer that resets on Solana token purchases. Built with React, Socket.IO, and Solana Web3.js.
 
 ## Features
 
-- ⏰ **1-Hour Countdown Timer**: Visual countdown with progress ring
-- 🔄 **Auto-Reset**: Automatically resets when token purchases are detected
-- 🎨 **Beautiful UI**: Modern glassmorphism design with smooth animations
-- 🔗 **Wallet Integration**: Connect with Phantom, Solflare, and other Solana wallets
-- 📱 **Responsive Design**: Works on desktop and mobile devices
-- ⚡ **Real-time Monitoring**: Checks for new transactions every 30 seconds
-- 🎯 **Manual Reset**: Option to manually reset the timer
+- **Real-time Purchase Detection**: Monitors Solana blockchain for actual token purchases (not transfers/airdrops)
+- **Global Timer**: All users see the same timer state - persistent across sessions
+- **Live Updates**: WebSocket connection for instant timer resets
+- **Purchase Filtering**: Only detects genuine purchases (SOL spent or DEX interactions)
+- **Start/Stop Monitoring**: Control API usage with monitoring controls
 
-## Tech Stack
+## Architecture
 
-- **Frontend**: React 18 + TypeScript
-- **Styling**: Tailwind CSS
-- **Build Tool**: Vite
-- **Blockchain**: Solana Web3.js
-- **Wallet**: Solana Wallet Adapter
-- **Icons**: Lucide React
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Backend**: Node.js + Express + Socket.IO
+- **Blockchain**: Solana Web3.js + Helius RPC
+- **Real-time**: Socket.IO for bidirectional communication
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Node.js 16+ 
-- npm or yarn
-- A Solana wallet (Phantom, Solflare, etc.)
+- Node.js 18+
+- Helius API key (for Solana RPC)
 
-### Installation
+### Local Development
 
-1. **Clone and install dependencies:**
+1. **Clone and setup**:
    ```bash
+   git clone <your-repo>
+   cd fresh-project
    npm install
+   cd server && npm install
    ```
 
-2. **Start the development server:**
+2. **Start backend** (in server directory):
+   ```bash
+   cd server
+   npm run dev
+   ```
+
+3. **Start frontend** (in root directory):
    ```bash
    npm run dev
    ```
 
-3. **Open your browser:**
-   Navigate to `http://localhost:3000`
+4. **Access the app**:
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:3001
 
-### Usage
+## Deployment
 
-1. **Enter Token Contract**: Input the Solana SPL token mint address you want to monitor
-2. **Connect Wallet**: Click the wallet button to connect your Solana wallet
-3. **Start Timer**: The timer will begin counting down from 1 hour
-4. **Auto-Monitoring**: The app automatically checks for new purchases every 30 seconds
-5. **Manual Reset**: Use the "Manual Reset" button to reset the timer manually
+### Backend Deployment (Render)
 
-## How It Works
+1. **Create Render account** at https://render.com
 
-### Timer Logic
-- Starts at 1 hour (3600 seconds)
-- Counts down every second
-- Shows visual progress with animated ring
-- Displays time in HH:MM:SS format
+2. **Connect your GitHub repository**
 
-### Purchase Detection
-- Monitors the specified token contract address
-- Checks for recent transactions every 30 seconds
-- Resets timer when new transactions are detected
-- Works on Solana devnet, testnet, and mainnet
+3. **Create a new Web Service**:
+   - **Build Command**: `cd server && npm install`
+   - **Start Command**: `cd server && npm start`
+   - **Environment Variables**:
+     - `HELIUS_API_KEY`: Your Helius API key
+     - `NODE_ENV`: `production`
 
-### Wallet Integration
-- Supports multiple Solana wallets
-- Uses Solana Wallet Adapter for seamless integration
-- Auto-connects to previously connected wallet
+4. **Deploy** and note your backend URL (e.g., `https://your-app.onrender.com`)
+
+### Frontend Deployment (Vercel)
+
+1. **Set environment variable**:
+   - Create `.env` file in root directory:
+   ```
+   VITE_BACKEND_URL=https://your-backend-url.onrender.com
+   ```
+
+2. **Deploy to Vercel**:
+   ```bash
+   npx vercel --prod
+   ```
+
+3. **Set environment variable in Vercel**:
+   - Go to your Vercel project settings
+   - Add environment variable: `VITE_BACKEND_URL` = your backend URL
 
 ## Configuration
 
-### Network Selection
-The app currently uses Solana devnet by default. To change networks, modify the `network` variable in `src/components/WalletProvider.tsx`:
+### Token Address
 
-```typescript
-const network = WalletAdapterNetwork.Mainnet; // or Devnet, Testnet
+To change the monitored token, edit `server/index.js`:
+```javascript
+const JUP_TOKEN_ADDRESS = 'YOUR_TOKEN_ADDRESS_HERE';
 ```
 
-### Monitoring Interval
-To change how often the app checks for purchases, modify the interval in `src/components/CountdownTimer.tsx`:
+### Helius API Key
 
-```typescript
-const interval = setInterval(monitorPurchases, 30000); // 30 seconds
+Set your Helius API key in the backend environment variables or edit `server/index.js`:
+```javascript
+const HELIUS_API_KEY = process.env.HELIUS_API_KEY || 'YOUR_API_KEY';
 ```
 
-## Project Structure
+## API Endpoints
 
-```
-src/
-├── components/
-│   ├── CountdownTimer.tsx    # Main timer component
-│   └── WalletProvider.tsx    # Solana wallet integration
-├── App.tsx                   # Main app component
-├── main.tsx                  # React entry point
-└── index.css                 # Global styles
-```
+- `GET /api/timer` - Get current timer state
+- `GET /api/health` - Health check
 
-## Building for Production
+## Socket.IO Events
 
-```bash
-npm run build
-```
+- `timerState` - Initial timer state sent to new clients
+- `timerUpdate` - Timer countdown updates
+- `timerReset` - Timer reset due to purchase
+- `timerExpired` - Timer has expired
+- `monitoringState` - Monitoring start/stop status
 
-The built files will be in the `dist/` directory.
+## Environment Variables
 
-## Contributing
+### Frontend
+- `VITE_BACKEND_URL` - Backend server URL
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### Backend
+- `HELIUS_API_KEY` - Helius RPC API key
+- `PORT` - Server port (default: 3001)
+- `NODE_ENV` - Environment (development/production)
+
+## Troubleshooting
+
+### Frontend not connecting to backend
+- Check `VITE_BACKEND_URL` environment variable
+- Ensure backend is running and accessible
+- Check CORS settings in backend
+
+### Timer not resetting
+- Verify Helius API key is valid
+- Check backend logs for purchase detection
+- Ensure token address is correct
+
+### Rate limiting
+- Use start/stop monitoring to control API usage
+- Consider upgrading Helius plan for higher limits
 
 ## License
 
-MIT License - feel free to use this project for your own purposes.
-
-## Support
-
-If you encounter any issues or have questions, please open an issue on GitHub.
-
----
-
-**Note**: This is a demonstration project. For production use, consider implementing more robust transaction parsing and error handling.
+MIT
