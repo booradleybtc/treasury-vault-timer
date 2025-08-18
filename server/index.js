@@ -9,34 +9,35 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
+// CORS allowlist using regex to support any Vercel preview for this project
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true; // allow non-browser clients
+  const allowed = [
+    /^http:\/\/localhost:3000$/,
+    /^https:\/\/fresh-project-ten\.vercel\.app$/,
+    // Any preview like fresh-project-xxxxxxxx-booradleybtcs-projects.vercel.app
+    /^https:\/\/fresh-project-[a-z0-9]+-booradleybtcs-projects\.vercel\.app$/
+  ];
+  return allowed.some((re) => re.test(origin));
+};
+
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:3000", 
-      "https://fresh-project-pm73umblr-booradleybtcs-projects.vercel.app",
-      "https://fresh-project-fxjxnfuv0-booradleybtcs-projects.vercel.app",
-      "https://fresh-project-palhth91n-booradleybtcs-projects.vercel.app",
-      "https://fresh-project-b30v1qgy7-booradleybtcs-projects.vercel.app",
-      "https://fresh-project-idycwlxsl-booradleybtcs-projects.vercel.app",
-      "https://fresh-project-quasxf4gg-booradleybtcs-projects.vercel.app",
-      "https://fresh-project-fkz4684rp-booradleybtcs-projects.vercel.app"
-    ],
-    methods: ["GET", "POST"]
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
 // Middleware
 app.use(cors({
-  origin: [
-    "http://localhost:3000", 
-    "https://fresh-project-pm73umblr-booradleybtcs-projects.vercel.app",
-    "https://fresh-project-fxjxnfuv0-booradleybtcs-projects.vercel.app",
-    "https://fresh-project-palhth91n-booradleybtcs-projects.vercel.app",
-    "https://fresh-project-b30v1qgy7-booradleybtcs-projects.vercel.app",
-    "https://fresh-project-idycwlxsl-booradleybtcs-projects.vercel.app",
-    "https://fresh-project-quasxf4gg-booradleybtcs-projects.vercel.app",
-    "https://fresh-project-fkz4684rp-booradleybtcs-projects.vercel.app"
-  ],
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());
