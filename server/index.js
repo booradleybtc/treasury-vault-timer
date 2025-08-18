@@ -56,7 +56,15 @@ let globalTimer = {
 let monitoringState = {
   isMonitoring: false,
   monitoringInterval: null,
-  webSocketSubscription: null
+  webSocketSubscription: null,
+  isProductionMode: process.env.NODE_ENV === 'production'
+};
+
+// Admin controls - only allow monitoring control in development
+const isAdmin = (socket) => {
+  // In production, only allow monitoring to be started once
+  // In development, allow full control
+  return process.env.NODE_ENV !== 'production' || socket.handshake.auth.adminKey === process.env.ADMIN_KEY;
 };
 
 // Known DEX programs (where actual purchases happen)
@@ -72,11 +80,15 @@ const knownDEXPrograms = [
 // Function to check if transaction is an actual PURCHASE (not transfer/airdrop)
 const checkIfActualPurchase = (transaction) => {
   try {
-    // Check if transaction involves SOL payment (buyer spent SOL)
+    const txSignature = transaction.transaction.signatures[0];
     const preBalances = transaction.meta.preBalances || [];
     const postBalances = transaction.meta.postBalances || [];
+    const accountKeys = transaction.transaction.message.accountKeys || [];
+    const instructions = transaction.transaction.message.instructions || [];
 
-    // Look for SOL balance decrease (buyer spent SOL)
+    console.log(`🔍 Analyzing transaction: ${txSignature.slice(0, 8)}...`);
+
+    // Check if transaction involves SOL payment (buyer spent SOL)
     for (let i = 0; i < postBalances.length; i++) {
       const preBalance = preBalances[i] || 0;
       const postBalance = postBalances[i] || 0;
@@ -85,31 +97,32 @@ const checkIfActualPurchase = (transaction) => {
       // If someone spent SOL (more than just transaction fee), it's likely a purchase
       if (solDecrease > 0.01) { // More than 0.01 SOL (accounting for fees)
         console.log(`✅ SOL spent: ${solDecrease / 1e9} SOL - ACTUAL PURCHASE`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
         return true;
       }
     }
 
     // Check for DEX program interactions (where purchases happen)
-    const accountKeys = transaction.transaction.message.accountKeys || [];
-
     for (const programId of knownDEXPrograms) {
       if (accountKeys.includes(programId)) {
         console.log(`✅ DEX program detected: ${programId} - ACTUAL PURCHASE`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
         return true;
       }
     }
 
     // Check for swap instructions in transaction
-    const instructions = transaction.transaction.message.instructions || [];
     for (const instruction of instructions) {
       const programId = accountKeys[instruction.programIdIndex];
       if (knownDEXPrograms.includes(programId)) {
         console.log(`✅ Swap instruction detected - ACTUAL PURCHASE`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
         return true;
       }
     }
 
     console.log(`❌ No purchase indicators found - likely a TRANSFER/AIRDROP`);
+    console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
     return false;
   } catch (err) {
     console.warn('Error checking if purchase:', err);
@@ -191,6 +204,17 @@ const monitorPurchases = async () => {
 
               if (isActualPurchase) {
                 console.log(`🎯 JUP PURCHASE DETECTED: ${netIncrease} tokens by ${postBalance.owner}`);
+
+                // Log purchase details for verification
+                const purchaseLog = {
+                  timestamp: new Date().toISOString(),
+                  signature: signature,
+                  buyerAddress: postBalance.owner,
+                  amount: netIncrease,
+                  solscanUrl: `https://solscan.io/tx/${signature}`,
+                  jupiterUrl: `https://jup.ag/swap/SOL-JUP`
+                };
+                purchaseLogs.push(purchaseLog);
 
                 // Reset global timer
                 globalTimer.timeLeft = 3600;
@@ -330,19 +354,30 @@ io.on('connection', (socket) => {
 
   // Handle monitoring control
   socket.on('startMonitoring', () => {
-    startMonitoring();
-    io.emit('monitoringState', { isMonitoring: monitoringState.isMonitoring });
+    if (isAdmin(socket)) {
+      startMonitoring();
+      io.emit('monitoringState', { isMonitoring: monitoringState.isMonitoring });
+    } else {
+      socket.emit('error', 'Unauthorized to start monitoring.');
+    }
   });
 
   socket.on('stopMonitoring', () => {
-    stopMonitoring();
-    io.emit('monitoringState', { isMonitoring: monitoringState.isMonitoring });
+    if (isAdmin(socket)) {
+      stopMonitoring();
+      io.emit('monitoringState', { isMonitoring: monitoringState.isMonitoring });
+    } else {
+      socket.emit('error', 'Unauthorized to stop monitoring.');
+    }
   });
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
 });
+
+// Purchase logs for verification
+let purchaseLogs = [];
 
 // API routes
 app.get('/api/timer', (req, res) => {
@@ -360,6 +395,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.get('/api/purchases', (req, res) => {
+  res.json({
+    purchases: purchaseLogs.slice(-50), // Last 50 purchases
+    total: purchaseLogs.length,
+    tokenAddress: JUP_TOKEN_ADDRESS
+  });
+});
+
 // Start server
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
@@ -368,5 +411,12 @@ server.listen(PORT, () => {
   console.log(`⏰ Global timer started at ${globalTimer.timeLeft} seconds`);
   console.log(`🔌 WebSocket monitoring: DISABLED`);
   console.log(`🎯 Only detecting ACTUAL PURCHASES (not transfers/airdrops)`);
-  console.log(`⏸️ Monitoring is PAUSED - use frontend to start/stop`);
+  
+  // Auto-start monitoring in production
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`🚀 PRODUCTION MODE: Auto-starting monitoring...`);
+    startMonitoring();
+  } else {
+    console.log(`⏸️ DEVELOPMENT MODE: Monitoring is PAUSED - use frontend to start/stop`);
+  }
 });
