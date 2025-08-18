@@ -87,7 +87,7 @@ const knownDEXPrograms = [
   'PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY',   // Phoenix
 ];
 
-// Function to check if transaction is an actual PURCHASE (not transfer/airdrop)
+// Function to check if transaction is an actual PURCHASE (not transfer/airdrop/burn)
 const checkIfActualPurchase = (transaction) => {
   try {
     const txSignature = transaction.transaction.signatures[0];
@@ -95,8 +95,35 @@ const checkIfActualPurchase = (transaction) => {
     const postBalances = transaction.meta.postBalances || [];
     const accountKeys = transaction.transaction.message.accountKeys || [];
     const instructions = transaction.transaction.message.instructions || [];
+    const preTokenBalances = transaction.meta.preTokenBalances || [];
+    const postTokenBalances = transaction.meta.postTokenBalances || [];
 
     console.log(`🔍 Analyzing transaction: ${txSignature.slice(0, 8)}...`);
+
+    // Check for BURN transactions (should be excluded)
+    const tokenPreBalances = preTokenBalances.filter(balance => balance.mint === REVS_TOKEN_ADDRESS);
+    const tokenPostBalances = postTokenBalances.filter(balance => balance.mint === REVS_TOKEN_ADDRESS);
+    
+    // If there are pre-balances but no post-balances for our token, it's likely a burn
+    if (tokenPreBalances.length > 0 && tokenPostBalances.length === 0) {
+      console.log(`🔥 BURN detected - EXCLUDING from timer reset`);
+      console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+      return false;
+    }
+
+    // Check for burn wallet patterns (common burn addresses)
+    const burnWalletPatterns = [
+      '11111111111111111111111111111111', // System Program (often used for burns)
+      'Burn111111111111111111111111111111111111111', // Common burn address
+    ];
+    
+    for (const accountKey of accountKeys) {
+      if (burnWalletPatterns.includes(accountKey)) {
+        console.log(`🔥 Burn wallet detected: ${accountKey} - EXCLUDING from timer reset`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+        return false;
+      }
+    }
 
     // Check if transaction involves SOL payment (buyer spent SOL)
     for (let i = 0; i < postBalances.length; i++) {
@@ -131,7 +158,7 @@ const checkIfActualPurchase = (transaction) => {
       }
     }
 
-    console.log(`❌ No purchase indicators found - likely a TRANSFER/AIRDROP`);
+    console.log(`❌ No purchase indicators found - likely a TRANSFER/AIRDROP/BURN`);
     console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
     return false;
   } catch (err) {
