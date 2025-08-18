@@ -58,7 +58,8 @@ let globalTimer = {
   lastPurchaseTime: null,
   lastBuyerAddress: null,
   lastPurchaseAmount: null,
-  lastCheckedSignature: null
+  lastCheckedSignature: null,
+  lastTxSignature: null
 };
 
 // Monitoring control
@@ -231,13 +232,15 @@ const monitorPurchases = async () => {
                 globalTimer.lastPurchaseTime = new Date();
                 globalTimer.lastBuyerAddress = postBalance.owner;
                 globalTimer.lastPurchaseAmount = netIncrease;
+                globalTimer.lastTxSignature = sig.signature;
 
                 // Emit timer reset to all connected clients
                 io.emit('timerReset', {
                   timeLeft: globalTimer.timeLeft,
                   lastPurchaseTime: globalTimer.lastPurchaseTime,
                   lastBuyerAddress: globalTimer.lastBuyerAddress,
-                  lastPurchaseAmount: globalTimer.lastPurchaseAmount
+                  lastPurchaseAmount: globalTimer.lastPurchaseAmount,
+                  txSignature: globalTimer.lastTxSignature
                 });
 
                 console.log('🎉 Global timer reset - all clients notified');
@@ -358,6 +361,7 @@ io.on('connection', (socket) => {
     lastPurchaseTime: globalTimer.lastPurchaseTime,
     lastBuyerAddress: globalTimer.lastBuyerAddress,
     lastPurchaseAmount: globalTimer.lastPurchaseAmount,
+    txSignature: globalTimer.lastTxSignature,
     isMonitoring: monitoringState.isMonitoring
   });
 
