@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, AlertCircle, CheckCircle, RefreshCw, Zap, Info, Power, Settings } from 'lucide-react';
+import { AlertCircle, CheckCircle, RefreshCw, Zap } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 interface CountdownTimerProps {
@@ -17,9 +17,9 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   const [lastPurchaseAmount, setLastPurchaseAmount] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
-  const [lastTxSignature, setLastTxSignature] = useState<string | null>(null);
+
 
   // Connect to server via Socket.IO
   useEffect(() => {

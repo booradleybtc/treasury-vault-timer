@@ -12,7 +12,7 @@ export interface TradeData {
 
 export class DEXMonitor {
   private tokenAddress: string;
-  private lastTradeTime: number = 0;
+
 
   constructor(tokenAddress: string) {
     this.tokenAddress = tokenAddress;
@@ -22,7 +22,7 @@ export class DEXMonitor {
   async monitorJupiterTrades(): Promise<TradeData[]> {
     try {
       // Use Jupiter's price API as a fallback - more reliable
-      const response = await axios.get(
+      await axios.get(
         `https://price.jup.ag/v4/price?ids=${this.tokenAddress}`
       );
 
