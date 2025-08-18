@@ -2,8 +2,8 @@ import React from 'react';
 import { CountdownTimer } from './components/CountdownTimer';
 
 function App() {
-  // Hardcoded to JUP token (moderate activity for testing)
-  const JUP_TOKEN_ADDRESS = 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN';
+  // Hardcoded to REVS token (Token-2022 revshare token for testing)
+  const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-4">
@@ -20,7 +20,7 @@ function App() {
         </div>
 
         {/* Main Device Body */}
-        <CountdownTimer tokenContract={JUP_TOKEN_ADDRESS} />
+        <CountdownTimer tokenContract={REVS_TOKEN_ADDRESS} />
 
         {/* Device Footer */}
         <div className="text-center mt-8">

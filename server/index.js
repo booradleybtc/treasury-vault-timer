@@ -48,8 +48,8 @@ const connection = new Connection(`https://rpc.helius.xyz/?api-key=${HELIUS_API_
   wsEndpoint: `wss://rpc.helius.xyz/?api-key=${HELIUS_API_KEY}`
 });
 
-// JUP token address (moderate activity - more than SAMO, less than BONK)
-const JUP_TOKEN_ADDRESS = 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN';
+// REVS token address (Token-2022 revshare token for testing)
+const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
 
 // Global timer state
 let globalTimer = {
@@ -189,10 +189,10 @@ const monitorPurchases = async () => {
 
         // Look for our specific token in the balances
         const tokenPreBalances = preTokenBalances.filter(
-          balance => balance.mint === JUP_TOKEN_ADDRESS
+          balance => balance.mint === REVS_TOKEN_ADDRESS
         );
         const tokenPostBalances = postTokenBalances.filter(
-          balance => balance.mint === JUP_TOKEN_ADDRESS
+          balance => balance.mint === REVS_TOKEN_ADDRESS
         );
 
         // Check if there was a net increase in token balance (purchase)
@@ -213,7 +213,7 @@ const monitorPurchases = async () => {
               const isActualPurchase = checkIfActualPurchase(transaction);
 
               if (isActualPurchase) {
-                console.log(`🎯 JUP PURCHASE DETECTED: ${netIncrease} tokens by ${postBalance.owner}`);
+                console.log(`🎯 REVS PURCHASE DETECTED: ${netIncrease} tokens by ${postBalance.owner}`);
 
                 // Log purchase details for verification
                 const purchaseLog = {
@@ -222,7 +222,7 @@ const monitorPurchases = async () => {
                   buyerAddress: postBalance.owner,
                   amount: netIncrease,
                   solscanUrl: `https://solscan.io/tx/${sig.signature}`,
-                  jupiterUrl: `https://jup.ag/swap/SOL-JUP`
+                  jupiterUrl: `https://jup.ag/swap/SOL-REVS`
                 };
                 purchaseLogs.push(purchaseLog);
 
@@ -266,7 +266,7 @@ const monitorPurchases = async () => {
 // WebSocket monitoring for real-time updates
 const setupWebSocketMonitoring = () => {
   try {
-    const tokenPublicKey = new PublicKey(JUP_TOKEN_ADDRESS);
+    const tokenPublicKey = new PublicKey(REVS_TOKEN_ADDRESS);
     
     // Subscribe to account changes
     const subscriptionId = connection.onAccountChange(
@@ -281,7 +281,7 @@ const setupWebSocketMonitoring = () => {
       'confirmed'
     );
 
-    console.log(`🔌 WebSocket monitoring enabled for JUP token`);
+    console.log(`🔌 WebSocket monitoring enabled for REVS token`);
     return subscriptionId;
   } catch (err) {
     console.error('Error setting up WebSocket monitoring:', err);
@@ -296,7 +296,7 @@ const startMonitoring = () => {
     return;
   }
 
-  console.log('🚀 Starting JUP purchase monitoring...');
+  console.log('🚀 Starting REVS purchase monitoring...');
   monitoringState.isMonitoring = true;
 
   // Start polling interval
@@ -319,7 +319,7 @@ const stopMonitoring = () => {
     return;
   }
 
-  console.log('⏹️ Stopping JUP purchase monitoring...');
+  console.log('⏹️ Stopping REVS purchase monitoring...');
   monitoringState.isMonitoring = false;
 
   // Clear polling interval
@@ -398,7 +398,7 @@ app.get('/', (req, res) => {
     message: 'Treasury Vault Timer Backend',
     status: 'running',
     timestamp: new Date().toISOString(),
-    token: JUP_TOKEN_ADDRESS,
+    token: REVS_TOKEN_ADDRESS,
     isMonitoring: monitoringState.isMonitoring
   });
 });
@@ -423,7 +423,7 @@ app.get('/api/purchases', (req, res) => {
   res.json({
     purchases: purchaseLogs.slice(-50), // Last 50 purchases
     total: purchaseLogs.length,
-    tokenAddress: JUP_TOKEN_ADDRESS
+    tokenAddress: REVS_TOKEN_ADDRESS
   });
 });
 
@@ -431,7 +431,7 @@ app.get('/api/purchases', (req, res) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Monitoring JUP token: ${JUP_TOKEN_ADDRESS}`);
+  console.log(`📡 Monitoring REVS token: ${REVS_TOKEN_ADDRESS}`);
   console.log(`⏰ Global timer started at ${globalTimer.timeLeft} seconds`);
   console.log(`🔌 WebSocket monitoring: DISABLED`);
   console.log(`🎯 Only detecting ACTUAL PURCHASES (not transfers/airdrops)`);

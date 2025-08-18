@@ -89,7 +89,7 @@ A real-time countdown timer that resets on Solana token purchases. Built with Re
 
 To change the monitored token, edit `server/index.js`:
 ```javascript
-const JUP_TOKEN_ADDRESS = 'YOUR_TOKEN_ADDRESS_HERE';
+const REVS_TOKEN_ADDRESS = 'YOUR_TOKEN_ADDRESS_HERE';
 ```
 
 ### Helius API Key
