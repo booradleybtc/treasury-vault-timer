@@ -144,7 +144,7 @@ const checkIfActualPurchase = (transaction) => {
 // Monitor purchases with improved detection
 const monitorPurchases = async () => {
   try {
-    const tokenPublicKey = new PublicKey(JUP_TOKEN_ADDRESS);
+    const tokenPublicKey = new PublicKey(REVS_TOKEN_ADDRESS);
 
     // Get recent transactions for the token
     const signatures = await connection.getSignaturesForAddress(
@@ -152,7 +152,7 @@ const monitorPurchases = async () => {
       { limit: 50 }
     );
 
-    console.log(`Found ${signatures.length} recent transactions for JUP`);
+    console.log(`Found ${signatures.length} recent transactions for REVS`);
 
     // Filter out already checked transactions
     let newTransactions = signatures;
