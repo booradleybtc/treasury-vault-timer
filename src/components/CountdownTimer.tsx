@@ -19,6 +19,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [lastTxSignature, setLastTxSignature] = useState<string | null>(null);
 
   // Connect to server via Socket.IO
   useEffect(() => {
@@ -46,6 +47,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
       setLastPurchaseTime(data.lastPurchaseTime ? new Date(data.lastPurchaseTime) : null);
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
+      setLastTxSignature(data.txSignature || null);
       setIsMonitoring(data.isMonitoring || false);
       setDebugInfo(prev => [...prev, `Timer state received: ${data.timeLeft}s remaining`]);
     });
@@ -62,6 +64,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
       setLastPurchaseTime(new Date(data.lastPurchaseTime));
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
+      setLastTxSignature(data.txSignature || null);
       
       // Add detailed bid information to vault log
       const buyerShort = data.lastBuyerAddress ? 
@@ -73,7 +76,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
         `🎯 BID PLACED - VAULT RESET`,
         `💰 ${data.lastPurchaseAmount} tokens purchased`,
         `👤 Buyer: ${buyerShort}`,
-        `🔗 https://solscan.io/account/${data.lastBuyerAddress}`
+        `🔗 Verify: https://solscan.io/tx/${data.txSignature}`
       ]);
     });
 
