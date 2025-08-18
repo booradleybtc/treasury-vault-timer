@@ -379,6 +379,17 @@ io.on('connection', (socket) => {
 // Purchase logs for verification
 let purchaseLogs = [];
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Treasury Vault Timer Backend',
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    token: JUP_TOKEN_ADDRESS,
+    isMonitoring: monitoringState.isMonitoring
+  });
+});
+
 // API routes
 app.get('/api/timer', (req, res) => {
   res.json({
