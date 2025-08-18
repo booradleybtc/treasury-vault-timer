@@ -15,7 +15,8 @@ const io = new Server(server, {
       "http://localhost:3000", 
       "https://fresh-project-pm73umblr-booradleybtcs-projects.vercel.app",
       "https://fresh-project-fxjxnfuv0-booradleybtcs-projects.vercel.app",
-      "https://fresh-project-palhth91n-booradleybtcs-projects.vercel.app"
+      "https://fresh-project-palhth91n-booradleybtcs-projects.vercel.app",
+      "https://fresh-project-b30v1qgy7-booradleybtcs-projects.vercel.app"
     ],
     methods: ["GET", "POST"]
   }
@@ -27,7 +28,8 @@ app.use(cors({
     "http://localhost:3000", 
     "https://fresh-project-pm73umblr-booradleybtcs-projects.vercel.app",
     "https://fresh-project-fxjxnfuv0-booradleybtcs-projects.vercel.app",
-    "https://fresh-project-palhth91n-booradleybtcs-projects.vercel.app"
+    "https://fresh-project-palhth91n-booradleybtcs-projects.vercel.app",
+    "https://fresh-project-b30v1qgy7-booradleybtcs-projects.vercel.app"
   ],
   credentials: true
 }));
