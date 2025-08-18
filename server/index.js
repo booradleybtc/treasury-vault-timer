@@ -208,10 +208,10 @@ const monitorPurchases = async () => {
                 // Log purchase details for verification
                 const purchaseLog = {
                   timestamp: new Date().toISOString(),
-                  signature: signature,
+                  signature: sig.signature,
                   buyerAddress: postBalance.owner,
                   amount: netIncrease,
-                  solscanUrl: `https://solscan.io/tx/${signature}`,
+                  solscanUrl: `https://solscan.io/tx/${sig.signature}`,
                   jupiterUrl: `https://jup.ag/swap/SOL-JUP`
                 };
                 purchaseLogs.push(purchaseLog);
