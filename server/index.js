@@ -11,13 +11,26 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://fresh-project-pm73umblr-booradleybtcs-projects.vercel.app"],
+    origin: [
+      "http://localhost:3000", 
+      "https://fresh-project-pm73umblr-booradleybtcs-projects.vercel.app",
+      "https://fresh-project-fxjxnfuv0-booradleybtcs-projects.vercel.app",
+      "https://fresh-project-palhth91n-booradleybtcs-projects.vercel.app"
+    ],
     methods: ["GET", "POST"]
   }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000", 
+    "https://fresh-project-pm73umblr-booradleybtcs-projects.vercel.app",
+    "https://fresh-project-fxjxnfuv0-booradleybtcs-projects.vercel.app",
+    "https://fresh-project-palhth91n-booradleybtcs-projects.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Solana connection with WebSocket support
