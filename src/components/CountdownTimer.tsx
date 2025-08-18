@@ -62,7 +62,19 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
       setLastPurchaseTime(new Date(data.lastPurchaseTime));
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
-      setDebugInfo(prev => [...prev, `Timer reset: ${data.lastPurchaseAmount} tokens purchased`]);
+      
+      // Add detailed bid information to vault log
+      const buyerShort = data.lastBuyerAddress ? 
+        `${data.lastBuyerAddress.slice(0, 8)}...${data.lastBuyerAddress.slice(-8)}` : 
+        'Unknown';
+      
+      setDebugInfo(prev => [
+        ...prev, 
+        `🎯 BID PLACED - VAULT RESET`,
+        `💰 ${data.lastPurchaseAmount} tokens purchased`,
+        `👤 Buyer: ${buyerShort}`,
+        `🔗 https://solscan.io/account/${data.lastBuyerAddress}`
+      ]);
     });
 
     newSocket.on('timerExpired', () => {
@@ -229,7 +241,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
           {debugInfo.length === 0 ? (
             <p className="text-gray-500 text-center text-xs font-mono">NO ACTIVITY DETECTED</p>
           ) : (
-            debugInfo.slice(-6).map((info, index) => (
+            debugInfo.slice(-8).map((info, index) => (
               <div key={index} className="text-xs text-green-400 mb-1 font-mono">
                 <span className="text-gray-500">{'>'}</span> {info}
               </div>
