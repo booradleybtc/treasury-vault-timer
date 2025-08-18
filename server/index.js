@@ -111,15 +111,40 @@ const checkIfActualPurchase = (transaction) => {
       return false;
     }
 
+    // Check if distributor/dev wallets are involved in token balance changes
+    const excludedWallets = [
+      '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE', // REVS Distributor wallet
+    ];
+    
+    for (const balance of [...tokenPreBalances, ...tokenPostBalances]) {
+      if (excludedWallets.includes(balance.owner)) {
+        console.log(`🚫 Distributor/Dev wallet involved in transaction: ${balance.owner} - EXCLUDING from timer reset`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+        return false;
+      }
+    }
+
     // Check for burn wallet patterns (common burn addresses)
     const burnWalletPatterns = [
       '11111111111111111111111111111111', // System Program (often used for burns)
       'Burn111111111111111111111111111111111111111', // Common burn address
     ];
     
+    // Check for distributor/dev wallet patterns (should be excluded)
+    const excludedWalletPatterns = [
+      '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE', // REVS Distributor wallet
+      // Add other known distributor/dev wallets here
+    ];
+    
     for (const accountKey of accountKeys) {
       if (burnWalletPatterns.includes(accountKey)) {
         console.log(`🔥 Burn wallet detected: ${accountKey} - EXCLUDING from timer reset`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+        return false;
+      }
+      
+      if (excludedWalletPatterns.includes(accountKey)) {
+        console.log(`🚫 Distributor/Dev wallet detected: ${accountKey} - EXCLUDING from timer reset`);
         console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
         return false;
       }
