@@ -156,7 +156,7 @@ const checkIfActualPurchase = (transaction) => {
     // LP pool wallets - we want to exclude SELLS (users sending REVS to LP) but allow BUYS (users receiving REVS from LP)
     const lpPoolWallets = [
       '8pN9qCiZg3KPg79R5cL4AF9xXVTWoJPxaVWf5ormvCwa', // Main REVS/SOL pool
-      'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // REVS LP pool for testing
+      // 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // This is actually a Raydium vault authority, not LP pool
       // Comment out other pools for testing
       // 'H3pnJpddNdcuuGnmVGhhWNeop8zgPwgnzKg9UPRxBKke', // REVS/RAY pool
       // 'DkQroLagNZhGC82aGkpdymZiv2UmSfsoppNJ6Ru6amun', // REVS/JUP pool
@@ -167,6 +167,7 @@ const checkIfActualPurchase = (transaction) => {
       '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8', // Raydium Vault Authority #1
       '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1', // Raydium Vault Authority #2
       '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM', // Raydium Vault Authority #3
+      'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // Raydium Vault Authority #4 (was incorrectly in lpPoolWallets)
     ];
     
     // Check if this is a SELL transaction (user sending REVS to LP pool)
