@@ -155,8 +155,10 @@ const checkIfActualPurchase = (transaction) => {
     
     // LP pool wallets - we want to exclude SELLS (users sending REVS to LP) but allow BUYS (users receiving REVS from LP)
     const lpPoolWallets = [
-      // Add Raydium Vault Authority #2 address here when we have it
-      // These are LP pools where users can buy/sell tokens
+      '8pN9qCiZg3KPg79R5cL4AF9xXVTWoJPxaVWf5ormvCwa', // Main REVS/SOL pool
+      'H3pnJpddNdcuuGnmVGhhWNeop8zgPwgnzKg9UPRxBKke', // REVS/RAY pool
+      'DkQroLagNZhGC82aGkpdymZiv2UmSfsoppNJ6Ru6amun', // REVS/JUP pool
+      'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // Additional LP pool you found
     ];
     
     // Check if this is a SELL transaction (user sending REVS to LP pool)
