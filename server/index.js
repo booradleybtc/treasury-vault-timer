@@ -114,6 +114,7 @@ const checkIfActualPurchase = (transaction) => {
     // Check if distributor/dev wallets are involved in token balance changes
     const excludedWallets = [
       '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE', // REVS Distributor wallet
+      'EdwuCgokC7zW4JLdScHwieD4pQzeYw8xCyb51CJXzLRW', // REVS Creator wallet
     ];
     
     for (const balance of [...tokenPreBalances, ...tokenPostBalances]) {
@@ -133,6 +134,7 @@ const checkIfActualPurchase = (transaction) => {
     // Check for distributor/dev wallet patterns (should be excluded)
     const excludedWalletPatterns = [
       '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE', // REVS Distributor wallet
+      'EdwuCgokC7zW4JLdScHwieD4pQzeYw8xCyb51CJXzLRW', // REVS Creator wallet
       // Add other known distributor/dev wallets here
     ];
     
