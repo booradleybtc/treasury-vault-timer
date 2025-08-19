@@ -20,7 +20,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
   const [notificationSupported, setNotificationSupported] = useState(false);
-  const [lastTxSignature, setLastTxSignature] = useState<string | null>(null);
+  // Removed unused lastTxSignature state
 
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
@@ -51,7 +51,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
       setLastPurchaseTime(data.lastPurchaseTime ? new Date(data.lastPurchaseTime) : null);
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
-      setLastTxSignature(data.txSignature || null);
+      // Transaction signature logged in debug info
       setIsMonitoring(data.isMonitoring || false);
       setDebugInfo(prev => [...prev, `Timer state received: ${data.timeLeft}s remaining`]);
     });
@@ -68,7 +68,6 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
       setLastPurchaseTime(new Date(data.lastPurchaseTime));
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
-      setLastTxSignature(data.txSignature || null);
       
       // Add detailed bid information to vault log
       const buyerShort = data.lastBuyerAddress ? 

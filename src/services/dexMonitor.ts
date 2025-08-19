@@ -12,6 +12,7 @@ export interface TradeData {
 
 export class DEXMonitor {
   private tokenAddress: string;
+  // Removed unused lastTradeTime property
 
 
   constructor(tokenAddress: string) {
@@ -102,9 +103,10 @@ export class DEXMonitor {
       )
       .sort((a, b) => b.timestamp - a.timestamp);
 
-    // Update last trade time
+    // Track trade timestamps for future use
     if (uniqueTrades.length > 0) {
-      this.lastTradeTime = Math.max(...uniqueTrades.map(t => t.timestamp));
+      const latestTime = Math.max(...uniqueTrades.map(t => t.timestamp));
+      console.log('Latest trade time:', new Date(latestTime).toLocaleString());
     }
 
     return uniqueTrades;

@@ -6,7 +6,7 @@ interface JupiterBuyWidgetProps {
   tokenSymbol: string;
 }
 
-export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenAddress, tokenSymbol }) => {
+export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [priceData, setPriceData] = useState<{ price: number; inputMint: string } | null>(null);
 

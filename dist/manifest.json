@@ -1,0 +1,22 @@
+{
+  "name": "Treasury Vault Timer",
+  "short_name": "Vault Timer",
+  "description": "Real-time countdown timer that resets on Solana token purchases",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#10B981",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
