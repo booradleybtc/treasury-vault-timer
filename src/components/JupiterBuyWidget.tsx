@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, ShoppingCart, X } from 'lucide-react';
+import { Zap, ShoppingCart, X, Target, Trophy } from 'lucide-react';
 import '@jup-ag/plugin/css';
 
 interface JupiterBuyWidgetProps {
@@ -150,28 +150,28 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
   const solFor100Tokens = priceData ? calculateSolAmountNeeded(100, priceData.price) : 0;
 
   return (
-    <div className="bg-gray-800 rounded-xl p-4 border-2 border-gray-600">
-      <div className="text-center mb-4">
-        <div className="flex items-center justify-center mb-2">
-          <ShoppingCart className="w-5 h-5 text-green-400 mr-2" />
-          <h3 className="text-lg font-bold text-green-400 font-mono">BUY {tokenSymbol}</h3>
+    <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+      <div className="text-center mb-6">
+        <div className="flex items-center justify-center mb-3">
+          <Zap className="w-6 h-6 text-orange-500 mr-2" />
+          <h3 className="text-xl font-bold text-orange-500 font-mono">PLACE YOUR BID</h3>
         </div>
-        <p className="text-xs text-gray-400 font-mono">
+        <p className="text-gray-400 text-sm font-mono">
           {priceData ? `Current Price: $${priceData.price.toFixed(6)}` : 'Loading price...'}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {/* Buy 1 Token Button */}
         <button
           onClick={() => openJupiterWidget(1)}
           disabled={isLoading || !priceData}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-green-500 disabled:border-gray-500"
+          className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 disabled:from-gray-700 disabled:to-gray-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-orange-500 disabled:border-gray-600 shadow-lg"
         >
-          <Zap className="w-4 h-4 inline mr-2" />
-          BUY 1 {tokenSymbol}
-          <div className="text-xs text-green-200 mt-1">
-            ~{solFor1Token.toFixed(4)} SOL needed
+          <Target className="w-5 h-5 inline mr-2" />
+          BID 1 REVS
+          <div className="text-xs text-orange-200 mt-2 font-medium">
+            ~{solFor1Token.toFixed(4)} SOL
           </div>
         </button>
 
@@ -179,34 +179,44 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
         <button
           onClick={() => openJupiterWidget(100)}
           disabled={isLoading || !priceData}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-blue-500 disabled:border-gray-500"
+          className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-700 disabled:to-gray-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-orange-400 disabled:border-gray-600 shadow-lg"
         >
-          <Zap className="w-4 h-4 inline mr-2" />
-          BUY 100 {tokenSymbol}
-          <div className="text-xs text-blue-200 mt-1">
-            ~{solFor100Tokens.toFixed(4)} SOL needed
+          <Trophy className="w-5 h-5 inline mr-2" />
+          BID 100 REVS
+          <div className="text-xs text-orange-200 mt-2 font-medium">
+            ~{solFor100Tokens.toFixed(4)} SOL
           </div>
         </button>
       </div>
 
-      <div className="mt-3 text-xs text-gray-400 text-center font-mono">
-        * Amounts include 10% tax + fees to ensure you receive the target amount
+      <div className="text-center">
+        <div className="bg-gray-800 rounded-lg p-3 mb-4">
+          <div className="text-xs text-gray-400 font-mono mb-1">BID TO RESET TIMER</div>
+          <div className="text-sm text-orange-400 font-mono">Minimum 1 REVS to trigger countdown</div>
+        </div>
+        
+        <div className="text-xs text-gray-500 font-mono">
+          * Amounts include 10% tax + fees to ensure you receive the target amount
+        </div>
       </div>
       
       {/* Jupiter Widget Modal */}
       {showWidget && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-xl p-6 max-w-2xl w-full border-2 border-gray-600 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-green-400 font-mono">Buy REVS to Reset Timer</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-2xl p-6 max-w-3xl w-full border-2 border-orange-500 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center">
+                <Zap className="w-6 h-6 text-orange-500 mr-3" />
+                <h3 className="text-xl font-bold text-orange-500 font-mono">Place Your Bid</h3>
+              </div>
               <button
                 onClick={() => setShowWidget(false)}
-                className="text-gray-400 hover:text-white transition-colors p-2"
+                className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div id="jupiter-widget-container" className="w-full h-[500px] rounded-lg overflow-hidden">
+            <div id="jupiter-widget-container" className="w-full h-[600px] rounded-xl overflow-hidden border border-gray-700">
               {/* Jupiter plugin will render here */}
             </div>
           </div>
