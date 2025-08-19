@@ -200,7 +200,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   const progress = ((3600 - timeLeft) / 3600) * 100;
 
   return (
-    <div className="bg-gray-900 rounded-2xl p-4 md:p-6 shadow-2xl border-2 border-gray-700 w-full max-w-md mx-auto">
+    <div className="bg-gray-900 rounded-2xl p-4 md:p-6 shadow-2xl border-2 border-gray-700 w-full max-w-md mx-auto mb-4">
       {/* Main Timer Display - LCD Style */}
       <div className="bg-black rounded-xl p-6 mb-6 border-2 border-gray-600">
         <div className="text-center">

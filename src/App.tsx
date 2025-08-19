@@ -1,13 +1,14 @@
 
 import { CountdownTimer } from './components/CountdownTimer';
+import { JupiterBuyWidget } from './components/JupiterBuyWidget';
 
 function App() {
   // Hardcoded to REVS token (Token-2022 revshare token for testing)
   const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-2 sm:p-4">
-      <div className="w-full max-w-4xl px-2">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="w-full max-w-4xl px-2 py-4">
         {/* Device Header */}
         <div className="text-center mb-4 sm:mb-8">
           <div className="inline-flex items-center bg-gray-800 rounded-t-2xl px-4 sm:px-6 py-2 sm:py-3 border-b-2 border-gray-600">
@@ -21,6 +22,11 @@ function App() {
 
         {/* Main Device Body */}
         <CountdownTimer tokenContract={REVS_TOKEN_ADDRESS} />
+
+        {/* Jupiter Buy Widget */}
+        <div className="mt-6">
+          <JupiterBuyWidget tokenAddress={REVS_TOKEN_ADDRESS} tokenSymbol="REVS" />
+        </div>
 
         {/* Device Footer */}
         <div className="text-center mt-4 sm:mt-8">
