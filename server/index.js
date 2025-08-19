@@ -188,12 +188,22 @@ const checkIfActualPurchase = (transaction) => {
     }
     
     // Check for BUYS from Raydium vault authorities (users receiving REVS from LP)
-    for (const balance of tokenPostBalances) {
+    // When user buys, Raydium vault authority appears in tokenPreBalances as the source
+    for (const balance of tokenPreBalances) {
       if (raydiumVaultAuthorities.includes(balance.owner)) {
-        // User is receiving REVS from Raydium vault (BUY) - this should trigger timer
-        console.log(`✅ BUY detected - user receiving REVS from Raydium vault: ${balance.owner} - TRIGGERING timer reset`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return true;
+        // Check if this is a BUY (user receiving tokens from vault)
+        // Look for a corresponding post balance for a user wallet
+        const userReceivedTokens = tokenPostBalances.some(postBalance => 
+          !raydiumVaultAuthorities.includes(postBalance.owner) && 
+          !excludedWalletPatterns.includes(postBalance.owner) &&
+          postBalance.owner !== balance.owner
+        );
+        
+        if (userReceivedTokens) {
+          console.log(`✅ BUY detected - user receiving REVS from Raydium vault: ${balance.owner} - TRIGGERING timer reset`);
+          console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+          return true;
+        }
       }
     }
     
