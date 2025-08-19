@@ -1,24 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Users, Trophy, Coins, TrendingUp, Gift, Target, Zap } from 'lucide-react';
+import { Clock, Trophy, Coins, TrendingUp, Gift, Target } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { pushNotificationService } from '../services/pushNotifications';
-
-interface TimerData {
-  timeRemaining: string;
-  isActive: boolean;
-  lastReset: string;
-  lastBuyer: string;
-  purchaseAmount: string;
-  serverConnected: boolean;
-  monitoringActive: boolean;
-  log: string[];
-}
 
 interface CountdownTimerProps {
   tokenContract: string;
 }
 
-const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract }) => {
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract }) => {
   // Socket.IO connection to server
   const [socket, setSocket] = useState<any>(null);
 
@@ -181,8 +170,6 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract }) => {
     const secs = seconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
-  const progress = ((3600 - timeLeft) / 3600) * 100;
 
   // Demo data for treasury features
   const demoData = {
@@ -441,5 +428,3 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract }) => {
     </div>
   );
 };
-
-export default CountdownTimer;

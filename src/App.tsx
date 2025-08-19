@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { CountdownTimer } from './components/CountdownTimer';
 import { JupiterBuyWidget } from './components/JupiterBuyWidget';
 

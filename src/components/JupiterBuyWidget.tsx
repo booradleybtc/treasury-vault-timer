@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, ShoppingCart, X, Target, Trophy } from 'lucide-react';
+import { Zap, X, Target, Trophy } from 'lucide-react';
 import '@jup-ag/plugin/css';
 
 interface JupiterBuyWidgetProps {
