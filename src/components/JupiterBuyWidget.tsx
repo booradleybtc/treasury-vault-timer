@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, ShoppingCart } from 'lucide-react';
+import { Zap, ShoppingCart, X } from 'lucide-react';
 
 interface JupiterBuyWidgetProps {
   tokenAddress: string;
@@ -9,8 +9,8 @@ interface JupiterBuyWidgetProps {
 export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [priceData, setPriceData] = useState<{ price: number; inputMint: string } | null>(null);
-  const [showInstructions, setShowInstructions] = useState(false);
-  const [instructions, setInstructions] = useState('');
+  const [showWidget, setShowWidget] = useState(false);
+  const [widgetConfig, setWidgetConfig] = useState('');
 
   // REVS token address
   const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
@@ -83,18 +83,11 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     // Calculate SOL amount needed for the target tokens
     const solAmount = priceData ? (targetTokens * priceData.price) : 0.01; // Fallback
     
-    // Set instructions for user
-    setInstructions(`To buy ${targetTokens} REVS:
-1. Select SOL as input token
-2. Select REVS (${REVS_TOKEN_ADDRESS.slice(0, 8)}...) as output token  
-3. Enter ${solAmount.toFixed(4)} SOL as amount
-4. This accounts for 10% tax + fees`);
+    // Create Jupiter iframe widget URL with pre-filled parameters
+    const widgetUrl = `https://jup.ag/widget?inputMint=So11111111111111111111111111111111111111112&outputMint=${REVS_TOKEN_ADDRESS}&amount=${solAmount}&fixed=in`;
     
-    setShowInstructions(true);
-    
-    // Open Jupiter in new tab
-    const jupiterUrl = 'https://jup.ag/swap';
-    window.open(jupiterUrl, '_blank');
+    setWidgetConfig(widgetUrl);
+    setShowWidget(true);
     
     setIsLoading(false);
   };
@@ -143,20 +136,28 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
         * Amounts include 10% tax + fees to ensure you receive the target amount
       </div>
       
-      {/* Instructions Modal */}
-      {showInstructions && (
+      {/* Jupiter Widget Modal */}
+      {showWidget && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-xl p-6 max-w-md mx-4 border-2 border-gray-600">
-            <h3 className="text-lg font-bold text-green-400 mb-4 font-mono">Jupiter Swap Instructions</h3>
-            <div className="text-sm text-gray-300 font-mono whitespace-pre-line mb-4">
-              {instructions}
+          <div className="bg-gray-800 rounded-xl p-4 max-w-2xl w-full mx-4 border-2 border-gray-600">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-green-400 font-mono">Buy REVS to Reset Timer</h3>
+              <button
+                onClick={() => setShowWidget(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <button
-              onClick={() => setShowInstructions(false)}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-            >
-              Got it!
-            </button>
+            <div className="w-full h-96">
+              <iframe
+                src={widgetConfig}
+                width="100%"
+                height="100%"
+                style={{ border: 'none', borderRadius: '8px' }}
+                title="Jupiter Swap Widget"
+              />
+            </div>
           </div>
         </div>
       )}
