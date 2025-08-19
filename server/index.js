@@ -111,9 +111,26 @@ const checkIfActualPurchase = (transaction) => {
       return false;
     }
 
+    // Check for burn patterns in transaction instructions
+    for (const instruction of instructions) {
+      const programId = accountKeys[instruction.programIdIndex];
+      if (programId === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') {
+        // Check if this is a burn instruction
+        if (instruction.data && instruction.data.length > 0) {
+          // Burn instruction typically has specific data pattern
+          const data = Buffer.from(instruction.data, 'base64');
+          if (data.length >= 1 && data[0] === 8) { // Burn instruction code
+            console.log(`🔥 Token burn instruction detected - EXCLUDING from timer reset`);
+            console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+            return false;
+          }
+        }
+      }
+    }
+
     // Check if distributor/dev wallets are involved in token balance changes
     const excludedWallets = [
-      '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE', // REVS Distributor wallet
+      '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // REVS Distributor wallet
     ];
     
     for (const balance of [...tokenPreBalances, ...tokenPostBalances]) {
@@ -132,7 +149,7 @@ const checkIfActualPurchase = (transaction) => {
     
     // Check for distributor/dev wallet patterns (should be excluded)
     const excludedWalletPatterns = [
-      '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE', // REVS Distributor wallet
+      '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // REVS Distributor wallet
       // Add other known distributor/dev wallets here
     ];
     
