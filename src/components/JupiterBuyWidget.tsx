@@ -121,8 +121,12 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
               name: "Treasury Vault Timer",
               logoUri: "https://raw.githubusercontent.com/booradleybtc/treasury-vault-timer/main/public/icon-192x192.png"
             },
+            // Test route restrictions with REVS LP pool
+            onlyDirectRoutes: true,
+            // Try to restrict to specific LP pool (if Jupiter supports this)
+            // Note: This may not work depending on Jupiter's API
           };
-          console.log('Jupiter config:', config);
+          console.log('Jupiter config with route restrictions:', config);
           init(config);
         });
       }
