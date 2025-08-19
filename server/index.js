@@ -162,6 +162,13 @@ const checkIfActualPurchase = (transaction) => {
       // 'DkQroLagNZhGC82aGkpdymZiv2UmSfsoppNJ6Ru6amun', // REVS/JUP pool
     ];
     
+    // Raydium vault authority addresses (these are the actual addresses that appear in transfers)
+    const raydiumVaultAuthorities = [
+      '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8', // Raydium Vault Authority #1
+      '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1', // Raydium Vault Authority #2
+      '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM', // Raydium Vault Authority #3
+    ];
+    
     // Check if this is a SELL transaction (user sending REVS to LP pool)
     for (const balance of tokenPreBalances) {
       if (lpPoolWallets.includes(balance.owner)) {
@@ -169,6 +176,24 @@ const checkIfActualPurchase = (transaction) => {
         console.log(`📉 SELL detected - user sending REVS to LP pool: ${balance.owner} - EXCLUDING from timer reset`);
         console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
         return false;
+      }
+      
+      // Check for Raydium vault authorities (SELLS)
+      if (raydiumVaultAuthorities.includes(balance.owner)) {
+        // User is sending REVS to Raydium vault (SELL) - exclude this
+        console.log(`📉 SELL detected - user sending REVS to Raydium vault: ${balance.owner} - EXCLUDING from timer reset`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+        return false;
+      }
+    }
+    
+    // Check for BUYS from Raydium vault authorities (users receiving REVS from LP)
+    for (const balance of tokenPostBalances) {
+      if (raydiumVaultAuthorities.includes(balance.owner)) {
+        // User is receiving REVS from Raydium vault (BUY) - this should trigger timer
+        console.log(`✅ BUY detected - user receiving REVS from Raydium vault: ${balance.owner} - TRIGGERING timer reset`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+        return true;
       }
     }
     
