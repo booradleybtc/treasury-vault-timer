@@ -106,7 +106,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
         import("@jup-ag/plugin").then((mod) => {
           const init = mod.init;
           const config = {
-            displayMode: "integrated",
+            displayMode: "integrated" as const,
             integratedTargetId: "jupiter-widget-container",
             formProps: {
               initialAmount: solAmount.toFixed(6),
