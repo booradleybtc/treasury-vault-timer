@@ -118,7 +118,6 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
               name: "Treasury Vault Timer",
               logoUri: "https://raw.githubusercontent.com/booradleybtc/treasury-vault-timer/main/public/icon-192x192.png"
             },
-            theme: "dark",
             defaultExplorer: "Solscan",
           });
         });
