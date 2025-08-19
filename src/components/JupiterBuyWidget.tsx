@@ -31,7 +31,19 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
   useEffect(() => {
     const fetchPrice = async () => {
       try {
-        const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`);
+        setIsLoading(true);
+        // Use a more reliable price endpoint or fallback
+        const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.data && data.data[REVS_TOKEN_ADDRESS]) {
@@ -39,14 +51,27 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
             price: data.data[REVS_TOKEN_ADDRESS].price,
             inputMint: 'So11111111111111111111111111111111111111112' // SOL
           });
+        } else {
+          // Fallback to a default price if API doesn't return data
+          setPriceData({
+            price: 0.001, // Default fallback price
+            inputMint: 'So11111111111111111111111111111111111111112'
+          });
         }
       } catch (error) {
         console.error('Error fetching price:', error);
+        // Set fallback price on error
+        setPriceData({
+          price: 0.001,
+          inputMint: 'So11111111111111111111111111111111111111112'
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchPrice();
-    const interval = setInterval(fetchPrice, 30000); // Update every 30 seconds
+    const interval = setInterval(fetchPrice, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, []);
 

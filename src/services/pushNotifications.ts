@@ -37,10 +37,21 @@ class PushNotificationService {
     }
 
     try {
-      // For now, skip VAPID key to avoid type issues
-      this.subscription = await this.registration.pushManager.subscribe({
+      // Try to subscribe with VAPID key if available, otherwise use basic subscription
+      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      const subscriptionOptions: PushSubscriptionOptionsInit = {
         userVisibleOnly: true
-      });
+      };
+      
+      if (vapidKey) {
+        try {
+          subscriptionOptions.applicationServerKey = this.urlBase64ToUint8Array(vapidKey);
+        } catch (error) {
+          console.warn('Failed to process VAPID key, using basic subscription:', error);
+        }
+      }
+      
+      this.subscription = await this.registration.pushManager.subscribe(subscriptionOptions);
 
       console.log('Push subscription created:', this.subscription);
       return this.subscription;
@@ -75,7 +86,20 @@ class PushNotificationService {
     return subscription !== null;
   }
 
-  // Removed unused urlBase64ToUint8Array method
+  private urlBase64ToUint8Array(base64String: string): Uint8Array {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
 
   getSubscription(): PushSubscription | null {
     return this.subscription;

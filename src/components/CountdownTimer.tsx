@@ -144,40 +144,15 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
 
   // Check for notification triggers
   useEffect(() => {
-    if (isNotificationEnabled && timeLeft <= 600 && timeLeft > 0) { // Under 10 minutes
+    if (isNotificationEnabled && timeLeft <= 120 && timeLeft > 0) { // Under 2 minutes (for testing)
       const minutes = Math.floor(timeLeft / 60);
       const seconds = timeLeft % 60;
       
-      if (minutes === 10 && seconds === 0) {
-        // 10 minute warning
+      if (minutes === 1 && seconds === 58) { // 58 seconds remaining (for quick testing)
         if ('serviceWorker' in navigator && 'PushManager' in window) {
           navigator.serviceWorker.ready.then(registration => {
             registration.showNotification('Treasury Vault Timer', {
-              body: 'Timer is under 10 minutes! Last chance to place your bid!',
-              icon: '/icon-192x192.png',
-              badge: '/badge-72x72.png',
-              requireInteraction: true
-            });
-          });
-        }
-      } else if (minutes === 5 && seconds === 0) {
-        // 5 minute warning
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification('Treasury Vault Timer', {
-              body: 'Timer is under 5 minutes! Time is running out!',
-              icon: '/icon-192x192.png',
-              badge: '/badge-72x72.png',
-              requireInteraction: true
-            });
-          });
-        }
-      } else if (minutes === 1 && seconds === 0) {
-        // 1 minute warning
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification('Treasury Vault Timer', {
-              body: 'Timer is under 1 minute! Final countdown!',
+              body: 'Timer is under 1 minute! Test notification!',
               icon: '/icon-192x192.png',
               badge: '/badge-72x72.png',
               requireInteraction: true
