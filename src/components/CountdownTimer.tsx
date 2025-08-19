@@ -144,15 +144,15 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
 
   // Check for notification triggers
   useEffect(() => {
-    if (isNotificationEnabled && timeLeft <= 120 && timeLeft > 0) { // Under 2 minutes (for testing)
+    if (isNotificationEnabled && timeLeft <= 3480 && timeLeft > 0) { // Under 58 minutes (for testing)
       const minutes = Math.floor(timeLeft / 60);
       const seconds = timeLeft % 60;
       
-      if (minutes === 1 && seconds === 58) { // 58 seconds remaining (for quick testing)
+      if (minutes === 58 && seconds === 0) { // 58 minutes remaining (for quick testing)
         if ('serviceWorker' in navigator && 'PushManager' in window) {
           navigator.serviceWorker.ready.then(registration => {
             registration.showNotification('Treasury Vault Timer', {
-              body: 'Timer is under 1 minute! Test notification!',
+              body: 'Timer has 58 minutes remaining! Test notification!',
               icon: '/icon-192x192.png',
               badge: '/badge-72x72.png',
               requireInteraction: true
