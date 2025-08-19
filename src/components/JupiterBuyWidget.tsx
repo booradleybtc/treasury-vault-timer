@@ -15,26 +15,26 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
   // REVS token address
   const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
   
-  // Calculate amounts needed (accounting for 10% tax + fees)
-  const calculateAmountNeeded = (targetTokens: number) => {
+  // Calculate SOL amount needed for target tokens (accounting for 10% tax + fees)
+  const calculateSolAmountNeeded = (targetTokens: number, currentPrice: number) => {
     // 10% tax means you need to buy 111.11% to get 100%
     const taxMultiplier = 1.111111111; // 1 / 0.9
-    const baseAmount = targetTokens * taxMultiplier;
+    const baseTokens = targetTokens * taxMultiplier;
     
-    // Add 2% for slippage and fees
-    const slippageMultiplier = 1.02;
-    return Math.ceil(baseAmount * slippageMultiplier);
+    // Add 5% for slippage and fees
+    const slippageMultiplier = 1.05;
+    const totalTokens = baseTokens * slippageMultiplier;
+    
+    // Convert to SOL amount
+    return totalTokens * currentPrice;
   };
-
-  const amountFor1Token = calculateAmountNeeded(1);
-  const amountFor100Tokens = calculateAmountNeeded(100);
 
   // Get current price from Jupiter
   useEffect(() => {
     const fetchPrice = async () => {
       try {
         setIsLoading(true);
-        // Use a more reliable price endpoint or fallback
+        // Try multiple price sources for better reliability
         const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`, {
           method: 'GET',
           headers: {
@@ -42,29 +42,45 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
           },
         });
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.data && data.data[REVS_TOKEN_ADDRESS]) {
+            setPriceData({
+              price: data.data[REVS_TOKEN_ADDRESS].price,
+              inputMint: 'So11111111111111111111111111111111111111112' // SOL
+            });
+            return;
+          }
         }
         
-        const data = await response.json();
-        
-        if (data.data && data.data[REVS_TOKEN_ADDRESS]) {
-          setPriceData({
-            price: data.data[REVS_TOKEN_ADDRESS].price,
-            inputMint: 'So11111111111111111111111111111111111111112' // SOL
-          });
-        } else {
-          // Fallback to a default price if API doesn't return data
-          setPriceData({
-            price: 0.001, // Default fallback price
-            inputMint: 'So11111111111111111111111111111111111111112'
-          });
+        // Fallback: try alternative price source
+        const fallbackResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${REVS_TOKEN_ADDRESS}`);
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          if (fallbackData.pairs && fallbackData.pairs[0]) {
+            const priceUsd = parseFloat(fallbackData.pairs[0].priceUsd);
+            // Convert USD price to SOL price (approximate)
+            const solPrice = priceUsd / 100; // Rough estimate
+            setPriceData({
+              price: solPrice,
+              inputMint: 'So11111111111111111111111111111111111111112'
+            });
+            return;
+          }
         }
+        
+        // Final fallback
+        setPriceData({
+          price: 0.0005, // Conservative fallback price
+          inputMint: 'So11111111111111111111111111111111111111112'
+        });
+        
       } catch (error) {
         console.error('Error fetching price:', error);
-        // Set fallback price on error
+        // Set conservative fallback price on error
         setPriceData({
-          price: 0.001,
+          price: 0.0005,
           inputMint: 'So11111111111111111111111111111111111111112'
         });
       } finally {
@@ -80,8 +96,8 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
   const openJupiterWidget = (targetTokens: number) => {
     setIsLoading(true);
     
-    // Calculate SOL amount needed for the target tokens (conservative estimate)
-    const solAmount = priceData ? (targetTokens * priceData.price * 1.15) : 0.01; // 15% buffer for tax + fees
+    // Calculate SOL amount needed for the target tokens
+    const solAmount = priceData ? calculateSolAmountNeeded(targetTokens, priceData.price) : 0.01;
     
     setShowWidget(true);
     
@@ -94,7 +110,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
             displayMode: "integrated",
             integratedTargetId: "jupiter-widget-container",
             formProps: {
-              initialAmount: solAmount.toString(),
+              initialAmount: solAmount.toFixed(6),
               initialInputMint: "So11111111111111111111111111111111111111112",
               initialOutputMint: REVS_TOKEN_ADDRESS,
             },
@@ -102,13 +118,19 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
               name: "Treasury Vault Timer",
               logoUri: "https://raw.githubusercontent.com/booradleybtc/treasury-vault-timer/main/public/icon-192x192.png"
             },
+            theme: "dark",
+            defaultExplorer: "Solscan",
           });
         });
       }
-    }, 100);
+    }, 200); // Increased delay to ensure modal is fully rendered
     
     setIsLoading(false);
   };
+
+  // Calculate display amounts for buttons
+  const solFor1Token = priceData ? calculateSolAmountNeeded(1, priceData.price) : 0;
+  const solFor100Tokens = priceData ? calculateSolAmountNeeded(100, priceData.price) : 0;
 
   return (
     <div className="bg-gray-800 rounded-xl p-4 border-2 border-gray-600">
@@ -118,7 +140,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
           <h3 className="text-lg font-bold text-green-400 font-mono">BUY {tokenSymbol}</h3>
         </div>
         <p className="text-xs text-gray-400 font-mono">
-          {priceData ? `Current Price: $${priceData.price.toFixed(6)}` : 'Loading price...'}
+          {priceData ? `Current Price: $${(priceData.price * 100).toFixed(6)}` : 'Loading price...'}
         </p>
       </div>
 
@@ -132,7 +154,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
           <Zap className="w-4 h-4 inline mr-2" />
           BUY 1 {tokenSymbol}
           <div className="text-xs text-green-200 mt-1">
-            ~{amountFor1Token} tokens needed
+            ~{solFor1Token.toFixed(4)} SOL needed
           </div>
         </button>
 
@@ -145,29 +167,29 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
           <Zap className="w-4 h-4 inline mr-2" />
           BUY 100 {tokenSymbol}
           <div className="text-xs text-blue-200 mt-1">
-            ~{amountFor100Tokens} tokens needed
+            ~{solFor100Tokens.toFixed(4)} SOL needed
           </div>
         </button>
       </div>
 
-            <div className="mt-3 text-xs text-gray-400 text-center font-mono">
+      <div className="mt-3 text-xs text-gray-400 text-center font-mono">
         * Amounts include 10% tax + fees to ensure you receive the target amount
       </div>
       
       {/* Jupiter Widget Modal */}
       {showWidget && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-xl p-4 max-w-2xl w-full mx-4 border-2 border-gray-600">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl p-6 max-w-2xl w-full border-2 border-gray-600 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-green-400 font-mono">Buy REVS to Reset Timer</h3>
+              <h3 className="text-xl font-bold text-green-400 font-mono">Buy REVS to Reset Timer</h3>
               <button
                 onClick={() => setShowWidget(false)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-white transition-colors p-2"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div id="jupiter-widget-container" className="w-full h-96">
+            <div id="jupiter-widget-container" className="w-full h-[500px] rounded-lg overflow-hidden">
               {/* Jupiter plugin will render here */}
             </div>
           </div>
