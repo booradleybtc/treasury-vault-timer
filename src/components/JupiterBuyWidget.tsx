@@ -25,60 +25,63 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     const slippageMultiplier = 1.05;
     const totalTokens = baseTokens * slippageMultiplier;
     
-    // Convert to SOL amount
-    return totalTokens * currentPrice;
+    // Convert to SOL amount (assuming SOL is ~$100)
+    const solPriceUsd = 100; // Approximate SOL price
+    const tokenPriceUsd = currentPrice;
+    const solAmount = (totalTokens * tokenPriceUsd) / solPriceUsd;
+    
+    return solAmount;
   };
 
-  // Get current price from Jupiter
+  // Get current price from multiple sources
   useEffect(() => {
     const fetchPrice = async () => {
       try {
         setIsLoading(true);
-        // Try Jupiter price API first
-        const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`);
         
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.data && data.data[REVS_TOKEN_ADDRESS]) {
-            const price = data.data[REVS_TOKEN_ADDRESS].price;
-            console.log('Jupiter price:', price);
+        // Try Dexscreener first (most reliable for REVS)
+        const dexResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${REVS_TOKEN_ADDRESS}`);
+        if (dexResponse.ok) {
+          const dexData = await dexResponse.json();
+          if (dexData.pairs && dexData.pairs[0]) {
+            const priceUsd = parseFloat(dexData.pairs[0].priceUsd);
+            console.log('Dexscreener price USD:', priceUsd);
             setPriceData({
-              price: price,
-              inputMint: 'So11111111111111111111111111111111111111112' // SOL
-            });
-            return;
-          }
-        }
-        
-        // Fallback: try Dexscreener
-        const fallbackResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${REVS_TOKEN_ADDRESS}`);
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          if (fallbackData.pairs && fallbackData.pairs[0]) {
-            const priceUsd = parseFloat(fallbackData.pairs[0].priceUsd);
-            // Convert USD price to SOL price (approximate)
-            const solPrice = priceUsd / 100; // Rough estimate
-            console.log('Dexscreener price:', solPrice);
-            setPriceData({
-              price: solPrice,
+              price: priceUsd,
               inputMint: 'So11111111111111111111111111111111111111112'
             });
             return;
           }
         }
         
-        // Final fallback - use a very conservative price
-        console.log('Using fallback price');
+        // Fallback: try Jupiter price API
+        const jupResponse = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`);
+        if (jupResponse.ok) {
+          const jupData = await jupResponse.json();
+          if (jupData.data && jupData.data[REVS_TOKEN_ADDRESS]) {
+            const price = jupData.data[REVS_TOKEN_ADDRESS].price;
+            // Convert to USD (assuming SOL is ~$100)
+            const priceUsd = price * 100;
+            console.log('Jupiter price USD:', priceUsd);
+            setPriceData({
+              price: priceUsd,
+              inputMint: 'So11111111111111111111111111111111111111112'
+            });
+            return;
+          }
+        }
+        
+        // Final fallback - use Solscan price
+        console.log('Using Solscan fallback price');
         setPriceData({
-          price: 0.0001, // Very conservative fallback price
+          price: 0.0007128, // From Solscan
           inputMint: 'So11111111111111111111111111111111111111112'
         });
         
       } catch (error) {
         console.error('Error fetching price:', error);
         setPriceData({
-          price: 0.0001,
+          price: 0.0007128, // From Solscan as fallback
           inputMint: 'So11111111111111111111111111111111111111112'
         });
       } finally {
@@ -122,7 +125,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
           init(config);
         });
       }
-    }, 300); // Increased delay to ensure modal is fully rendered
+    }, 500); // Increased delay to ensure modal is fully rendered
     
     setIsLoading(false);
   };
@@ -139,7 +142,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
           <h3 className="text-lg font-bold text-green-400 font-mono">BUY {tokenSymbol}</h3>
         </div>
         <p className="text-xs text-gray-400 font-mono">
-          {priceData ? `Current Price: $${(priceData.price * 100).toFixed(6)}` : 'Loading price...'}
+          {priceData ? `Current Price: $${priceData.price.toFixed(6)}` : 'Loading price...'}
         </p>
       </div>
 
