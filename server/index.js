@@ -177,14 +177,6 @@ const checkIfActualPurchase = (transaction) => {
         console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
         return false;
       }
-      
-      // Check for Raydium vault authorities (SELLS)
-      if (raydiumVaultAuthorities.includes(balance.owner)) {
-        // User is sending REVS to Raydium vault (SELL) - exclude this
-        console.log(`📉 SELL detected - user sending REVS to Raydium vault: ${balance.owner} - EXCLUDING from timer reset`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return false;
-      }
     }
     
     // Check for BUYS from Raydium vault authorities (users receiving REVS from LP)
@@ -207,6 +199,16 @@ const checkIfActualPurchase = (transaction) => {
       }
     }
     
+    // Check for SELLS to Raydium vault authorities (users sending REVS to LP)
+    for (const balance of tokenPostBalances) {
+      if (raydiumVaultAuthorities.includes(balance.owner)) {
+        // User is sending REVS to Raydium vault (SELL) - exclude this
+        console.log(`📉 SELL detected - user sending REVS to Raydium vault: ${balance.owner} - EXCLUDING from timer reset`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+        return false;
+      }
+    }
+
     for (const accountKey of accountKeys) {
       if (burnWalletPatterns.includes(accountKey)) {
         console.log(`🔥 Burn wallet detected: ${accountKey} - EXCLUDING from timer reset`);
