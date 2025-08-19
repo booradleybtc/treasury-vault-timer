@@ -34,27 +34,24 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     const fetchPrice = async () => {
       try {
         setIsLoading(true);
-        // Try multiple price sources for better reliability
-        const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
+        // Try Jupiter price API first
+        const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`);
         
         if (response.ok) {
           const data = await response.json();
           
           if (data.data && data.data[REVS_TOKEN_ADDRESS]) {
+            const price = data.data[REVS_TOKEN_ADDRESS].price;
+            console.log('Jupiter price:', price);
             setPriceData({
-              price: data.data[REVS_TOKEN_ADDRESS].price,
+              price: price,
               inputMint: 'So11111111111111111111111111111111111111112' // SOL
             });
             return;
           }
         }
         
-        // Fallback: try alternative price source
+        // Fallback: try Dexscreener
         const fallbackResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${REVS_TOKEN_ADDRESS}`);
         if (fallbackResponse.ok) {
           const fallbackData = await fallbackResponse.json();
@@ -62,6 +59,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
             const priceUsd = parseFloat(fallbackData.pairs[0].priceUsd);
             // Convert USD price to SOL price (approximate)
             const solPrice = priceUsd / 100; // Rough estimate
+            console.log('Dexscreener price:', solPrice);
             setPriceData({
               price: solPrice,
               inputMint: 'So11111111111111111111111111111111111111112'
@@ -70,17 +68,17 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
           }
         }
         
-        // Final fallback
+        // Final fallback - use a very conservative price
+        console.log('Using fallback price');
         setPriceData({
-          price: 0.0005, // Conservative fallback price
+          price: 0.0001, // Very conservative fallback price
           inputMint: 'So11111111111111111111111111111111111111112'
         });
         
       } catch (error) {
         console.error('Error fetching price:', error);
-        // Set conservative fallback price on error
         setPriceData({
-          price: 0.0005,
+          price: 0.0001,
           inputMint: 'So11111111111111111111111111111111111111112'
         });
       } finally {
@@ -98,6 +96,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     
     // Calculate SOL amount needed for the target tokens
     const solAmount = priceData ? calculateSolAmountNeeded(targetTokens, priceData.price) : 0.01;
+    console.log(`Opening widget for ${targetTokens} tokens, SOL amount: ${solAmount}`);
     
     setShowWidget(true);
     
@@ -106,23 +105,26 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
       if (typeof window !== "undefined") {
         import("@jup-ag/plugin").then((mod) => {
           const init = mod.init;
-          init({
+          const config = {
             displayMode: "integrated",
             integratedTargetId: "jupiter-widget-container",
             formProps: {
               initialAmount: solAmount.toFixed(6),
               initialInputMint: "So11111111111111111111111111111111111111112",
               initialOutputMint: REVS_TOKEN_ADDRESS,
+              swapMode: "ExactInOrOut"
             },
             branding: {
               name: "Treasury Vault Timer",
               logoUri: "https://raw.githubusercontent.com/booradleybtc/treasury-vault-timer/main/public/icon-192x192.png"
             },
             defaultExplorer: "Solscan",
-          });
+          };
+          console.log('Jupiter config:', config);
+          init(config);
         });
       }
-    }, 200); // Increased delay to ensure modal is fully rendered
+    }, 300); // Increased delay to ensure modal is fully rendered
     
     setIsLoading(false);
   };
