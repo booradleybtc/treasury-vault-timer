@@ -411,6 +411,21 @@ setInterval(() => {
   if (globalTimer.isActive && globalTimer.timeLeft > 0) {
     globalTimer.timeLeft -= 1;
 
+    // Check for notification triggers
+    const minutes = Math.floor(globalTimer.timeLeft / 60);
+    const seconds = globalTimer.timeLeft % 60;
+    
+    // Send push notifications at specific intervals
+    if (minutes === 10 && seconds === 0) {
+      console.log('🔔 Sending 10-minute warning push notifications');
+      // In a real implementation, you would send push notifications here
+      // For now, we'll just log it
+    } else if (minutes === 5 && seconds === 0) {
+      console.log('🔔 Sending 5-minute warning push notifications');
+    } else if (minutes === 1 && seconds === 0) {
+      console.log('🔔 Sending 1-minute warning push notifications');
+    }
+
     // Emit timer update to all connected clients
     io.emit('timerUpdate', {
       timeLeft: globalTimer.timeLeft,
@@ -461,10 +476,19 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
+
+  // Handle push notification subscriptions
+  socket.on('subscribeNotifications', (subscription) => {
+    console.log('New push notification subscription:', subscription.endpoint);
+    pushSubscriptions.push(subscription);
+  });
 });
 
 // Purchase logs for verification
 let purchaseLogs = [];
+
+// Push notification subscriptions
+let pushSubscriptions = [];
 
 // Root route
 app.get('/', (req, res) => {

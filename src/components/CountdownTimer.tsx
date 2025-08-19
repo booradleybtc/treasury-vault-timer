@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, RefreshCw, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle, RefreshCw, Zap, Bell, BellOff } from 'lucide-react';
 import { io } from 'socket.io-client';
+import { pushNotificationService } from '../services/pushNotifications';
 
 interface CountdownTimerProps {
   tokenContract: string;
@@ -17,6 +18,8 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   const [lastPurchaseAmount, setLastPurchaseAmount] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(false);
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
+  const [notificationSupported, setNotificationSupported] = useState(false);
 
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
@@ -96,6 +99,90 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
     };
   }, []);
 
+  // Initialize push notifications
+  useEffect(() => {
+    const initNotifications = async () => {
+      const supported = await pushNotificationService.initialize();
+      setNotificationSupported(supported);
+      
+      if (supported) {
+        const isSubscribed = await pushNotificationService.isSubscribed();
+        setIsNotificationEnabled(isSubscribed);
+      }
+    };
+
+    initNotifications();
+  }, []);
+
+  // Handle push notification subscription
+  const handleNotificationToggle = async () => {
+    if (!notificationSupported) return;
+
+    if (isNotificationEnabled) {
+      await pushNotificationService.unsubscribe();
+      setIsNotificationEnabled(false);
+    } else {
+      const permissionGranted = await pushNotificationService.requestPermission();
+      if (permissionGranted) {
+        const subscription = await pushNotificationService.subscribe();
+        if (subscription) {
+          setIsNotificationEnabled(true);
+          // Send subscription to backend
+          socket?.emit('subscribeNotifications', subscription);
+        }
+      }
+    }
+  };
+
+  // Check for notification triggers
+  useEffect(() => {
+    if (isNotificationEnabled && timeLeft <= 600 && timeLeft > 0) { // Under 10 minutes
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      
+      if (minutes === 10 && seconds === 0) {
+        // 10 minute warning
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification('Treasury Vault Timer', {
+              body: 'Timer is under 10 minutes! Last chance to place your bid!',
+              icon: '/icon-192x192.png',
+              badge: '/badge-72x72.png',
+              vibrate: [100, 50, 100],
+              requireInteraction: true
+            });
+          });
+        }
+      } else if (minutes === 5 && seconds === 0) {
+        // 5 minute warning
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification('Treasury Vault Timer', {
+              body: 'Timer is under 5 minutes! Time is running out!',
+              icon: '/icon-192x192.png',
+              badge: '/badge-72x72.png',
+              vibrate: [200, 100, 200],
+              requireInteraction: true
+            });
+          });
+        }
+      } else if (minutes === 1 && seconds === 0) {
+        // 1 minute warning
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification('Treasury Vault Timer', {
+              body: 'Timer is under 1 minute! Final countdown!',
+              icon: '/icon-192x192.png',
+              badge: '/badge-72x72.png',
+              vibrate: [300, 150, 300, 150, 300],
+              requireInteraction: true
+            });
+          });
+        }
+      }
+    }
+  }, [timeLeft, isNotificationEnabled]);
+
   // Format time helper function
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -107,12 +194,12 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   const progress = ((3600 - timeLeft) / 3600) * 100;
 
   return (
-    <div className="bg-gray-900 rounded-2xl p-6 shadow-2xl border-2 border-gray-700">
+    <div className="bg-gray-900 rounded-2xl p-4 md:p-6 shadow-2xl border-2 border-gray-700 max-w-md mx-auto">
       {/* Main Timer Display - LCD Style */}
       <div className="bg-black rounded-xl p-6 mb-6 border-2 border-gray-600">
         <div className="text-center">
           <div className="text-xs text-gray-400 font-mono mb-2 tracking-wider">COUNTDOWN TIMER</div>
-          <div className="text-6xl font-mono font-bold text-green-400 mb-2 tracking-wider drop-shadow-lg">
+          <div className="text-4xl md:text-6xl font-mono font-bold text-green-400 mb-2 tracking-wider drop-shadow-lg">
             {formatTime(timeLeft)}
           </div>
           <div className="text-sm text-gray-300 font-mono">
@@ -130,36 +217,58 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
       </div>
 
       {/* Control Panel */}
-      <div className="flex justify-center mb-6">
-        <div className="flex space-x-4">
-          {!isMonitoring ? (
-            <button
-              onClick={() => {
-                socket?.emit('startMonitoring');
-                setDebugInfo(prev => [...prev, `Starting monitoring at ${new Date().toLocaleTimeString()}`]);
-              }}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-green-500"
-            >
-              <Zap className="w-4 h-4 inline mr-2" />
-              START
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                socket?.emit('stopMonitoring');
-                setDebugInfo(prev => [...prev, `Stopping monitoring at ${new Date().toLocaleTimeString()}`]);
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-red-500"
-            >
-              <AlertCircle className="w-4 h-4 inline mr-2" />
-              STOP
-            </button>
-          )}
-        </div>
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mb-6">
+        {!isMonitoring ? (
+          <button
+            onClick={() => {
+              socket?.emit('startMonitoring');
+              setDebugInfo(prev => [...prev, `Starting monitoring at ${new Date().toLocaleTimeString()}`]);
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-green-500 w-full sm:w-auto"
+          >
+            <Zap className="w-4 h-4 inline mr-2" />
+            START
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              socket?.emit('stopMonitoring');
+              setDebugInfo(prev => [...prev, `Stopping monitoring at ${new Date().toLocaleTimeString()}`]);
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-red-500 w-full sm:w-auto"
+          >
+            <AlertCircle className="w-4 h-4 inline mr-2" />
+            STOP
+          </button>
+        )}
+        
+        {/* Notification Toggle */}
+        {notificationSupported && (
+          <button
+            onClick={handleNotificationToggle}
+            className={`font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 w-full sm:w-auto ${
+              isNotificationEnabled 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500' 
+                : 'bg-gray-600 hover:bg-gray-700 text-gray-300 border-gray-500'
+            }`}
+          >
+            {isNotificationEnabled ? (
+              <>
+                <Bell className="w-4 h-4 inline mr-2" />
+                NOTIFICATIONS ON
+              </>
+            ) : (
+              <>
+                <BellOff className="w-4 h-4 inline mr-2" />
+                NOTIFICATIONS OFF
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Digital Screens Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         {/* Left Column - Status Screens */}
         <div className="space-y-4">
           {/* Connection Status */}
