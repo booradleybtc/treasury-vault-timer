@@ -121,10 +121,20 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
               name: "Treasury Vault Timer",
               logoUri: "https://raw.githubusercontent.com/booradleybtc/treasury-vault-timer/main/public/icon-192x192.png"
             },
-            // Test route restrictions with REVS LP pool
+            // Route restrictions for future token deployment
             onlyDirectRoutes: true,
-            // Try to restrict to specific LP pool (if Jupiter supports this)
-            // Note: This may not work depending on Jupiter's API
+            // Explicitly restrict to our specific LP pool
+            poolFilter: (pool: any) => {
+              // For testing with REVS, allow the current LP pool
+              const allowedPools = [
+                'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // Current REVS LP pool
+                // Add your future token LP pool here when deployed
+                // 'YOUR_FUTURE_TOKEN_LP_POOL_ADDRESS'
+              ];
+              return allowedPools.includes(pool.address);
+            },
+            // Alternative approach - restrict to specific pool addresses
+            // allowedPools: ['GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL']
           };
           console.log('Jupiter config with route restrictions:', config);
           init(config);
