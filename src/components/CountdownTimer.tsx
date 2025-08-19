@@ -7,20 +7,17 @@ interface CountdownTimerProps {
   tokenContract: string;
 }
 
-export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract }) => {
+export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
   // Socket.IO connection to server
   const [socket, setSocket] = useState<any>(null);
 
   const [timeLeft, setTimeLeft] = useState(3600); // 1 hour in seconds
-  const [isActive, setIsActive] = useState(true);
-  const [lastPurchaseTime, setLastPurchaseTime] = useState<Date | null>(null);
   const [lastBuyerAddress, setLastBuyerAddress] = useState<string | null>(null);
   const [lastPurchaseAmount, setLastPurchaseAmount] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
   const [notificationSupported, setNotificationSupported] = useState(false);
-  // Removed unused lastTxSignature state
 
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
@@ -47,8 +44,6 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
     newSocket.on('timerState', (data) => {
       console.log('Received timer state:', data);
       setTimeLeft(data.timeLeft);
-      setIsActive(data.isActive);
-      setLastPurchaseTime(data.lastPurchaseTime ? new Date(data.lastPurchaseTime) : null);
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
       // Transaction signature logged in debug info
@@ -58,14 +53,11 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
 
     newSocket.on('timerUpdate', (data) => {
       setTimeLeft(data.timeLeft);
-      setIsActive(data.isActive);
     });
 
     newSocket.on('timerReset', (data) => {
       console.log('Timer reset:', data);
       setTimeLeft(data.timeLeft);
-      setIsActive(true);
-      setLastPurchaseTime(new Date(data.lastPurchaseTime));
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
       
@@ -85,7 +77,6 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
 
     newSocket.on('timerExpired', () => {
       console.log('Timer expired');
-      setIsActive(false);
       setDebugInfo(prev => [...prev, 'Timer expired']);
     });
 
@@ -191,15 +182,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
     endDate: "2024-02-15T00:00:00Z"
   };
 
-  const formatAddress = (address: string) => {
-    if (!address || address === 'N/A') return 'N/A';
-    return `${address.slice(0, 4)}...${address.slice(-4)}`;
-  };
 
-  const getSolscanUrl = (address: string) => {
-    if (!address || address === 'N/A') return '#';
-    return `https://solscan.io/account/${address}`;
-  };
 
   const getTimeUntilEnd = () => {
     const endDate = new Date(demoData.endDate);

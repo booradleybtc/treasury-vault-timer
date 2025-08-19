@@ -13,7 +13,7 @@ function App() {
         
         {/* Buy Widget */}
         <div className="mt-8">
-          <JupiterBuyWidget tokenAddress={REVS_TOKEN_ADDRESS} tokenSymbol="REVS" />
+          <JupiterBuyWidget tokenAddress={REVS_TOKEN_ADDRESS} />
         </div>
       </div>
     </div>

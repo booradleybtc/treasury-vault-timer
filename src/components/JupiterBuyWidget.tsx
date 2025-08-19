@@ -4,10 +4,9 @@ import '@jup-ag/plugin/css';
 
 interface JupiterBuyWidgetProps {
   tokenAddress: string;
-  tokenSymbol: string;
 }
 
-export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol }) => {
+export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenAddress }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [priceData, setPriceData] = useState<{ price: number; inputMint: string } | null>(null);
   const [showWidget, setShowWidget] = useState(false);
