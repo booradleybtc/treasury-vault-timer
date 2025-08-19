@@ -81,9 +81,9 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     // Calculate SOL amount needed for the target tokens
     const solAmount = priceData ? (targetTokens * priceData.price) : 0.01; // Fallback
     
-    // Jupiter Widget URL with REVS as output token and SOL as input
-    // Format: https://jup.ag/swap/INPUT-OUTPUT?amountIn=AMOUNT&fixed=in
-    const jupiterUrl = `https://jup.ag/swap/SOL-${REVS_TOKEN_ADDRESS}?amountIn=${solAmount}&fixed=in`;
+    // Jupiter Widget URL with SOL as input and REVS as output
+    // Format: https://jup.ag/swap?inputMint=SOL&outputMint=REVS&amount=AMOUNT
+    const jupiterUrl = `https://jup.ag/swap?inputMint=So11111111111111111111111111111111111111112&outputMint=${REVS_TOKEN_ADDRESS}&amount=${solAmount}`;
     
     // Open Jupiter in new tab
     window.open(jupiterUrl, '_blank');
