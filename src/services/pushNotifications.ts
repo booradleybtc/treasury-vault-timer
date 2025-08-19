@@ -45,7 +45,9 @@ class PushNotificationService {
       
       if (vapidKey) {
         try {
-          subscriptionOptions.applicationServerKey = this.urlBase64ToUint8Array(vapidKey);
+          // Convert VAPID key to proper format
+          const vapidKeyArray = this.urlBase64ToUint8Array(vapidKey);
+          subscriptionOptions.applicationServerKey = vapidKeyArray as any;
         } catch (error) {
           console.warn('Failed to process VAPID key, using basic subscription:', error);
         }
