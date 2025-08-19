@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Zap, ShoppingCart, X } from 'lucide-react';
+import '@jup-ag/plugin/css';
 
 interface JupiterBuyWidgetProps {
   tokenAddress: string;
@@ -10,7 +11,6 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
   const [isLoading, setIsLoading] = useState(false);
   const [priceData, setPriceData] = useState<{ price: number; inputMint: string } | null>(null);
   const [showWidget, setShowWidget] = useState(false);
-  const [widgetConfig, setWidgetConfig] = useState('');
 
   // REVS token address
   const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
@@ -80,14 +80,32 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
   const openJupiterWidget = (targetTokens: number) => {
     setIsLoading(true);
     
-    // Calculate SOL amount needed for the target tokens
-    const solAmount = priceData ? (targetTokens * priceData.price) : 0.01; // Fallback
+    // Calculate SOL amount needed for the target tokens (conservative estimate)
+    const solAmount = priceData ? (targetTokens * priceData.price * 1.15) : 0.01; // 15% buffer for tax + fees
     
-    // Create Jupiter iframe widget URL with pre-filled parameters
-    const widgetUrl = `https://jup.ag/widget?inputMint=So11111111111111111111111111111111111111112&outputMint=${REVS_TOKEN_ADDRESS}&amount=${solAmount}&fixed=in`;
-    
-    setWidgetConfig(widgetUrl);
     setShowWidget(true);
+    
+    // Initialize Jupiter plugin after modal opens
+    setTimeout(() => {
+      if (typeof window !== "undefined") {
+        import("@jup-ag/plugin").then((mod) => {
+          const init = mod.init;
+          init({
+            displayMode: "integrated",
+            integratedTargetId: "jupiter-widget-container",
+            formProps: {
+              initialAmount: solAmount.toString(),
+              initialInputMint: "So11111111111111111111111111111111111111112",
+              initialOutputMint: REVS_TOKEN_ADDRESS,
+            },
+            branding: {
+              name: "Treasury Vault Timer",
+              logoUri: "https://raw.githubusercontent.com/booradleybtc/treasury-vault-timer/main/public/icon-192x192.png"
+            },
+          });
+        });
+      }
+    }, 100);
     
     setIsLoading(false);
   };
@@ -132,7 +150,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
         </button>
       </div>
 
-      <div className="mt-3 text-xs text-gray-400 text-center font-mono">
+            <div className="mt-3 text-xs text-gray-400 text-center font-mono">
         * Amounts include 10% tax + fees to ensure you receive the target amount
       </div>
       
@@ -149,14 +167,8 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="w-full h-96">
-              <iframe
-                src={widgetConfig}
-                width="100%"
-                height="100%"
-                style={{ border: 'none', borderRadius: '8px' }}
-                title="Jupiter Swap Widget"
-              />
+            <div id="jupiter-widget-container" className="w-full h-96">
+              {/* Jupiter plugin will render here */}
             </div>
           </div>
         </div>

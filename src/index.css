@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Jupiter Plugin CSS Variables - Dark Theme */
+:root {
+  --jupiter-plugin-primary: 255, 255, 255;
+  --jupiter-plugin-background: 0, 0, 0;
+  --jupiter-plugin-primary-text: 255, 255, 255;
+  --jupiter-plugin-warning: 251, 191, 36;
+  --jupiter-plugin-interactive: 32, 32, 32;
+  --jupiter-plugin-module: 232, 88, 5;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
