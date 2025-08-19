@@ -3,10 +3,10 @@ import { Zap, X, Target, Trophy } from 'lucide-react';
 import '@jup-ag/plugin/css';
 
 interface JupiterBuyWidgetProps {
-  tokenAddress: string;
+  // tokenAddress is not used since we hardcode REVS_TOKEN_ADDRESS
 }
 
-export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenAddress }) => {
+export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [priceData, setPriceData] = useState<{ price: number; inputMint: string } | null>(null);
   const [showWidget, setShowWidget] = useState(false);
