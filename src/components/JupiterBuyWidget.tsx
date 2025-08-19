@@ -21,14 +21,15 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     const taxMultiplier = 1.111111111; // 1 / 0.9
     const baseTokens = targetTokens * taxMultiplier;
     
-    // Add 5% for slippage and fees
-    const slippageMultiplier = 1.05;
-    const totalTokens = baseTokens * slippageMultiplier;
+    // Calculate USD value needed
+    const usdValue = baseTokens * currentPrice;
     
-    // Convert to SOL amount (assuming SOL is ~$100)
-    const solPriceUsd = 100; // Approximate SOL price
-    const tokenPriceUsd = currentPrice;
-    const solAmount = (totalTokens * tokenPriceUsd) / solPriceUsd;
+    // Add 5% buffer for slippage and fees
+    const totalUsdValue = usdValue * 1.05;
+    
+    // Convert to SOL (assuming SOL is ~$100)
+    const solPriceUsd = 100;
+    const solAmount = totalUsdValue / solPriceUsd;
     
     return solAmount;
   };

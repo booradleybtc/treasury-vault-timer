@@ -153,6 +153,22 @@ const checkIfActualPurchase = (transaction) => {
       // Add other known distributor/dev wallets here
     ];
     
+    // LP pool wallets - we want to exclude SELLS (users sending REVS to LP) but allow BUYS (users receiving REVS from LP)
+    const lpPoolWallets = [
+      // Add Raydium Vault Authority #2 address here when we have it
+      // These are LP pools where users can buy/sell tokens
+    ];
+    
+    // Check if this is a SELL transaction (user sending REVS to LP pool)
+    for (const balance of tokenPreBalances) {
+      if (lpPoolWallets.includes(balance.owner)) {
+        // User is sending REVS to LP pool (SELL) - exclude this
+        console.log(`📉 SELL detected - user sending REVS to LP pool: ${balance.owner} - EXCLUDING from timer reset`);
+        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+        return false;
+      }
+    }
+    
     for (const accountKey of accountKeys) {
       if (burnWalletPatterns.includes(accountKey)) {
         console.log(`🔥 Burn wallet detected: ${accountKey} - EXCLUDING from timer reset`);
