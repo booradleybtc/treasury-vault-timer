@@ -19,8 +19,8 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     const taxMultiplier = 1.111111111; // 1 / 0.9
     const baseAmount = targetTokens * taxMultiplier;
     
-    // Add 1% for slippage and fees
-    const slippageMultiplier = 1.01;
+    // Add 2% for slippage and fees
+    const slippageMultiplier = 1.02;
     return Math.ceil(baseAmount * slippageMultiplier);
   };
 
@@ -75,14 +75,15 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     return () => clearInterval(interval);
   }, []);
 
-  const openJupiterWidget = (amount: number) => {
+  const openJupiterWidget = (targetTokens: number) => {
     setIsLoading(true);
     
-    // Calculate SOL amount needed
-    const solAmount = priceData ? (amount * priceData.price) : 0.01; // Fallback
+    // Calculate SOL amount needed for the target tokens
+    const solAmount = priceData ? (targetTokens * priceData.price) : 0.01; // Fallback
     
-    // Jupiter Widget URL with pre-filled amounts
-    const jupiterUrl = `https://jup.ag/swap/SOL-${tokenSymbol}?amountIn=${solAmount}&fixed=in`;
+    // Jupiter Widget URL with REVS as output token and SOL as input
+    // Format: https://jup.ag/swap/INPUT-OUTPUT?amountIn=AMOUNT&fixed=in
+    const jupiterUrl = `https://jup.ag/swap/SOL-${REVS_TOKEN_ADDRESS}?amountIn=${solAmount}&fixed=in`;
     
     // Open Jupiter in new tab
     window.open(jupiterUrl, '_blank');
@@ -105,7 +106,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Buy 1 Token Button */}
         <button
-          onClick={() => openJupiterWidget(amountFor1Token)}
+          onClick={() => openJupiterWidget(1)}
           disabled={isLoading || !priceData}
           className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-green-500 disabled:border-gray-500"
         >
@@ -118,7 +119,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
 
         {/* Buy 100 Tokens Button */}
         <button
-          onClick={() => openJupiterWidget(amountFor100Tokens)}
+          onClick={() => openJupiterWidget(100)}
           disabled={isLoading || !priceData}
           className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-blue-500 disabled:border-gray-500"
         >
