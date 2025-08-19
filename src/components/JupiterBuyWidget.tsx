@@ -9,6 +9,8 @@ interface JupiterBuyWidgetProps {
 export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [priceData, setPriceData] = useState<{ price: number; inputMint: string } | null>(null);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [instructions, setInstructions] = useState('');
 
   // REVS token address
   const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
@@ -81,11 +83,17 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
     // Calculate SOL amount needed for the target tokens
     const solAmount = priceData ? (targetTokens * priceData.price) : 0.01; // Fallback
     
-    // Jupiter Widget URL with SOL as input and REVS as output
-    // Format: https://jup.ag/swap?inputMint=SOL&outputMint=REVS&amount=AMOUNT
-    const jupiterUrl = `https://jup.ag/swap?inputMint=So11111111111111111111111111111111111111112&outputMint=${REVS_TOKEN_ADDRESS}&amount=${solAmount}`;
+    // Set instructions for user
+    setInstructions(`To buy ${targetTokens} REVS:
+1. Select SOL as input token
+2. Select REVS (${REVS_TOKEN_ADDRESS.slice(0, 8)}...) as output token  
+3. Enter ${solAmount.toFixed(4)} SOL as amount
+4. This accounts for 10% tax + fees`);
+    
+    setShowInstructions(true);
     
     // Open Jupiter in new tab
+    const jupiterUrl = 'https://jup.ag/swap';
     window.open(jupiterUrl, '_blank');
     
     setIsLoading(false);
@@ -134,6 +142,24 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
       <div className="mt-3 text-xs text-gray-400 text-center font-mono">
         * Amounts include 10% tax + fees to ensure you receive the target amount
       </div>
+      
+      {/* Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-md mx-4 border-2 border-gray-600">
+            <h3 className="text-lg font-bold text-green-400 mb-4 font-mono">Jupiter Swap Instructions</h3>
+            <div className="text-sm text-gray-300 font-mono whitespace-pre-line mb-4">
+              {instructions}
+            </div>
+            <button
+              onClick={() => setShowInstructions(false)}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
