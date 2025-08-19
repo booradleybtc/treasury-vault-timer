@@ -20,6 +20,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
   const [notificationSupported, setNotificationSupported] = useState(false);
+  const [lastTxSignature, setLastTxSignature] = useState<string | null>(null);
 
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
@@ -102,12 +103,20 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   // Initialize push notifications
   useEffect(() => {
     const initNotifications = async () => {
-      const supported = await pushNotificationService.initialize();
-      setNotificationSupported(supported);
-      
-      if (supported) {
-        const isSubscribed = await pushNotificationService.isSubscribed();
-        setIsNotificationEnabled(isSubscribed);
+      try {
+        console.log('Initializing push notifications...');
+        const supported = await pushNotificationService.initialize();
+        console.log('Push notifications supported:', supported);
+        setNotificationSupported(supported);
+        
+        if (supported) {
+          const isSubscribed = await pushNotificationService.isSubscribed();
+          console.log('Already subscribed:', isSubscribed);
+          setIsNotificationEnabled(isSubscribed);
+        }
+      } catch (error) {
+        console.error('Error initializing notifications:', error);
+        setNotificationSupported(false);
       }
     };
 
@@ -148,7 +157,6 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
               body: 'Timer is under 10 minutes! Last chance to place your bid!',
               icon: '/icon-192x192.png',
               badge: '/badge-72x72.png',
-              vibrate: [100, 50, 100],
               requireInteraction: true
             });
           });
@@ -161,7 +169,6 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
               body: 'Timer is under 5 minutes! Time is running out!',
               icon: '/icon-192x192.png',
               badge: '/badge-72x72.png',
-              vibrate: [200, 100, 200],
               requireInteraction: true
             });
           });
@@ -174,7 +181,6 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
               body: 'Timer is under 1 minute! Final countdown!',
               icon: '/icon-192x192.png',
               badge: '/badge-72x72.png',
-              vibrate: [300, 150, 300, 150, 300],
               requireInteraction: true
             });
           });
@@ -194,7 +200,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   const progress = ((3600 - timeLeft) / 3600) * 100;
 
   return (
-    <div className="bg-gray-900 rounded-2xl p-4 md:p-6 shadow-2xl border-2 border-gray-700 max-w-md mx-auto">
+    <div className="bg-gray-900 rounded-2xl p-4 md:p-6 shadow-2xl border-2 border-gray-700 w-full max-w-md mx-auto">
       {/* Main Timer Display - LCD Style */}
       <div className="bg-black rounded-xl p-6 mb-6 border-2 border-gray-600">
         <div className="text-center">

@@ -7,7 +7,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-2 sm:p-4">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-4xl px-2">
         {/* Device Header */}
         <div className="text-center mb-4 sm:mb-8">
           <div className="inline-flex items-center bg-gray-800 rounded-t-2xl px-4 sm:px-6 py-2 sm:py-3 border-b-2 border-gray-600">
