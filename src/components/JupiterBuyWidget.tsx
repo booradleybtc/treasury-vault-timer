@@ -112,7 +112,6 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = ({ tokenSymbol 
               initialAmount: solAmount.toFixed(6),
               initialInputMint: "So11111111111111111111111111111111111111112",
               initialOutputMint: REVS_TOKEN_ADDRESS,
-              swapMode: "ExactInOrOut"
             },
             branding: {
               name: "Treasury Vault Timer",
