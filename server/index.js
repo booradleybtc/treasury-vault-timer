@@ -257,8 +257,13 @@ const monitorPurchases = async () => {
           );
 
           if (preBalance) {
-            const preAmount = parseFloat(preBalance.uiTokenAmount.uiAmount || '0');
-            const postAmount = parseFloat(postBalance.uiTokenAmount.uiAmount || '0');
+            // Use raw amounts and convert manually to ensure correct decimal handling
+            const preAmountRaw = parseInt(preBalance.uiTokenAmount.amount || '0');
+            const postAmountRaw = parseInt(postBalance.uiTokenAmount.amount || '0');
+            const decimals = preBalance.uiTokenAmount.decimals || 9; // REVS has 9 decimals
+            
+            const preAmount = preAmountRaw / Math.pow(10, decimals);
+            const postAmount = postAmountRaw / Math.pow(10, decimals);
             const netIncrease = postAmount - preAmount;
 
             // Check if at least 1 token was purchased
