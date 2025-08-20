@@ -203,9 +203,14 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
       {/* Header */}
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-orange-500">Treasury Vault</h1>
-            <p className="text-gray-400 text-sm">On-chain Treasury Timer</p>
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mr-4">
+              <span className="text-black font-bold text-xl">₿</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-orange-500">MicroScratchety</h1>
+              <p className="text-gray-400 text-sm">Treasury Vault Timer</p>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             {notificationSupported && (
@@ -230,90 +235,101 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
 
         {/* Main Timer Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Timer Card */}
-          <div className="lg:col-span-2 bg-gray-900 rounded-2xl p-6 border border-gray-800">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <Clock className="w-8 h-8 text-orange-500 mr-3" />
-                <h2 className="text-2xl font-bold text-white">Treasury Timer</h2>
-              </div>
-              
-              {/* Main Timer Display */}
-              <div className="bg-black rounded-xl p-8 mb-6 border-2 border-orange-500">
-                <div className="text-6xl font-mono font-bold text-orange-500 mb-2">
-                  {formatTime(timeLeft)}
-                </div>
-                <div className="text-gray-400 text-lg">1 Hour Countdown</div>
-              </div>
-
-              {/* Timer Stats */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-800 rounded-lg p-4">
-                  <div className="text-gray-400 text-sm">Timer Alive</div>
-                  <div className="text-white font-semibold">{demoData.timerAlive}</div>
-                </div>
-                <div className="bg-gray-800 rounded-lg p-4">
-                  <div className="text-gray-400 text-sm">Ends In</div>
-                  <div className="text-white font-semibold">{getTimeUntilEnd()}</div>
-                </div>
-              </div>
-
-              {/* Last Transaction */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <div className="text-gray-400 text-sm mb-2">Last Bid</div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Target className="w-4 h-4 text-orange-500 mr-2" />
-                    <span className="text-white font-medium">
-                      {lastBuyerAddress ? (
-                        lastBuyerAddress.length > 20
-                          ? `${lastBuyerAddress.slice(0, 8)}...${lastBuyerAddress.slice(-8)}`
-                          : lastBuyerAddress
-                      ) : 'N/A'}
-                    </span>
-                    <a 
-                      href={lastBuyerAddress ? `https://solscan.io/account/${lastBuyerAddress}` : '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 text-orange-500 hover:text-orange-400 text-sm"
-                    >
-                      ↗
-                    </a>
+          {/* Timer Card - Scratch-off Ticket Style */}
+          <div className="lg:col-span-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-1">
+            <div className="bg-black rounded-xl p-6 h-full">
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-6">
+                  <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mr-4 border-4 border-orange-400">
+                    <span className="text-black font-bold text-2xl">₿</span>
                   </div>
-                  <div className="text-orange-500 font-semibold">
-                    {lastPurchaseAmount ? `${lastPurchaseAmount.toFixed(6)} REVS` : 'N/A'}
+                  <div>
+                    <h2 className="text-2xl font-bold text-orange-500">SCRATCH</h2>
+                    <p className="text-gray-400 text-sm">Treasury Vault Timer</p>
+                  </div>
+                </div>
+                
+                {/* Main Timer Display - Scratch-off Style */}
+                <div className="bg-gradient-to-r from-orange-400 to-orange-500 rounded-xl p-8 mb-6 border-4 border-orange-300 shadow-2xl">
+                  <div className="text-7xl font-mono font-bold text-black mb-2 tracking-wider">
+                    {formatTime(timeLeft)}
+                  </div>
+                  <div className="text-orange-900 text-lg font-semibold">1 Hour Countdown</div>
+                </div>
+
+                {/* Timer Stats - Scratch-off Blocks */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
+                    <div className="text-orange-900 text-sm font-bold">TIMER ALIVE</div>
+                    <div className="text-black font-bold text-lg">{demoData.timerAlive}</div>
+                  </div>
+                  <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
+                    <div className="text-orange-900 text-sm font-bold">ENDS IN</div>
+                    <div className="text-black font-bold text-lg">{getTimeUntilEnd()}</div>
+                  </div>
+                </div>
+
+                {/* Last Transaction - Scratch-off Style */}
+                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
+                  <div className="text-orange-900 text-sm font-bold mb-2">LAST BIDDER</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Target className="w-5 h-5 text-black mr-2" />
+                      <span className="text-black font-bold">
+                        {lastBuyerAddress ? (
+                          lastBuyerAddress.length > 20
+                            ? `${lastBuyerAddress.slice(0, 8)}...${lastBuyerAddress.slice(-8)}`
+                            : lastBuyerAddress
+                        ) : 'N/A'}
+                      </span>
+                      <a 
+                        href={lastBuyerAddress ? `https://solscan.io/account/${lastBuyerAddress}` : '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 text-black hover:text-orange-900 text-sm font-bold"
+                      >
+                        ↗
+                      </a>
+                    </div>
+                    <div className="text-black font-bold text-lg">
+                      {lastPurchaseAmount ? `${lastPurchaseAmount.toFixed(6)} REVS` : 'N/A'}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Treasury Stats */}
-          <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-            <div className="flex items-center mb-4">
-              <Trophy className="w-6 h-6 text-orange-500 mr-2" />
-              <h3 className="text-xl font-bold text-white">Treasury Stats</h3>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="bg-gray-800 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">Treasury Value</div>
-                <div className="text-white font-bold text-lg">${demoData.treasuryValue.toLocaleString()}</div>
+          {/* Treasury Stats - Scratch-off Blocks */}
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-1">
+            <div className="bg-black rounded-xl p-6 h-full">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+                  <Trophy className="w-6 h-6 text-black" />
+                </div>
+                <h3 className="text-xl font-bold text-orange-500">TREASURY VAULT</h3>
               </div>
               
-              <div className="bg-gray-800 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">Potential Winnings</div>
-                <div className="text-orange-500 font-bold text-lg">${demoData.potentialWinnings.toLocaleString()}</div>
-              </div>
-              
-              <div className="bg-gray-800 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">BID:WIN Ratio</div>
-                <div className="text-white font-bold text-lg">{demoData.bidWinRatio}</div>
-              </div>
-              
-              <div className="bg-gray-800 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">Token Price</div>
-                <div className="text-white font-bold text-lg">${demoData.tokenPrice.toFixed(6)}</div>
+              <div className="space-y-4">
+                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
+                  <div className="text-orange-900 text-sm font-bold">TREASURY VALUE</div>
+                  <div className="text-black font-bold text-lg">${demoData.treasuryValue.toLocaleString()}</div>
+                </div>
+                
+                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
+                  <div className="text-orange-900 text-sm font-bold">SCRATCHER POTENTIAL</div>
+                  <div className="text-black font-bold text-lg">${demoData.potentialWinnings.toLocaleString()}</div>
+                </div>
+                
+                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
+                  <div className="text-orange-900 text-sm font-bold">BID:WIN RATIO</div>
+                  <div className="text-black font-bold text-lg">{demoData.bidWinRatio}</div>
+                </div>
+                
+                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
+                  <div className="text-orange-900 text-sm font-bold">TOKEN PRICE</div>
+                  <div className="text-black font-bold text-lg">${demoData.tokenPrice.toFixed(6)}</div>
+                </div>
               </div>
             </div>
           </div>

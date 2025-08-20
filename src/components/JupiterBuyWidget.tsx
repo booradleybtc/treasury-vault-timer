@@ -149,55 +149,58 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
   const solFor100Tokens = priceData ? calculateSolAmountNeeded(100, priceData.price) : 0;
 
   return (
-    <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center mb-3">
-          <Zap className="w-6 h-6 text-orange-500 mr-2" />
-          <h3 className="text-xl font-bold text-orange-500 font-mono">PLACE YOUR BID</h3>
-        </div>
-        <p className="text-gray-400 text-sm font-mono">
-          {priceData ? `Current Price: $${priceData.price.toFixed(6)}` : 'Loading price...'}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {/* Buy 1 Token Button */}
-        <button
-          onClick={() => openJupiterWidget(1)}
-          disabled={isLoading || !priceData}
-          className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 disabled:from-gray-700 disabled:to-gray-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-orange-500 disabled:border-gray-600 shadow-lg"
-        >
-          <Target className="w-5 h-5 inline mr-2" />
-          BID 1 REVS
-          <div className="text-xs text-orange-200 mt-2 font-medium">
-            ~{solFor1Token.toFixed(4)} SOL
+    <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-1">
+      <div className="bg-black rounded-xl p-6">
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-black font-bold text-lg">₿</span>
+            </div>
+            <h3 className="text-xl font-bold text-orange-500 font-mono">PLACE YOUR BID</h3>
           </div>
-        </button>
+          <p className="text-gray-400 text-sm font-mono">
+            {priceData ? `Current Price: $${priceData.price.toFixed(6)}` : 'Loading price...'}
+          </p>
+        </div>
 
-        {/* Buy 100 Tokens Button */}
-        <button
-          onClick={() => openJupiterWidget(100)}
-          disabled={isLoading || !priceData}
-          className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-700 disabled:to-gray-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-orange-400 disabled:border-gray-600 shadow-lg"
-        >
-          <Trophy className="w-5 h-5 inline mr-2" />
-          BID 100 REVS
-          <div className="text-xs text-orange-200 mt-2 font-medium">
-            ~{solFor100Tokens.toFixed(4)} SOL
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {/* Buy 1 Token Button - Scratch-off Style */}
+          <button
+            onClick={() => openJupiterWidget(1)}
+            disabled={isLoading || !priceData}
+            className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 disabled:from-gray-700 disabled:to-gray-800 text-black font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-orange-300 disabled:border-gray-600 shadow-lg"
+          >
+            <Target className="w-5 h-5 inline mr-2" />
+            BUY 1 TO HUNT
+            <div className="text-xs text-orange-900 mt-2 font-bold">
+              ~{solFor1Token.toFixed(4)} SOL
+            </div>
+          </button>
+
+          {/* Buy 100 Tokens Button - Scratch-off Style */}
+          <button
+            onClick={() => openJupiterWidget(100)}
+            disabled={isLoading || !priceData}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-700 disabled:to-gray-800 text-black font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-sm font-mono border-2 border-orange-400 disabled:border-gray-600 shadow-lg"
+          >
+            <Trophy className="w-5 h-5 inline mr-2" />
+            BUY 100 TO FARM
+            <div className="text-xs text-orange-900 mt-2 font-bold">
+              ~{solFor100Tokens.toFixed(4)} SOL
+            </div>
+          </button>
+        </div>
+
+        <div className="text-center">
+          <div className="bg-orange-500 rounded-lg p-3 mb-4 border-2 border-orange-400">
+            <div className="text-xs text-orange-900 font-mono mb-1 font-bold">BID TO RESET TIMER</div>
+            <div className="text-sm text-black font-mono font-bold">Minimum 1 REVS to trigger countdown</div>
           </div>
-        </button>
-      </div>
-
-      <div className="text-center">
-        <div className="bg-gray-800 rounded-lg p-3 mb-4">
-          <div className="text-xs text-gray-400 font-mono mb-1">BID TO RESET TIMER</div>
-          <div className="text-sm text-orange-400 font-mono">Minimum 1 REVS to trigger countdown</div>
+          
+          <div className="text-xs text-gray-500 font-mono">
+            * Amounts include 10% tax + fees to ensure you receive the target amount
+          </div>
         </div>
-        
-        <div className="text-xs text-gray-500 font-mono">
-          * Amounts include 10% tax + fees to ensure you receive the target amount
-        </div>
-      </div>
       
       {/* Jupiter Widget Modal */}
       {showWidget && (
