@@ -201,6 +201,7 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
             * Amounts include 10% tax + fees to ensure you receive the target amount
           </div>
         </div>
+      </div>
       
       {/* Jupiter Widget Modal */}
       {showWidget && (
