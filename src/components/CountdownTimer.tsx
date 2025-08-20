@@ -199,228 +199,199 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-4">
       {/* Header */}
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
-            <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mr-4">
-              <span className="text-black font-bold text-xl">₿</span>
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-4 border border-white/30">
+              <span className="text-white font-bold text-xl">₿</span>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-orange-500">MicroScratchety</h1>
-              <p className="text-gray-400 text-sm">Treasury Vault Timer</p>
+              <h1 className="text-3xl font-bold text-white">MicroScratchety</h1>
+              <p className="text-white/80 text-sm">Treasury Vault Timer</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
             {notificationSupported && (
               <button
                 onClick={handleNotificationToggle}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors backdrop-blur-sm border ${
                   isNotificationEnabled 
-                    ? 'bg-orange-600 text-white' 
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    ? 'bg-white/20 text-white border-white/30' 
+                    : 'bg-black/20 text-white/80 border-white/20 hover:bg-black/30'
                 }`}
               >
                 {isNotificationEnabled ? '🔔 On' : '🔕 Off'}
               </button>
             )}
-            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-              isConnected ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+            <div className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border ${
+              isConnected ? 'bg-green-500/20 text-green-200 border-green-400/30' : 'bg-red-500/20 text-red-200 border-red-400/30'
             }`}>
               {isConnected ? '● LIVE' : '● OFFLINE'}
             </div>
           </div>
         </div>
 
-        {/* Main Timer Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Timer Card - Scratch-off Ticket Style */}
-          <div className="lg:col-span-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-1">
-            <div className="bg-black rounded-xl p-6 h-full">
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mr-4 border-4 border-orange-400">
-                    <span className="text-black font-bold text-2xl">₿</span>
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-orange-500">SCRATCH</h2>
-                    <p className="text-gray-400 text-sm">Treasury Vault Timer</p>
-                  </div>
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-12 gap-4 h-[calc(100vh-120px)]">
+          {/* Main Timer - Large Card */}
+          <div className="col-span-8 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <div className="text-center h-full flex flex-col justify-center">
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mr-4 border-2 border-white/30">
+                  <span className="text-white font-bold text-2xl">₿</span>
                 </div>
-                
-                {/* Main Timer Display - Scratch-off Style */}
-                <div className="bg-gradient-to-r from-orange-400 to-orange-500 rounded-xl p-8 mb-6 border-4 border-orange-300 shadow-2xl">
-                  <div className="text-7xl font-mono font-bold text-black mb-2 tracking-wider">
-                    {formatTime(timeLeft)}
-                  </div>
-                  <div className="text-orange-900 text-lg font-semibold">1 Hour Countdown</div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">SCRATCH</h2>
+                  <p className="text-white/80 text-sm">Treasury Vault Timer</p>
                 </div>
-
-                {/* Timer Stats - Scratch-off Blocks */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
-                    <div className="text-orange-900 text-sm font-bold">TIMER ALIVE</div>
-                    <div className="text-black font-bold text-lg">{demoData.timerAlive}</div>
-                  </div>
-                  <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
-                    <div className="text-orange-900 text-sm font-bold">ENDS IN</div>
-                    <div className="text-black font-bold text-lg">{getTimeUntilEnd()}</div>
-                  </div>
-                </div>
-
-                {/* Last Transaction - Scratch-off Style */}
-                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
-                  <div className="text-orange-900 text-sm font-bold mb-2">LAST BIDDER</div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Target className="w-5 h-5 text-black mr-2" />
-                      <span className="text-black font-bold">
-                        {lastBuyerAddress ? (
-                          lastBuyerAddress.length > 20
-                            ? `${lastBuyerAddress.slice(0, 8)}...${lastBuyerAddress.slice(-8)}`
-                            : lastBuyerAddress
-                        ) : 'N/A'}
-                      </span>
-                      <a 
-                        href={lastBuyerAddress ? `https://solscan.io/account/${lastBuyerAddress}` : '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-2 text-black hover:text-orange-900 text-sm font-bold"
-                      >
-                        ↗
-                      </a>
-                    </div>
-                    <div className="text-black font-bold text-lg">
-                      {lastPurchaseAmount ? `${lastPurchaseAmount.toFixed(6)} REVS` : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Treasury Stats - Scratch-off Blocks */}
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-1">
-            <div className="bg-black rounded-xl p-6 h-full">
-              <div className="flex items-center mb-6">
-                <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
-                  <Trophy className="w-6 h-6 text-black" />
-                </div>
-                <h3 className="text-xl font-bold text-orange-500">TREASURY VAULT</h3>
               </div>
               
-              <div className="space-y-4">
-                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
-                  <div className="text-orange-900 text-sm font-bold">TREASURY VALUE</div>
-                  <div className="text-black font-bold text-lg">${demoData.treasuryValue.toLocaleString()}</div>
+              {/* Main Timer Display */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-6 border border-white/20">
+                <div className="text-8xl font-mono font-bold text-white mb-2 tracking-wider">
+                  {formatTime(timeLeft)}
                 </div>
-                
-                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
-                  <div className="text-orange-900 text-sm font-bold">SCRATCHER POTENTIAL</div>
-                  <div className="text-black font-bold text-lg">${demoData.potentialWinnings.toLocaleString()}</div>
+                <div className="text-white/80 text-lg">1 Hour Countdown</div>
+              </div>
+
+              {/* Timer Stats Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                  <div className="text-white/60 text-sm font-bold">TIMER ALIVE</div>
+                  <div className="text-white font-bold text-lg">{demoData.timerAlive}</div>
                 </div>
-                
-                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
-                  <div className="text-orange-900 text-sm font-bold">BID:WIN RATIO</div>
-                  <div className="text-black font-bold text-lg">{demoData.bidWinRatio}</div>
-                </div>
-                
-                <div className="bg-orange-500 rounded-lg p-4 border-2 border-orange-400">
-                  <div className="text-orange-900 text-sm font-bold">TOKEN PRICE</div>
-                  <div className="text-black font-bold text-lg">${demoData.tokenPrice.toFixed(6)}</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                  <div className="text-white/60 text-sm font-bold">ENDS IN</div>
+                  <div className="text-white font-bold text-lg">{getTimeUntilEnd()}</div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Airdrop Section */}
-        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 mb-8">
-          <div className="flex items-center mb-6">
-            <Gift className="w-6 h-6 text-orange-500 mr-2" />
-            <h3 className="text-xl font-bold text-white">Airdrop System</h3>
+          {/* Treasury Stats - Tall Card */}
+          <div className="col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <div className="flex items-center mb-6">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                <Trophy className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-white">TREASURY</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-white/60 text-sm font-bold">TREASURY VALUE</div>
+                <div className="text-white font-bold text-lg">${demoData.treasuryValue.toLocaleString()}</div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-white/60 text-sm font-bold">SCRATCHER POTENTIAL</div>
+                <div className="text-white font-bold text-lg">${demoData.potentialWinnings.toLocaleString()}</div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-white/60 text-sm font-bold">BID:WIN RATIO</div>
+                <div className="text-white font-bold text-lg">{demoData.bidWinRatio}</div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-white/60 text-sm font-bold">TOKEN PRICE</div>
+                <div className="text-white font-bold text-lg">${demoData.tokenPrice.toFixed(6)}</div>
+              </div>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gray-800 rounded-lg p-4">
-              <div className="text-gray-400 text-sm">Next Airdrop</div>
-              <div className="text-white font-semibold">
-                {new Date(demoData.nextAirdrop).toLocaleDateString()}
+
+          {/* Last Bidder - Medium Card */}
+          <div className="col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <div className="flex items-center mb-4">
+              <Target className="w-5 h-5 text-white mr-2" />
+              <h3 className="text-lg font-bold text-white">LAST BIDDER</h3>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white font-bold">
+                  {lastBuyerAddress ? (
+                    lastBuyerAddress.length > 20
+                      ? `${lastBuyerAddress.slice(0, 8)}...${lastBuyerAddress.slice(-8)}`
+                      : lastBuyerAddress
+                  ) : 'N/A'}
+                </span>
+                <a 
+                  href={lastBuyerAddress ? `https://solscan.io/account/${lastBuyerAddress}` : '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/60 hover:text-white text-sm"
+                >
+                  ↗
+                </a>
+              </div>
+              <div className="text-white/80 text-sm">
+                {lastPurchaseAmount ? `${lastPurchaseAmount.toFixed(6)} REVS` : 'N/A'}
+              </div>
+            </div>
+          </div>
+
+          {/* APY Calculator - Medium Card */}
+          <div className="col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <div className="flex items-center mb-4">
+              <TrendingUp className="w-5 h-5 text-white mr-2" />
+              <h3 className="text-lg font-bold text-white">APY</h3>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 text-center">
+              <div className="text-white/60 text-sm mb-2">Current APY</div>
+              <div className="text-white font-bold text-3xl">{demoData.apy}%</div>
+              <div className="text-white/60 text-xs mt-2">Based on treasury performance</div>
+            </div>
+          </div>
+
+          {/* Airdrop Info - Medium Card */}
+          <div className="col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <div className="flex items-center mb-4">
+              <Gift className="w-5 h-5 text-white mr-2" />
+              <h3 className="text-lg font-bold text-white">AIRDROP</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                <div className="text-white/60 text-xs">Next Airdrop</div>
+                <div className="text-white font-bold">{new Date(demoData.nextAirdrop).toLocaleDateString()}</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                <div className="text-white/60 text-xs">Amount</div>
+                <div className="text-white font-bold">{demoData.nextAirdropAmount} BTC</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                <div className="text-white/60 text-xs">Eligible Wallets</div>
+                <div className="text-white font-bold">{demoData.eligibleWallets.toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Activity Log - Wide Card */}
+          <div className="col-span-8 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Coins className="w-5 h-5 text-white mr-2" />
+                <h3 className="text-lg font-bold text-white">TREASURY ACTIVITY</h3>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border ${
+                isMonitoring ? 'bg-green-500/20 text-green-200 border-green-400/30' : 'bg-red-500/20 text-red-200 border-red-400/30'
+              }`}>
+                {isMonitoring ? '● MONITORING' : '● PAUSED'}
               </div>
             </div>
             
-            <div className="bg-gray-800 rounded-lg p-4">
-              <div className="text-gray-400 text-sm">Next Amount</div>
-              <div className="text-orange-500 font-semibold">{demoData.nextAirdropAmount} BTC</div>
+            <div className="bg-black/20 backdrop-blur-sm rounded-xl p-4 h-32 overflow-y-auto border border-white/10">
+              {debugInfo.length === 0 ? (
+                <div className="text-white/60 text-sm">No activity yet...</div>
+              ) : (
+                debugInfo.slice(-6).map((info, index) => (
+                  <div key={index} className="text-sm text-white/80 mb-2 font-mono">
+                    {info}
+                  </div>
+                ))
+              )}
             </div>
-            
-            <div className="bg-gray-800 rounded-lg p-4">
-              <div className="text-gray-400 text-sm">Eligible Wallets</div>
-              <div className="text-white font-semibold">{demoData.eligibleWallets.toLocaleString()}</div>
-            </div>
-            
-            <div className="bg-gray-800 rounded-lg p-4">
-              <div className="text-gray-400 text-sm">Total Awarded</div>
-              <div className="text-white font-semibold">{demoData.totalSatsAwarded} BTC</div>
-            </div>
-          </div>
-
-          {/* Past Airdrops */}
-          <div>
-            <h4 className="text-white font-semibold mb-3">Past Airdrops</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {demoData.pastAirdrops.map((airdrop, index) => (
-                <div key={index} className="bg-gray-800 rounded-lg p-3">
-                  <div className="text-gray-400 text-xs">{airdrop.date}</div>
-                  <div className="text-white font-medium">{airdrop.amount} BTC</div>
-                  <div className="text-gray-400 text-xs">{airdrop.participants} participants</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* APY Calculator */}
-        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 mb-8">
-          <div className="flex items-center mb-4">
-            <TrendingUp className="w-6 h-6 text-orange-500 mr-2" />
-            <h3 className="text-xl font-bold text-white">APY Calculator</h3>
-          </div>
-          
-          <div className="bg-gray-800 rounded-lg p-4">
-            <div className="text-center">
-              <div className="text-gray-400 text-sm mb-2">Current APY</div>
-              <div className="text-orange-500 font-bold text-3xl">{demoData.apy}%</div>
-              <div className="text-gray-400 text-sm mt-2">Based on current treasury performance</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Treasury Log */}
-        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <Coins className="w-6 h-6 text-orange-500 mr-2" />
-              <h3 className="text-xl font-bold text-white">Treasury Activity</h3>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-              isMonitoring ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-            }`}>
-              {isMonitoring ? '● MONITORING' : '● PAUSED'}
-            </div>
-          </div>
-          
-          <div className="bg-black rounded-lg p-4 h-48 overflow-y-auto">
-            {debugInfo.length === 0 ? (
-              <div className="text-gray-500 text-sm">No activity yet...</div>
-            ) : (
-              debugInfo.slice(-8).map((info, index) => (
-                <div key={index} className="text-sm text-gray-300 mb-2 font-mono">
-                  {info}
-                </div>
-              ))
-            )}
           </div>
         </div>
       </div>
