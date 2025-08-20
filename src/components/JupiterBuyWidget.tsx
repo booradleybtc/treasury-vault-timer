@@ -1,228 +1,188 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, X, Target, Trophy } from 'lucide-react';
-import '@jup-ag/plugin/css';
+import { Target, Trophy, Zap, Coins, Crown, Star } from 'lucide-react';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+
+const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
 
 interface JupiterBuyWidgetProps {
-  // tokenAddress is not used since we hardcode REVS_TOKEN_ADDRESS
+  tokenAddress: string;
 }
 
 export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [priceData, setPriceData] = useState<{ price: number; inputMint: string } | null>(null);
-  const [showWidget, setShowWidget] = useState(false);
 
-  // REVS token address
-  const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
-  
-  // Calculate SOL amount needed for target tokens (accounting for 10% tax + fees)
-  const calculateSolAmountNeeded = (targetTokens: number, currentPrice: number) => {
-    // 10% tax means you need to buy 111.11% to get 100%
-    const taxMultiplier = 1.111111111; // 1 / 0.9
-    const baseTokens = targetTokens * taxMultiplier;
+  // Calculate SOL amount needed for target REVS tokens
+  const calculateSolAmountNeeded = (targetTokens: number) => {
+    // Assuming SOL price is around $100 USD
+    const solPriceUSD = 100;
+    const revsPriceUSD = currentPrice || 0.0007128; // Use current price or fallback
     
-    // Calculate USD value needed
-    const usdValue = baseTokens * currentPrice;
+    // Calculate USD value needed for target tokens
+    const usdValueNeeded = targetTokens * revsPriceUSD;
     
-    // Add 5% buffer for slippage and fees
-    const totalUsdValue = usdValue * 1.05;
+    // Account for 10% token tax + 5% slippage/fees
+    const totalMultiplier = 1.15; // 10% tax + 5% fees
+    const adjustedUSDValue = usdValueNeeded * totalMultiplier;
     
-    // Convert to SOL (assuming SOL is ~$100)
-    const solPriceUsd = 100;
-    const solAmount = totalUsdValue / solPriceUsd;
+    // Convert to SOL
+    const solAmount = adjustedUSDValue / solPriceUSD;
     
-    return solAmount;
+    return Math.max(solAmount, 0.001); // Minimum 0.001 SOL
   };
 
-  // Get current price from multiple sources
+  // Fetch current REVS price
   useEffect(() => {
     const fetchPrice = async () => {
       try {
-        setIsLoading(true);
+        // Try Dexscreener API first
+        const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${REVS_TOKEN_ADDRESS}`);
+        const data = await response.json();
         
-        // Try Dexscreener first (most reliable for REVS)
-        const dexResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${REVS_TOKEN_ADDRESS}`);
-        if (dexResponse.ok) {
-          const dexData = await dexResponse.json();
-          if (dexData.pairs && dexData.pairs[0]) {
-            const priceUsd = parseFloat(dexData.pairs[0].priceUsd);
-            console.log('Dexscreener price USD:', priceUsd);
-            setPriceData({
-              price: priceUsd,
-              inputMint: 'So11111111111111111111111111111111111111112'
-            });
+        if (data.pairs && data.pairs.length > 0) {
+          const price = parseFloat(data.pairs[0].priceUsd);
+          if (price > 0) {
+            setCurrentPrice(price);
             return;
           }
         }
         
-        // Fallback: try Jupiter price API
-        const jupResponse = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`);
-        if (jupResponse.ok) {
-          const jupData = await jupResponse.json();
-          if (jupData.data && jupData.data[REVS_TOKEN_ADDRESS]) {
-            const price = jupData.data[REVS_TOKEN_ADDRESS].price;
-            // Convert to USD (assuming SOL is ~$100)
-            const priceUsd = price * 100;
-            console.log('Jupiter price USD:', priceUsd);
-            setPriceData({
-              price: priceUsd,
-              inputMint: 'So11111111111111111111111111111111111111112'
-            });
-            return;
-          }
-        }
-        
-        // Final fallback - use Solscan price
-        console.log('Using Solscan fallback price');
-        setPriceData({
-          price: 0.0007128, // From Solscan
-          inputMint: 'So11111111111111111111111111111111111111112'
-        });
-        
+        // Fallback to hardcoded price
+        setCurrentPrice(0.0007128);
       } catch (error) {
         console.error('Error fetching price:', error);
-        setPriceData({
-          price: 0.0007128, // From Solscan as fallback
-          inputMint: 'So11111111111111111111111111111111111111112'
-        });
-      } finally {
-        setIsLoading(false);
+        setCurrentPrice(0.0007128);
       }
     };
 
     fetchPrice();
-    const interval = setInterval(fetchPrice, 30000); // Refresh every 30 seconds
+    const interval = setInterval(fetchPrice, 30000); // Update every 30 seconds
     return () => clearInterval(interval);
   }, []);
 
-  const openJupiterWidget = (targetTokens: number) => {
+  const handleBuyClick = (targetTokens: number) => {
     setIsLoading(true);
     
-    // Calculate SOL amount needed for the target tokens
-    const solAmount = priceData ? calculateSolAmountNeeded(targetTokens, priceData.price) : 0.01;
-    console.log(`Opening widget for ${targetTokens} tokens, SOL amount: ${solAmount}`);
+    // Calculate SOL amount needed
+    const solAmount = calculateSolAmountNeeded(targetTokens);
     
-    setShowWidget(true);
+    // Format for Jupiter widget
+    const formattedAmount = solAmount.toFixed(6);
     
-    // Initialize Jupiter plugin after modal opens
-    setTimeout(() => {
-      if (typeof window !== "undefined") {
-        import("@jup-ag/plugin").then((mod) => {
-          const init = mod.init;
-          const config = {
-            displayMode: "integrated" as const,
-            integratedTargetId: "jupiter-widget-container",
-            formProps: {
-              initialAmount: solAmount.toFixed(6),
-              initialInputMint: "So11111111111111111111111111111111111111112",
-              initialOutputMint: REVS_TOKEN_ADDRESS,
-            },
-            branding: {
-              name: "Treasury Vault Timer",
-              logoUri: "https://raw.githubusercontent.com/booradleybtc/treasury-vault-timer/main/public/icon-192x192.png"
-            },
-            // Route restrictions for future token deployment
-            onlyDirectRoutes: true,
-            // Explicitly restrict to our specific LP pool
-            poolFilter: (pool: any) => {
-              // For testing with REVS, allow the current LP pool
-              const allowedPools = [
-                'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // Current REVS LP pool
-                // Add your future token LP pool here when deployed
-                // 'YOUR_FUTURE_TOKEN_LP_POOL_ADDRESS'
-              ];
-              return allowedPools.includes(pool.address);
-            },
-            // Alternative approach - restrict to specific pool addresses
-            // allowedPools: ['GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL']
-          };
-          console.log('Jupiter config with route restrictions:', config);
-          init(config);
-        });
-      }
-    }, 500); // Increased delay to ensure modal is fully rendered
+    // Create Jupiter URL with pre-filled parameters
+    const jupiterUrl = `https://jup.ag/swap/SOL-${REVS_TOKEN_ADDRESS}?amount=${formattedAmount}&inputMint=So11111111111111111111111111111111111111112&outputMint=${REVS_TOKEN_ADDRESS}`;
+    
+    // Open Jupiter in new tab
+    window.open(jupiterUrl, '_blank');
     
     setIsLoading(false);
   };
 
-  // Calculate display amounts for buttons
-  const solFor1Token = priceData ? calculateSolAmountNeeded(1, priceData.price) : 0;
-  const solFor100Tokens = priceData ? calculateSolAmountNeeded(100, priceData.price) : 0;
+  const solFor1Token = calculateSolAmountNeeded(1);
+  const solFor100Tokens = calculateSolAmountNeeded(100);
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center mb-3">
-          <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
-            <span className="text-white font-bold text-lg">₿</span>
+    <Card className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 border-2 border-yellow-400/30 backdrop-blur-sm">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mr-4 shadow-lg border-2 border-yellow-300">
+              <Zap className="w-6 h-6 text-black" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-yellow-400">PLACE YOUR BET</CardTitle>
+              <p className="text-cyan-400 text-sm">High Stakes Casino Action</p>
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-white font-mono">PLACE YOUR BID</h3>
+          {currentPrice && (
+            <div className="text-right">
+              <div className="text-cyan-400 text-sm font-bold">Current Price</div>
+              <div className="text-yellow-400 font-bold text-lg">${currentPrice.toFixed(6)}</div>
+            </div>
+          )}
         </div>
-        <p className="text-white/80 text-sm font-mono">
-          {priceData ? `Current Price: $${priceData.price.toFixed(6)}` : 'Loading price...'}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {/* Buy 1 Token Button - Glass Style */}
-        <button
-          onClick={() => openJupiterWidget(1)}
-          disabled={isLoading || !priceData}
-          className="bg-white/20 backdrop-blur-sm hover:bg-white/30 disabled:bg-black/20 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-sm font-mono border border-white/30 disabled:border-white/10 shadow-lg"
-        >
-          <Target className="w-5 h-5 inline mr-2" />
-          BUY 1 TO HUNT
-          <div className="text-xs text-white/80 mt-2 font-bold">
-            ~{solFor1Token.toFixed(4)} SOL
-          </div>
-        </button>
-
-        {/* Buy 100 Tokens Button - Glass Style */}
-        <button
-          onClick={() => openJupiterWidget(100)}
-          disabled={isLoading || !priceData}
-          className="bg-white/20 backdrop-blur-sm hover:bg-white/30 disabled:bg-black/20 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 text-sm font-mono border border-white/30 disabled:border-white/10 shadow-lg"
-        >
-          <Trophy className="w-5 h-5 inline mr-2" />
-          BUY 100 TO FARM
-          <div className="text-xs text-white/80 mt-2 font-bold">
-            ~{solFor100Tokens.toFixed(4)} SOL
-          </div>
-        </button>
-      </div>
-
-      <div className="text-center">
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 mb-4 border border-white/20">
-          <div className="text-xs text-white/60 font-mono mb-1 font-bold">BID TO RESET TIMER</div>
-          <div className="text-sm text-white font-mono font-bold">Minimum 1 REVS to trigger countdown</div>
-        </div>
-        
-        <div className="text-xs text-white/60 font-mono">
-          * Amounts include 10% tax + fees to ensure you receive the target amount
-        </div>
-      </div>
+      </CardHeader>
       
-      {/* Jupiter Widget Modal */}
-      {showWidget && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl p-6 max-w-3xl w-full border-2 border-orange-500 shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center">
-                <Zap className="w-6 h-6 text-orange-500 mr-3" />
-                <h3 className="text-xl font-bold text-orange-500 font-mono">Place Your Bid</h3>
-              </div>
-              <button
-                onClick={() => setShowWidget(false)}
-                className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800"
-              >
-                <X className="w-6 h-6" />
-              </button>
+      <CardContent className="space-y-6">
+        {/* Info Block */}
+        <Card className="bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border-2 border-yellow-400/30">
+          <CardContent className="p-4">
+            <div className="flex items-center mb-2">
+              <Crown className="w-5 h-5 text-yellow-400 mr-2" />
+              <span className="text-yellow-400 font-bold">CASINO RULES</span>
             </div>
-            <div id="jupiter-widget-container" className="w-full h-[600px] rounded-xl overflow-hidden border border-gray-700">
-              {/* Jupiter plugin will render here */}
+            <div className="text-cyan-400 text-sm space-y-1">
+              <div>• Minimum bet: 1 REVS to reset timer</div>
+              <div>• High roller bonus: 100+ REVS gets VIP rewards</div>
+              <div>• 10% token tax applies to all bets</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Betting Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Small Bet Button */}
+          <Button
+            onClick={() => handleBuyClick(1)}
+            variant="casino"
+            size="xl"
+            disabled={isLoading}
+            className="h-16 text-lg font-bold shadow-2xl hover:shadow-yellow-400/25"
+          >
+            <div className="flex items-center justify-center w-full">
+              <Target className="w-6 h-6 mr-3" />
+              <div className="text-left">
+                <div className="text-sm">MINIMUM BET</div>
+                <div className="text-lg">1 REVS</div>
+                <div className="text-xs opacity-80">{solFor1Token.toFixed(4)} SOL</div>
+              </div>
+            </div>
+          </Button>
+
+          {/* High Roller Button */}
+          <Button
+            onClick={() => handleBuyClick(100)}
+            variant="gold"
+            size="xl"
+            disabled={isLoading}
+            className="h-16 text-lg font-bold shadow-2xl hover:shadow-yellow-400/25"
+          >
+            <div className="flex items-center justify-center w-full">
+              <Trophy className="w-6 h-6 mr-3" />
+              <div className="text-left">
+                <div className="text-sm">HIGH ROLLER</div>
+                <div className="text-lg">100 REVS</div>
+                <div className="text-xs opacity-80">{solFor100Tokens.toFixed(4)} SOL</div>
+              </div>
+            </div>
+          </Button>
+        </div>
+
+        {/* VIP Status */}
+        <Card className="bg-gradient-to-r from-purple-400/20 to-pink-500/20 border-2 border-purple-400/30">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Star className="w-5 h-5 text-purple-400 mr-2" />
+              <span className="text-purple-400 font-bold">VIP BONUSES</span>
+            </div>
+            <div className="text-cyan-400 text-sm">
+              High rollers get exclusive rewards, higher APY, and VIP airdrop eligibility
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center">
+            <div className="inline-flex items-center px-4 py-2 bg-yellow-400/20 text-yellow-400 rounded-lg">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400 mr-2"></div>
+              Opening Casino Tables...
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

@@ -2,70 +2,139 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Jupiter Plugin CSS Variables - Orange Theme (matching Jupiter docs) */
+/* Casino Theme Colors */
 :root {
-  --jupiter-plugin-primary: 232, 88, 5;
-  --jupiter-plugin-background: 0, 0, 0;
-  --jupiter-plugin-primary-text: 255, 255, 255;
-  --jupiter-plugin-warning: 251, 191, 36;
-  --jupiter-plugin-interactive: 32, 32, 32;
-  --jupiter-plugin-module: 232, 88, 5;
-  --jupiter-plugin-secondary: 75, 85, 99;
-  --jupiter-plugin-secondary-text: 156, 163, 175;
-  --jupiter-plugin-accent: 59, 130, 246;
-  --jupiter-plugin-error: 239, 68, 68;
-  --jupiter-plugin-success: 34, 197, 94;
+  --casino-gold: #FFD700;
+  --casino-orange: #FF6B35;
+  --casino-purple: #8B5CF6;
+  --casino-cyan: #06B6D4;
+  --casino-pink: #EC4899;
+  --casino-green: #10B981;
+  --casino-red: #EF4444;
+  --casino-black: #0F0F23;
+  --casino-dark-purple: #1E1B4B;
+  --casino-dark-blue: #1E3A8A;
 }
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0f0f23;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
+/* Custom animations for casino effects */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+  }
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
 }
 
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
-.gradient-bg {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* Casino-specific utility classes */
+.casino-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.glass-effect {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.casino-sparkle {
+  animation: sparkle 1.5s ease-in-out infinite;
 }
 
-/* Jupiter Widget Container Styles */
-#jupiter-widget-container {
-  background: rgb(0, 0, 0);
-  border-radius: 12px;
-  overflow: hidden;
+.casino-float {
+  animation: float 3s ease-in-out infinite;
 }
 
-/* Ensure Jupiter plugin elements inherit our theme */
-#jupiter-widget-container * {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+/* Custom scrollbar for casino theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 15, 35, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, var(--casino-gold), var(--casino-orange));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, var(--casino-orange), var(--casino-gold));
+}
+
+/* Glass morphism effects */
+.glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-strong {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Text gradients */
+.text-gradient-gold {
+  background: linear-gradient(45deg, var(--casino-gold), var(--casino-orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(45deg, var(--casino-cyan), var(--casino-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Button hover effects */
+.btn-casino:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+}
+
+/* Card hover effects */
+.card-casino:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
+}
+
+/* Responsive design adjustments */
+@media (max-width: 768px) {
+  .casino-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .casino-responsive-lg {
+    font-size: 1.125rem;
+  }
+}
+
+/* Loading spinner for casino theme */
+.casino-spinner {
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-top: 2px solid var(--casino-gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
