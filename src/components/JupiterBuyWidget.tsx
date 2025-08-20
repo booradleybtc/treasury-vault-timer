@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Trophy, Zap, Coins, Crown, Star } from 'lucide-react';
+import { Target, Trophy, Zap, Crown, Star } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
@@ -10,7 +10,6 @@ interface JupiterBuyWidgetProps {
 }
 
 export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 

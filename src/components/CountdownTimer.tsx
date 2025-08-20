@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Coins, TrendingUp, Gift, Target, Zap, Crown, Star, Sparkles } from 'lucide-react';
+import { Trophy, Coins, TrendingUp, Gift, Crown, Star, Sparkles } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { pushNotificationService } from '../services/pushNotifications';
 import { Button } from './ui/button';
