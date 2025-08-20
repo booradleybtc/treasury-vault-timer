@@ -2,27 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Casino Theme Colors */
+/* Modern Tech Theme Colors */
 :root {
-  --casino-gold: #FFD700;
-  --casino-orange: #FF6B35;
-  --casino-purple: #8B5CF6;
-  --casino-cyan: #06B6D4;
-  --casino-pink: #EC4899;
-  --casino-green: #10B981;
-  --casino-red: #EF4444;
-  --casino-black: #0F0F23;
-  --casino-dark-purple: #1E1B4B;
-  --casino-dark-blue: #1E3A8A;
+  --tech-blue: #3B82F6;
+  --tech-cyan: #06B6D4;
+  --tech-slate: #1E293B;
+  --tech-dark: #0F172A;
+  --tech-green: #10B981;
+  --tech-purple: #8B5CF6;
+  --tech-pink: #EC4899;
+  --tech-indigo: #6366F1;
 }
 
-/* Custom animations for casino effects */
+/* Custom animations for tech effects */
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
   }
   50% {
-    box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.6);
   }
 }
 
@@ -46,35 +44,48 @@
   }
 }
 
-/* Casino-specific utility classes */
-.casino-glow {
+@keyframes grid-pulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* Tech-specific utility classes */
+.tech-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.casino-sparkle {
+.tech-sparkle {
   animation: sparkle 1.5s ease-in-out infinite;
 }
 
-.casino-float {
+.tech-float {
   animation: float 3s ease-in-out infinite;
 }
 
-/* Custom scrollbar for casino theme */
+.tech-grid {
+  animation: grid-pulse 4s ease-in-out infinite;
+}
+
+/* Custom scrollbar for tech theme */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 15, 35, 0.5);
+  background: rgba(15, 23, 42, 0.5);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(45deg, var(--casino-gold), var(--casino-orange));
+  background: linear-gradient(45deg, var(--tech-blue), var(--tech-cyan));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(45deg, var(--casino-orange), var(--casino-gold));
+  background: linear-gradient(45deg, var(--tech-cyan), var(--tech-blue));
 }
 
 /* Glass morphism effects */
@@ -89,47 +100,47 @@
 }
 
 /* Text gradients */
-.text-gradient-gold {
-  background: linear-gradient(45deg, var(--casino-gold), var(--casino-orange));
+.text-gradient-blue {
+  background: linear-gradient(45deg, var(--tech-blue), var(--tech-cyan));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.text-gradient-cyan {
-  background: linear-gradient(45deg, var(--casino-cyan), var(--casino-purple));
+.text-gradient-green {
+  background: linear-gradient(45deg, var(--tech-green), #34D399);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 /* Button hover effects */
-.btn-casino:hover {
+.btn-tech:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
 }
 
 /* Card hover effects */
-.card-casino:hover {
+.card-tech:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
 }
 
 /* Responsive design adjustments */
 @media (max-width: 768px) {
-  .casino-responsive {
+  .tech-responsive {
     font-size: 0.875rem;
   }
   
-  .casino-responsive-lg {
+  .tech-responsive-lg {
     font-size: 1.125rem;
   }
 }
 
-/* Loading spinner for casino theme */
-.casino-spinner {
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  border-top: 2px solid var(--casino-gold);
+/* Loading spinner for tech theme */
+.tech-spinner {
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-top: 2px solid var(--tech-blue);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -137,4 +148,30 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Grid background pattern */
+.tech-grid-bg {
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Particle effects */
+.tech-particle {
+  position: absolute;
+  border-radius: 50%;
+  animation: tech-float 3s ease-in-out infinite;
+}
+
+@keyframes tech-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.1);
+    opacity: 1;
+  }
 }

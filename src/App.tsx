@@ -6,7 +6,7 @@ const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="container mx-auto p-4">
         <CountdownTimer tokenContract={REVS_TOKEN_ADDRESS} />
         <div className="mt-6">

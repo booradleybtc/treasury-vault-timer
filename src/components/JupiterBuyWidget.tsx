@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Trophy, Zap, Crown, Star } from 'lucide-react';
+import { Target, Trophy, Zap, Crown, Star, Rocket, TrendingUp, Activity } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
@@ -83,22 +83,22 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
   const solFor100Tokens = calculateSolAmountNeeded(100);
 
   return (
-    <Card className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 border-2 border-yellow-400/30 backdrop-blur-sm">
+    <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mr-4 shadow-lg border-2 border-yellow-300">
-              <Zap className="w-6 h-6 text-black" />
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-4 shadow-lg border border-blue-400/30">
+              <Rocket className="w-6 h-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-yellow-400">PLACE YOUR BET</CardTitle>
-              <p className="text-cyan-400 text-sm">High Stakes Casino Action</p>
+              <CardTitle className="text-2xl font-bold text-white">EXECUTE TRANSACTION</CardTitle>
+              <p className="text-slate-300 text-sm">Protocol Interface</p>
             </div>
           </div>
           {currentPrice && (
             <div className="text-right">
-              <div className="text-cyan-400 text-sm font-bold">Current Price</div>
-              <div className="text-yellow-400 font-bold text-lg">${currentPrice.toFixed(6)}</div>
+              <div className="text-slate-300 text-sm font-bold">Current Price</div>
+              <div className="text-blue-400 font-bold text-lg">${currentPrice.toFixed(6)}</div>
             </div>
           )}
         </div>
@@ -106,52 +106,52 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
       
       <CardContent className="space-y-6">
         {/* Info Block */}
-        <Card className="bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border-2 border-yellow-400/30">
+        <Card className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30">
           <CardContent className="p-4">
             <div className="flex items-center mb-2">
-              <Crown className="w-5 h-5 text-yellow-400 mr-2" />
-              <span className="text-yellow-400 font-bold">CASINO RULES</span>
+              <Activity className="w-5 h-5 text-blue-400 mr-2" />
+              <span className="text-blue-400 font-bold">PROTOCOL PARAMETERS</span>
             </div>
-            <div className="text-cyan-400 text-sm space-y-1">
-              <div>• Minimum bet: 1 REVS to reset timer</div>
-              <div>• High roller bonus: 100+ REVS gets VIP rewards</div>
-              <div>• 10% token tax applies to all bets</div>
+            <div className="text-slate-300 text-sm space-y-1">
+              <div>• Minimum execution: 1 REVS to reset timer</div>
+              <div>• High-frequency execution: 100+ REVS for premium rewards</div>
+              <div>• Protocol tax: 10% applies to all transactions</div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Betting Buttons */}
+        {/* Execution Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Small Bet Button */}
+          {/* Standard Execution Button */}
           <Button
             onClick={() => handleBuyClick(1)}
-            variant="casino"
+            variant="default"
             size="xl"
             disabled={isLoading}
-            className="h-16 text-lg font-bold shadow-2xl hover:shadow-yellow-400/25"
+            className="h-16 text-lg font-bold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 border-0 shadow-2xl hover:shadow-blue-500/25"
           >
             <div className="flex items-center justify-center w-full">
               <Target className="w-6 h-6 mr-3" />
               <div className="text-left">
-                <div className="text-sm">MINIMUM BET</div>
+                <div className="text-sm">STANDARD EXECUTION</div>
                 <div className="text-lg">1 REVS</div>
                 <div className="text-xs opacity-80">{solFor1Token.toFixed(4)} SOL</div>
               </div>
             </div>
           </Button>
 
-          {/* High Roller Button */}
+          {/* High-Frequency Execution Button */}
           <Button
             onClick={() => handleBuyClick(100)}
-            variant="gold"
+            variant="default"
             size="xl"
             disabled={isLoading}
-            className="h-16 text-lg font-bold shadow-2xl hover:shadow-yellow-400/25"
+            className="h-16 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 border-0 shadow-2xl hover:shadow-green-500/25"
           >
             <div className="flex items-center justify-center w-full">
-              <Trophy className="w-6 h-6 mr-3" />
+              <TrendingUp className="w-6 h-6 mr-3" />
               <div className="text-left">
-                <div className="text-sm">HIGH ROLLER</div>
+                <div className="text-sm">HIGH-FREQUENCY</div>
                 <div className="text-lg">100 REVS</div>
                 <div className="text-xs opacity-80">{solFor100Tokens.toFixed(4)} SOL</div>
               </div>
@@ -159,15 +159,15 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
           </Button>
         </div>
 
-        {/* VIP Status */}
-        <Card className="bg-gradient-to-r from-purple-400/20 to-pink-500/20 border-2 border-purple-400/30">
+        {/* Premium Status */}
+        <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
               <Star className="w-5 h-5 text-purple-400 mr-2" />
-              <span className="text-purple-400 font-bold">VIP BONUSES</span>
+              <span className="text-purple-400 font-bold">PREMIUM FEATURES</span>
             </div>
-            <div className="text-cyan-400 text-sm">
-              High rollers get exclusive rewards, higher APY, and VIP airdrop eligibility
+            <div className="text-slate-300 text-sm">
+              High-frequency executors receive exclusive rewards, enhanced APY, and priority distribution access
             </div>
           </CardContent>
         </Card>
@@ -175,9 +175,9 @@ export const JupiterBuyWidget: React.FC<JupiterBuyWidgetProps> = () => {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center">
-            <div className="inline-flex items-center px-4 py-2 bg-yellow-400/20 text-yellow-400 rounded-lg">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400 mr-2"></div>
-              Opening Casino Tables...
+            <div className="inline-flex items-center px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400 mr-2"></div>
+              Initializing Protocol Interface...
             </div>
           </div>
         )}
