@@ -5,11 +5,19 @@ import cors from 'cors';
 import { Connection, PublicKey } from '@solana/web3.js';
 import dotenv from 'dotenv';
 import web3 from '@solana/web3.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const server = createServer(app);
+
+// Serve static files from the dist directory (built frontend)
+app.use(express.static(path.join(__dirname, '../dist')));
 // CORS allowlist using regex to support any Vercel preview for this project
 const isAllowedOrigin = (origin) => {
   if (!origin) return true; // allow non-browser clients
@@ -478,8 +486,13 @@ io.on('connection', (socket) => {
 // Purchase logs for verification
 let purchaseLogs = [];
 
-// Root route
+// Root route - serve the frontend
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
+// API route for backend status
+app.get('/api/status', (req, res) => {
   res.json({ 
     message: 'Treasury Vault Timer Backend',
     status: 'running',
