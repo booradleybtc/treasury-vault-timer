@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Gift, Zap, Activity, Clock, Target, BarChart3 } from 'lucide-react';
+import { Trophy, Gift, Zap, Activity, Clock, Target, BarChart3, Bitcoin } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { pushNotificationService } from '../services/pushNotifications';
 import { Button } from './ui/button';
@@ -10,41 +10,32 @@ interface CountdownTimerProps {
   tokenContract: string;
 }
 
-export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
-  // Socket.IO connection to server
-  const [socket, setSocket] = useState<any>(null);
-
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract }) => {
   const [timeLeft, setTimeLeft] = useState(3600); // 1 hour in seconds
-  const [lastBuyerAddress, setLastBuyerAddress] = useState<string | null>(null);
-  const [lastPurchaseAmount, setLastPurchaseAmount] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(false);
-  const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
+  const [lastBuyerAddress, setLastBuyerAddress] = useState<string | null>(null);
+  const [lastPurchaseAmount, setLastPurchaseAmount] = useState<number | null>(null);
   const [notificationSupported, setNotificationSupported] = useState(false);
-
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   // Connect to server via Socket.IO
   useEffect(() => {
-    // Use environment variable for backend URL, fallback to localhost for development
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-    const newSocket = io(backendUrl);
-    setSocket(newSocket);
+    const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
 
     newSocket.on('connect', () => {
-      console.log('Connected to server');
       setIsConnected(true);
-      setDebugInfo(prev => [...prev, 'Connected to server']);
+      setDebugInfo(prev => [...prev, '✅ Connected to backend server']);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
       setIsConnected(false);
-      setDebugInfo(prev => [...prev, 'Disconnected from server']);
+      setIsMonitoring(false);
+      setDebugInfo(prev => [...prev, '❌ Disconnected from backend server']);
     });
 
-    newSocket.on('timerState', (data) => {
-      console.log('Received timer state:', data);
+    newSocket.on('timerUpdate', (data: { timeLeft: number; isMonitoring: boolean; lastBuyerAddress: string | null; lastPurchaseAmount: number | null; }) => {
       setTimeLeft(data.timeLeft);
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
@@ -52,21 +43,11 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
       setDebugInfo(prev => [...prev, `Timer state received: ${data.timeLeft}s remaining`]);
     });
 
-    newSocket.on('timerUpdate', (data) => {
-      setTimeLeft(data.timeLeft);
-    });
-
-    newSocket.on('timerReset', (data) => {
-      console.log('Timer reset:', data);
-      setTimeLeft(data.timeLeft);
+    newSocket.on('timerReset', (data: { txSignature: string; lastBuyerAddress: string; lastPurchaseAmount: number; }) => {
+      setTimeLeft(3600); // Reset to 1 hour
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
-      
-      // Add detailed bid information to vault log
-      const buyerShort = data.lastBuyerAddress ? 
-        `${data.lastBuyerAddress.slice(0, 8)}...${data.lastBuyerAddress.slice(-8)}` : 
-        'Unknown';
-      
+      const buyerShort = data.lastBuyerAddress.length > 12 ? `${data.lastBuyerAddress.slice(0, 6)}...${data.lastBuyerAddress.slice(-6)}` : data.lastBuyerAddress;
       setDebugInfo(prev => [
         ...prev, 
         `⚡ BID PLACED - VAULT RESET`,
@@ -81,154 +62,144 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
       setDebugInfo(prev => [...prev, '⏰ Timer expired']);
     });
 
-    newSocket.on('monitoringState', (data) => {
-      setIsMonitoring(data.isMonitoring);
-      setDebugInfo(prev => [...prev, `Monitoring ${data.isMonitoring ? 'started' : 'stopped'}`]);
+    newSocket.on('debugLog', (message: string) => {
+      setDebugInfo(prev => [...prev, message]);
     });
 
     return () => {
-      newSocket.close();
+      newSocket.disconnect();
     };
   }, []);
 
-  // Initialize push notifications
+  // Countdown logic
   useEffect(() => {
-    const initNotifications = async () => {
-      try {
-        console.log('Initializing push notifications...');
-        const supported = await pushNotificationService.initialize();
-        console.log('Push notifications supported:', supported);
-        setNotificationSupported(supported);
-        
-        if (supported) {
-          const isSubscribed = await pushNotificationService.isSubscribed();
-          console.log('Already subscribed:', isSubscribed);
-          setIsNotificationEnabled(isSubscribed);
-        }
-      } catch (error) {
-        console.error('Error initializing notifications:', error);
-        setNotificationSupported(false);
-      }
-    };
-
-    initNotifications();
-  }, []);
-
-  // Handle push notification subscription
-  const handleNotificationToggle = async () => {
-    if (!notificationSupported) return;
-
-    if (isNotificationEnabled) {
-      await pushNotificationService.unsubscribe();
-      setIsNotificationEnabled(false);
-    } else {
-      const permissionGranted = await pushNotificationService.requestPermission();
-      if (permissionGranted) {
-        const subscription = await pushNotificationService.subscribe();
-        if (subscription) {
-          setIsNotificationEnabled(true);
-          // Send subscription to backend
-          socket?.emit('subscribeNotifications', subscription);
-        }
-      }
+    let timer: NodeJS.Timeout;
+    if (timeLeft > 0 && isMonitoring) {
+      timer = setInterval(() => {
+        setTimeLeft(prevTime => prevTime - 1);
+      }, 1000);
     }
-  };
+    return () => clearInterval(timer);
+  }, [timeLeft, isMonitoring]);
 
-  // Check for notification triggers
+  // Push notification logic
   useEffect(() => {
-    if (isNotificationEnabled && timeLeft <= 3480 && timeLeft > 0) { // Under 58 minutes (for testing)
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
-      
-      if (minutes === 58 && seconds === 0) { // 58 minutes remaining (for quick testing)
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification('Treasury Vault Timer', {
-              body: 'Timer has 58 minutes remaining! Test notification!',
-              icon: '/icon-192x192.png',
-              badge: '/badge-72x72.png',
-              requireInteraction: true
-            });
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setNotificationSupported(true);
+      const sub = pushNotificationService.getSubscription();
+      setIsNotificationEnabled(!!sub);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isNotificationEnabled && timeLeft === 58 * 60) { // 58 minutes remaining
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.showNotification('MicroScratchety Protocol', {
+            body: 'Timer has 58 minutes remaining! Test notification!',
+            icon: '/icon-192x192.png',
+            badge: '/badge-72x72.png',
           });
-        }
+        });
       }
     }
   }, [timeLeft, isNotificationEnabled]);
 
-  // Format time helper function
+  const handleNotificationToggle = async () => {
+    if (isNotificationEnabled) {
+      await pushNotificationService.unsubscribe();
+      setIsNotificationEnabled(false);
+      setDebugInfo(prev => [...prev, '🔕 Notifications disabled']);
+    } else {
+      const success = await pushNotificationService.subscribe();
+      setIsNotificationEnabled(success);
+      if (success) {
+        setDebugInfo(prev => [...prev, '🔔 Notifications enabled']);
+      } else {
+        setDebugInfo(prev => [...prev, '⚠️ Failed to enable notifications']);
+      }
+    }
+  };
+
   const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   const progress = ((3600 - timeLeft) / 3600) * 100;
 
   // Demo data for treasury features
   const demoData = {
-    treasuryValue: 125000, // USD
-    potentialWinnings: 45000, // USD
-    bidWinRatio: "3.2:1",
+    treasuryValue: 5.293, // Bitcoin
+    potentialWinnings: 48384283234, // USD
+    bidWinRatio: "1:48,948",
     tokenPrice: 0.0007128, // USD
-    nextAirdrop: "2024-01-15T18:00:00Z",
-    nextAirdropAmount: 0.85, // BTC
-    eligibleWallets: 1247,
-    totalSatsAwarded: 2.45, // BTC
+    nextAirdrop: "2024-07-01T00:00:00Z",
+    nextAirdropAmount: 0.05, // BTC
+    eligibleWallets: 12345,
+    totalSatsAwarded: 1.25, // BTC
     pastAirdrops: [
-      { date: "2024-01-08", amount: 0.75, participants: 892 },
-      { date: "2024-01-01", amount: 0.68, participants: 756 },
-      { date: "2023-12-25", amount: 0.82, participants: 1034 }
+      { date: "2024-06-01", amount: 0.02 },
+      { date: "2024-05-01", amount: 0.03 },
     ],
-    apy: 156.8, // %
-    timerAlive: "2h 34m 12s",
-    endDate: "2024-02-15T00:00:00Z"
+    apy: 83,
+    timerAlive: "12h 34m",
+    endDate: "2025-12-31T00:00:00Z"
   };
 
   const getTimeUntilEnd = () => {
-    const endDate = new Date(demoData.endDate);
     const now = new Date();
-    const diff = endDate.getTime() - now.getTime();
-    
-    if (diff <= 0) return '00:00:00';
-    
+    const end = new Date(demoData.endDate);
+    const diff = end.getTime() - now.getTime();
+
+    if (diff <= 0) {
+      return "Ended";
+    }
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     return `${days}d ${hours}h ${minutes}m`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 relative overflow-hidden">
-      {/* Animated background grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.1)_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse"></div>
-      
-      {/* Floating particles */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
-        <div className="absolute top-40 right-40 w-1 h-1 bg-cyan-400 rounded-full animate-ping delay-1000"></div>
-        <div className="absolute bottom-40 left-1/3 w-1.5 h-1.5 bg-indigo-400 rounded-full animate-ping delay-2000"></div>
-        <div className="absolute bottom-20 right-1/4 w-1 h-1 bg-purple-400 rounded-full animate-ping delay-1500"></div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Pixel Jungle Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-green-900 via-green-800 to-blue-900">
+        {/* Pixel art pattern overlay */}
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:4px_4px]"></div>
+        
+        {/* Misty atmosphere */}
+        <div className="absolute inset-0 bg-gradient-to-t from-blue-900/30 via-transparent to-green-900/20"></div>
+        
+        {/* Floating particles */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-1 h-1 bg-green-400 rounded-full animate-ping"></div>
+          <div className="absolute top-40 right-40 w-1 h-1 bg-blue-400 rounded-full animate-ping delay-1000"></div>
+          <div className="absolute bottom-40 left-1/3 w-1 h-1 bg-yellow-400 rounded-full animate-ping delay-2000"></div>
+        </div>
       </div>
 
-      {/* Header */}
-      <div className="max-w-7xl mx-auto relative z-10">
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto p-4">
+        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center">
             <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mr-6 shadow-2xl border border-blue-400/30">
-                <Zap className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mr-6 shadow-2xl border border-orange-400/30">
+                <Bitcoin className="w-8 h-8 text-white" />
               </div>
               <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
                 <div className="w-2 h-2 bg-white rounded-full"></div>
               </div>
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold text-white">
                 MicroScratchety
               </h1>
-              <p className="text-slate-300 text-lg font-medium">Next-Gen Treasury Protocol</p>
+              <p className="text-orange-300 text-lg font-medium">Treasury Vault Protocol</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -237,7 +208,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
                 onClick={handleNotificationToggle}
                 variant={isNotificationEnabled ? "default" : "outline"}
                 size="lg"
-                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 border-0"
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 border-0"
               >
                 {isNotificationEnabled ? '🔔 Active' : '🔕 Inactive'}
               </Button>
@@ -247,53 +218,60 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
                 ? 'bg-green-500/20 text-green-400 border-green-400' 
                 : 'bg-red-500/20 text-red-400 border-red-400'
             }`}>
-              {isConnected ? '● SYSTEM ONLINE' : '● SYSTEM OFFLINE'}
+              {isConnected ? '● VAULT ONLINE' : '● VAULT OFFLINE'}
             </div>
           </div>
         </div>
 
         {/* Main Layout */}
         <div className="grid grid-cols-12 gap-6 h-[calc(100vh-140px)]">
-          {/* Main Timer - Large Card */}
+          {/* Main Vault Card - Large */}
           <div className="col-span-8">
-            <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50 h-full">
-              <CardHeader className="text-center pb-4">
+            <Card className="bg-black/40 backdrop-blur-xl border-orange-500/30 h-full relative overflow-hidden">
+              {/* Vault Door Background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-800/50 to-orange-900/30"></div>
+              
+              <CardHeader className="text-center pb-4 relative z-10">
                 <div className="flex items-center justify-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center mr-4">
                     <Clock className="w-6 h-6 text-white" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-white">QUANTUM TIMER</CardTitle>
+                  <CardTitle className="text-2xl font-bold text-white">TREASURY VAULT TIMER</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="text-center h-full flex flex-col justify-center">
+              
+              <CardContent className="text-center h-full flex flex-col justify-center relative z-10">
                 {/* Main Timer Display */}
-                <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-3xl p-12 mb-8 border border-slate-600/50 shadow-2xl">
-                  <div className="text-8xl font-mono font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-4 tracking-wider">
+                <div className="bg-gradient-to-r from-black/50 to-gray-800/50 rounded-3xl p-12 mb-8 border border-orange-500/30 shadow-2xl">
+                  <div className="text-8xl font-mono font-bold text-orange-400 mb-4 tracking-wider">
                     {formatTime(timeLeft)}
                   </div>
-                  <div className="text-slate-300 text-xl font-medium">Protocol Countdown</div>
+                  <div className="text-orange-300 text-xl font-medium">Vault Countdown</div>
                 </div>
 
                 {/* Progress Bar */}
                 <div className="mb-6">
-                  <Progress value={progress} className="h-3 bg-slate-700 border border-slate-600" />
-                  <div className="text-center mt-2 text-slate-300 font-semibold">
+                  <Progress value={progress} className="h-3 bg-gray-700 border border-orange-500/30" />
+                  <div className="text-center mt-2 text-orange-300 font-semibold">
                     {Math.round(progress)}% Complete
                   </div>
                 </div>
 
-                {/* Timer Stats */}
+                {/* Treasury Stats */}
                 <div className="grid grid-cols-2 gap-6">
-                  <Card className="bg-slate-700/50 border-slate-600/50">
+                  <Card className="bg-black/40 border-orange-500/30">
                     <CardContent className="p-4 text-center">
-                      <div className="text-slate-400 text-sm font-bold mb-1">UPTIME</div>
-                      <div className="text-blue-400 font-bold text-xl">{demoData.timerAlive}</div>
+                      <div className="text-orange-300 text-sm font-bold mb-1">TREASURY VAULT</div>
+                      <div className="flex items-center justify-center">
+                        <Bitcoin className="w-5 h-5 text-orange-400 mr-2" />
+                        <span className="text-orange-400 font-bold text-xl">{demoData.treasuryValue}</span>
+                      </div>
                     </CardContent>
                   </Card>
-                  <Card className="bg-slate-700/50 border-slate-600/50">
+                  <Card className="bg-black/40 border-orange-500/30">
                     <CardContent className="p-4 text-center">
-                      <div className="text-slate-400 text-sm font-bold mb-1">EXPIRES</div>
-                      <div className="text-cyan-400 font-bold text-xl">{getTimeUntilEnd()}</div>
+                      <div className="text-orange-300 text-sm font-bold mb-1">SCRATCHER POTENTIAL</div>
+                      <div className="text-orange-400 font-bold text-xl">${demoData.potentialWinnings.toLocaleString()}</div>
                     </CardContent>
                   </Card>
                 </div>
@@ -303,41 +281,41 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
 
           {/* Treasury Stats - Tall Card */}
           <div className="col-span-4">
-            <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50 h-full">
+            <Card className="bg-black/40 backdrop-blur-xl border-orange-500/30 h-full">
               <CardHeader>
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mr-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3">
                     <Trophy className="w-5 h-5 text-white" />
                   </div>
-                  <CardTitle className="text-xl font-bold text-white">TREASURY ANALYTICS</CardTitle>
+                  <CardTitle className="text-xl font-bold text-white">VAULT ANALYTICS</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Card className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30">
+                <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/30">
                   <CardContent className="p-4">
-                    <div className="text-slate-300 text-sm font-bold mb-1">TOTAL VALUE LOCKED</div>
-                    <div className="text-blue-400 font-bold text-2xl">${demoData.treasuryValue.toLocaleString()}</div>
+                    <div className="text-orange-300 text-sm font-bold mb-1">END GAME</div>
+                    <div className="text-orange-400 font-bold text-2xl">{getTimeUntilEnd()}</div>
                   </CardContent>
                 </Card>
                 
                 <Card className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30">
                   <CardContent className="p-4">
-                    <div className="text-slate-300 text-sm font-bold mb-1">POTENTIAL YIELD</div>
-                    <div className="text-green-400 font-bold text-2xl">${demoData.potentialWinnings.toLocaleString()}</div>
+                    <div className="text-green-300 text-sm font-bold mb-1">HUNT MULTIPLIER</div>
+                    <div className="text-green-400 font-bold text-2xl">{demoData.bidWinRatio}</div>
                   </CardContent>
                 </Card>
                 
                 <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30">
                   <CardContent className="p-4">
-                    <div className="text-slate-300 text-sm font-bold mb-1">RISK RATIO</div>
-                    <div className="text-purple-400 font-bold text-2xl">{demoData.bidWinRatio}</div>
+                    <div className="text-purple-300 text-sm font-bold mb-1">FARM APY</div>
+                    <div className="text-purple-400 font-bold text-2xl">{demoData.apy}%</div>
                   </CardContent>
                 </Card>
                 
-                <Card className="bg-gradient-to-r from-indigo-500/20 to-blue-500/20 border-indigo-500/30">
+                <Card className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30">
                   <CardContent className="p-4">
-                    <div className="text-slate-300 text-sm font-bold mb-1">TOKEN PRICE</div>
-                    <div className="text-indigo-400 font-bold text-xl">${demoData.tokenPrice.toFixed(6)}</div>
+                    <div className="text-blue-300 text-sm font-bold mb-1">TOKEN PRICE</div>
+                    <div className="text-blue-400 font-bold text-xl">${demoData.tokenPrice.toFixed(6)}</div>
                   </CardContent>
                 </Card>
               </CardContent>
@@ -346,17 +324,17 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
 
           {/* Last Bidder - Medium Card */}
           <div className="col-span-4">
-            <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
+            <Card className="bg-black/40 backdrop-blur-xl border-orange-500/30">
               <CardHeader>
                 <div className="flex items-center">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mr-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3">
                     <Target className="w-4 h-4 text-white" />
                   </div>
-                  <CardTitle className="text-lg font-bold text-white">LAST EXECUTOR</CardTitle>
+                  <CardTitle className="text-lg font-bold text-white">LAST BIDDER</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <Card className="bg-gradient-to-r from-slate-700/50 to-slate-600/50 border-slate-600/50">
+                <Card className="bg-gradient-to-r from-black/50 to-gray-800/50 border-orange-500/30">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-white font-bold font-mono">
@@ -370,12 +348,12 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
                         href={lastBuyerAddress ? `https://solscan.io/account/${lastBuyerAddress}` : '#'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-cyan-400 text-sm"
+                        className="text-orange-400 hover:text-red-400 text-sm"
                       >
                         ↗
                       </a>
                     </div>
-                    <div className="text-slate-300 text-sm font-mono">
+                    <div className="text-orange-300 text-sm font-mono">
                       {lastPurchaseAmount ? `${lastPurchaseAmount.toFixed(6)} REVS` : 'N/A'}
                     </div>
                   </CardContent>
@@ -386,21 +364,21 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
 
           {/* APY Calculator - Medium Card */}
           <div className="col-span-4">
-            <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
+            <Card className="bg-black/40 backdrop-blur-xl border-orange-500/30">
               <CardHeader>
                 <div className="flex items-center">
                   <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mr-3">
                     <BarChart3 className="w-4 h-4 text-white" />
                   </div>
-                  <CardTitle className="text-lg font-bold text-white">YIELD METRICS</CardTitle>
+                  <CardTitle className="text-lg font-bold text-white">FARM YIELD</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <Card className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30 text-center">
                   <CardContent className="p-6">
-                    <div className="text-slate-300 text-sm mb-2">Current APY</div>
+                    <div className="text-green-300 text-sm mb-2">Current APY</div>
                     <div className="text-green-400 font-bold text-4xl mb-2">{demoData.apy}%</div>
-                    <div className="text-slate-400 text-xs">Protocol performance</div>
+                    <div className="text-green-400 text-xs">Protocol performance</div>
                   </CardContent>
                 </Card>
               </CardContent>
@@ -409,32 +387,32 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
 
           {/* Airdrop Info - Medium Card */}
           <div className="col-span-4">
-            <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
+            <Card className="bg-black/40 backdrop-blur-xl border-orange-500/30">
               <CardHeader>
                 <div className="flex items-center">
                   <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mr-3">
                     <Gift className="w-4 h-4 text-white" />
                   </div>
-                  <CardTitle className="text-lg font-bold text-white">DISTRIBUTION</CardTitle>
+                  <CardTitle className="text-lg font-bold text-white">SCRATCH REWARDS</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30">
                   <CardContent className="p-3">
-                    <div className="text-slate-300 text-xs">Next Distribution</div>
+                    <div className="text-purple-300 text-xs">Next Distribution</div>
                     <div className="text-purple-400 font-bold">{new Date(demoData.nextAirdrop).toLocaleDateString()}</div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/30">
+                  <CardContent className="p-3">
+                    <div className="text-orange-300 text-xs">Amount</div>
+                    <div className="text-orange-400 font-bold">{demoData.nextAirdropAmount} BTC</div>
                   </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30">
                   <CardContent className="p-3">
-                    <div className="text-slate-300 text-xs">Amount</div>
-                    <div className="text-blue-400 font-bold">{demoData.nextAirdropAmount} BTC</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border-indigo-500/30">
-                  <CardContent className="p-3">
-                    <div className="text-slate-300 text-xs">Eligible Wallets</div>
-                    <div className="text-indigo-400 font-bold">{demoData.eligibleWallets.toLocaleString()}</div>
+                    <div className="text-blue-300 text-xs">Eligible Wallets</div>
+                    <div className="text-blue-400 font-bold">{demoData.eligibleWallets.toLocaleString()}</div>
                   </CardContent>
                 </Card>
               </CardContent>
@@ -443,14 +421,14 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
 
           {/* Activity Log - Wide Card */}
           <div className="col-span-8">
-            <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
+            <Card className="bg-black/40 backdrop-blur-xl border-orange-500/30">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mr-3">
+                    <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3">
                       <Activity className="w-4 h-4 text-white" />
                     </div>
-                    <CardTitle className="text-lg font-bold text-white">SYSTEM LOGS</CardTitle>
+                    <CardTitle className="text-lg font-bold text-white">VAULT ACCESS LOG</CardTitle>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-bold border-2 ${
                     isMonitoring 
@@ -462,12 +440,12 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="bg-slate-900/50 rounded-xl p-4 h-32 overflow-y-auto border border-slate-600/50">
+                <div className="bg-black/50 rounded-xl p-4 h-32 overflow-y-auto border border-orange-500/30">
                   {debugInfo.length === 0 ? (
-                    <div className="text-slate-400 text-sm text-center">Awaiting transactions...</div>
+                    <div className="text-orange-300 text-sm text-center">Awaiting vault transactions...</div>
                   ) : (
                     debugInfo.slice(-6).map((info, index) => (
-                      <div key={index} className="text-sm text-slate-300 mb-2 font-mono">
+                      <div key={index} className="text-sm text-orange-300 mb-2 font-mono">
                         {info}
                       </div>
                     ))

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: treasury-vault-timer-frontend
+    env: static
+    plan: free
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_BACKEND_URL
+        value: https://treasury-vault-timer-backend.onrender.com

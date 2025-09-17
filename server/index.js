@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { Connection, PublicKey } from '@solana/web3.js';
 import dotenv from 'dotenv';
+import web3 from '@solana/web3.js';
 
 dotenv.config();
 
@@ -23,12 +24,8 @@ const isAllowedOrigin = (origin) => {
 
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'));
-    },
-    methods: ["GET", "POST"],
-    credentials: true
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    methods: ["GET", "POST"]
   }
 });
 
@@ -48,8 +45,8 @@ const connection = new Connection(`https://rpc.helius.xyz/?api-key=${HELIUS_API_
   wsEndpoint: `wss://rpc.helius.xyz/?api-key=${HELIUS_API_KEY}`
 });
 
-// REVS token address (Token-2022 revshare token for testing)
-const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
+// BONK token address (high activity meme token)
+const REVS_TOKEN_ADDRESS = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
 
 // Global timer state
 let globalTimer = {
@@ -70,6 +67,12 @@ let monitoringState = {
   isProductionMode: process.env.NODE_ENV === 'production'
 };
 
+// Track processed signatures to avoid duplicates
+const processedSignatures = new Set();
+
+// Push notification subscriptions
+let pushSubscriptions = [];
+
 // Admin controls - only allow monitoring control in development
 const isAdmin = (socket) => {
   // In production, only allow monitoring to be started once
@@ -87,310 +90,241 @@ const knownDEXPrograms = [
   'PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY',   // Phoenix
 ];
 
-// Function to check if transaction is an actual PURCHASE (not transfer/airdrop/burn)
-const checkIfActualPurchase = (transaction) => {
+// LP Pool and Vault Authority Configuration
+const lpPoolWallets = [
+  // Add your future token LP pool addresses here
+  // 'YOUR_FUTURE_TOKEN_LP_POOL_ADDRESS'
+];
+
+const raydiumVaultAuthorities = [
+  'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // Current REVS Raydium Vault Authority
+  // Add your future token vault authorities here
+  // 'YOUR_FUTURE_TOKEN_VAULT_AUTHORITY'
+];
+
+// Excluded wallet patterns (burns, distributor, dev wallets)
+const excludedWalletPatterns = [
+  '11111111111111111111111111111111', // System Program
+  'Burn111111111111111111111111111111111111111', // Burn wallet
+  '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // REVS distributor/dev wallet
+  // Add your future token excluded wallets here
+  // 'YOUR_FUTURE_TOKEN_DISTRIBUTOR_WALLET'
+];
+
+// Enhanced function to check if transaction is a legitimate purchase
+function checkIfActualPurchase(transaction) {
   try {
-    const txSignature = transaction.transaction.signatures[0];
-    const preBalances = transaction.meta.preBalances || [];
-    const postBalances = transaction.meta.postBalances || [];
-    const accountKeys = transaction.transaction.message.accountKeys || [];
-    const instructions = transaction.transaction.message.instructions || [];
-    const preTokenBalances = transaction.meta.preTokenBalances || [];
-    const postTokenBalances = transaction.meta.postTokenBalances || [];
-
-    console.log(`🔍 Analyzing transaction: ${txSignature.slice(0, 8)}...`);
-
-    // Check for BURN transactions (should be excluded)
-    const tokenPreBalances = preTokenBalances.filter(balance => balance.mint === REVS_TOKEN_ADDRESS);
-    const tokenPostBalances = postTokenBalances.filter(balance => balance.mint === REVS_TOKEN_ADDRESS);
+    console.log('🔍 Analyzing transaction for legitimate purchase...');
     
-    // If there are pre-balances but no post-balances for our token, it's likely a burn
-    if (tokenPreBalances.length > 0 && tokenPostBalances.length === 0) {
-      console.log(`🔥 BURN detected - EXCLUDING from timer reset`);
-      console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+    // Check if transaction involves our token
+    const tokenBalances = transaction.meta.preTokenBalances || [];
+    const postTokenBalances = transaction.meta.postTokenBalances || [];
+    
+    if (!tokenBalances.length || !postTokenBalances.length) {
+      console.log('❌ No token balances found in transaction');
       return false;
     }
 
-    // Check for burn patterns in transaction instructions
-    for (const instruction of instructions) {
-      const programId = accountKeys[instruction.programIdIndex];
-      if (programId === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') {
-        // Check if this is a burn instruction
-        if (instruction.data && instruction.data.length > 0) {
-          // Burn instruction typically has specific data pattern
-          const data = Buffer.from(instruction.data, 'base64');
-          if (data.length >= 1 && data[0] === 8) { // Burn instruction code
-            console.log(`🔥 Token burn instruction detected - EXCLUDING from timer reset`);
-            console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-            return false;
-          }
-        }
-      }
+    // Find our token in the balances
+    const ourTokenPre = tokenBalances.find(balance => 
+      balance.mint === REVS_TOKEN_ADDRESS
+    );
+    const ourTokenPost = postTokenBalances.find(balance => 
+      balance.mint === REVS_TOKEN_ADDRESS
+    );
+
+    if (!ourTokenPre || !ourTokenPost) {
+      console.log('❌ Our token not found in transaction balances');
+      return false;
     }
 
-    // Check if distributor/dev wallets are involved in token balance changes
-    const excludedWallets = [
-      '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // REVS Distributor wallet
-    ];
+    // Check for burns (decreasing balance)
+    const preAmount = parseInt(ourTokenPre.uiTokenAmount.amount);
+    const postAmount = parseInt(ourTokenPost.uiTokenAmount.amount);
+    const decimals = ourTokenPre.uiTokenAmount.decimals;
     
-    for (const balance of [...tokenPreBalances, ...tokenPostBalances]) {
-      if (excludedWallets.includes(balance.owner)) {
-        console.log(`🚫 Distributor/Dev wallet involved in transaction: ${balance.owner} - EXCLUDING from timer reset`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return false;
-      }
+    const actualPreAmount = preAmount / Math.pow(10, decimals);
+    const actualPostAmount = postAmount / Math.pow(10, decimals);
+    
+    console.log(`💰 Token amounts - Pre: ${actualPreAmount}, Post: ${actualPostAmount}`);
+
+    if (actualPostAmount < actualPreAmount) {
+      console.log('❌ Transaction is a burn/sell (decreasing balance)');
+      return false;
     }
 
-    // Check for burn wallet patterns (common burn addresses)
-    const burnWalletPatterns = [
-      '11111111111111111111111111111111', // System Program (often used for burns)
-      'Burn111111111111111111111111111111111111111', // Common burn address
-    ];
-    
-    // Check for distributor/dev wallet patterns (should be excluded)
-    const excludedWalletPatterns = [
-      '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // REVS Distributor wallet
-      // Add other known distributor/dev wallets here
-    ];
-    
-    // LP pool wallets - we want to exclude SELLS (users sending REVS to LP) but allow BUYS (users receiving REVS from LP)
-    const lpPoolWallets = [
-      '8pN9qCiZg3KPg79R5cL4AF9xXVTWoJPxaVWf5ormvCwa', // Main REVS/SOL pool
-      // 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // This is actually a Raydium vault authority, not LP pool
-      // Comment out other pools for testing
-      // 'H3pnJpddNdcuuGnmVGhhWNeop8zgPwgnzKg9UPRxBKke', // REVS/RAY pool
-      // 'DkQroLagNZhGC82aGkpdymZiv2UmSfsoppNJ6Ru6amun', // REVS/JUP pool
-    ];
-    
-    // Raydium vault authority addresses (these are the actual addresses that appear in transfers)
-    const raydiumVaultAuthorities = [
-      '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8', // Raydium Vault Authority #1
-      '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1', // Raydium Vault Authority #2
-      '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM', // Raydium Vault Authority #3
-      'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // Raydium Vault Authority #4 (was incorrectly in lpPoolWallets)
-    ];
-    
-    // Check if this is a SELL transaction (user sending REVS to LP pool)
-    for (const balance of tokenPreBalances) {
-      if (lpPoolWallets.includes(balance.owner)) {
-        // User is sending REVS to LP pool (SELL) - exclude this
-        console.log(`📉 SELL detected - user sending REVS to LP pool: ${balance.owner} - EXCLUDING from timer reset`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return false;
-      }
+    // Check if any excluded wallets are involved
+    const allAccounts = transaction.transaction.message.accountKeys;
+    const excludedWalletFound = allAccounts.some(account => 
+      excludedWalletPatterns.includes(account.pubkey)
+    );
+
+    if (excludedWalletFound) {
+      console.log('❌ Excluded wallet pattern found in transaction');
+      return false;
     }
-    
-    // Check for BUYS from Raydium vault authorities (users receiving REVS from LP)
-    // When user buys, Raydium vault authority appears in tokenPreBalances as the source
-    for (const balance of tokenPreBalances) {
-      if (raydiumVaultAuthorities.includes(balance.owner)) {
-        // Check if this is a BUY (user receiving tokens from vault)
-        // Look for a corresponding post balance for a user wallet
-        const userReceivedTokens = tokenPostBalances.some(postBalance => 
-          !raydiumVaultAuthorities.includes(postBalance.owner) && 
-          !excludedWalletPatterns.includes(postBalance.owner) &&
-          postBalance.owner !== balance.owner
-        );
-        
-        if (userReceivedTokens) {
-          console.log(`✅ BUY detected - user receiving REVS from Raydium vault: ${balance.owner} - TRIGGERING timer reset`);
-          console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
+
+    // CRITICAL: Check if transaction involves our approved LP pool/vault authority
+    const involvesApprovedLP = allAccounts.some(account => 
+      raydiumVaultAuthorities.includes(account.pubkey)
+    );
+
+    if (!involvesApprovedLP) {
+      console.log('❌ Transaction does not involve our approved LP pool/vault authority');
+      console.log('🔍 Available accounts:', allAccounts.map(acc => acc.pubkey));
+      console.log('✅ Approved authorities:', raydiumVaultAuthorities);
+      return false;
+    }
+
+    // Check if this is a BUY (user receives tokens from vault authority)
+    const isBuyFromVault = ourTokenPre.owner === raydiumVaultAuthorities[0] && 
+                          ourTokenPost.owner !== raydiumVaultAuthorities[0];
+
+    // Check if this is a SELL (user sends tokens to vault authority)
+    const isSellToVault = ourTokenPre.owner !== raydiumVaultAuthorities[0] && 
+                         ourTokenPost.owner === raydiumVaultAuthorities[0];
+
+    console.log(`🔍 Transaction type analysis:`);
+    console.log(`   Pre owner: ${ourTokenPre.owner}`);
+    console.log(`   Post owner: ${ourTokenPost.owner}`);
+    console.log(`   Vault authority: ${raydiumVaultAuthorities[0]}`);
+    console.log(`   Is buy from vault: ${isBuyFromVault}`);
+    console.log(`   Is sell to vault: ${isSellToVault}`);
+
+    if (isSellToVault) {
+      console.log('❌ Transaction is a sell to LP (not a buy)');
+      return false;
+    }
+
+    if (!isBuyFromVault) {
+      console.log('❌ Transaction is not a buy from our approved LP');
+      return false;
+    }
+
+    // Additional validation: Check instruction data for burn operations
+    const instructions = transaction.transaction.message.instructions;
+    const isBurnInstruction = instructions.some(instruction => {
+      if (instruction.programId === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') {
+        const data = instruction.data;
+        if (data && data[0] === 8) { // Burn instruction
+          console.log('❌ Burn instruction detected');
           return true;
         }
       }
+      return false;
+    });
+
+    if (isBurnInstruction) {
+      return false;
+    }
+
+    // Calculate the actual purchase amount
+    const purchaseAmount = actualPostAmount - actualPreAmount;
+    
+    // Set minimum purchase amount (e.g., 1000 BONK tokens)
+    const MINIMUM_PURCHASE_AMOUNT = 1000;
+    
+    if (purchaseAmount <= 0) {
+      console.log('❌ No positive purchase amount detected');
+      return false;
     }
     
-    // Check for SELLS to Raydium vault authorities (users sending REVS to LP)
-    for (const balance of tokenPostBalances) {
-      if (raydiumVaultAuthorities.includes(balance.owner)) {
-        // User is sending REVS to Raydium vault (SELL) - exclude this
-        console.log(`📉 SELL detected - user sending REVS to Raydium vault: ${balance.owner} - EXCLUDING from timer reset`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return false;
-      }
+    if (purchaseAmount < MINIMUM_PURCHASE_AMOUNT) {
+      console.log(`❌ Purchase amount ${purchaseAmount} below minimum threshold ${MINIMUM_PURCHASE_AMOUNT}`);
+      return false;
     }
 
-    for (const accountKey of accountKeys) {
-      if (burnWalletPatterns.includes(accountKey)) {
-        console.log(`🔥 Burn wallet detected: ${accountKey} - EXCLUDING from timer reset`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return false;
-      }
-      
-      if (excludedWalletPatterns.includes(accountKey)) {
-        console.log(`🚫 Distributor/Dev wallet detected: ${accountKey} - EXCLUDING from timer reset`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return false;
-      }
-    }
+    console.log(`✅ LEGITIMATE PURCHASE DETECTED!`);
+    console.log(`   Amount: ${purchaseAmount} BONK`);
+    console.log(`   Buyer: ${ourTokenPost.owner}`);
+    console.log(`   LP Pool: ${raydiumVaultAuthorities[0]}`);
+    
+    return {
+      isValid: true,
+      amount: purchaseAmount,
+      buyer: ourTokenPost.owner
+    };
 
-    // Check if transaction involves SOL payment (buyer spent SOL)
-    for (let i = 0; i < postBalances.length; i++) {
-      const preBalance = preBalances[i] || 0;
-      const postBalance = postBalances[i] || 0;
-      const solDecrease = preBalance - postBalance;
-
-      // If someone spent SOL (more than just transaction fee), it's likely a purchase
-      if (solDecrease > 0.01) { // More than 0.01 SOL (accounting for fees)
-        console.log(`✅ SOL spent: ${solDecrease / 1e9} SOL - ACTUAL PURCHASE`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return true;
-      }
-    }
-
-    // Check for DEX program interactions (where purchases happen)
-    for (const programId of knownDEXPrograms) {
-      if (accountKeys.includes(programId)) {
-        console.log(`✅ DEX program detected: ${programId} - ACTUAL PURCHASE`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return true;
-      }
-    }
-
-    // Check for swap instructions in transaction
-    for (const instruction of instructions) {
-      const programId = accountKeys[instruction.programIdIndex];
-      if (knownDEXPrograms.includes(programId)) {
-        console.log(`✅ Swap instruction detected - ACTUAL PURCHASE`);
-        console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-        return true;
-      }
-    }
-
-    console.log(`❌ No purchase indicators found - likely a TRANSFER/AIRDROP/BURN`);
-    console.log(`🔗 Transaction: https://solscan.io/tx/${txSignature}`);
-    return false;
-  } catch (err) {
-    console.warn('Error checking if purchase:', err);
-    // If we can't determine, assume it's NOT a purchase to be safe
+  } catch (error) {
+    console.error('❌ Error analyzing transaction:', error);
     return false;
   }
-};
+}
 
 // Monitor purchases with improved detection
 const monitorPurchases = async () => {
   try {
-    const tokenPublicKey = new PublicKey(REVS_TOKEN_ADDRESS);
-
-    // Get recent transactions for the token
+    console.log('🔍 Monitoring for legitimate REVS purchases...');
+    
     const signatures = await connection.getSignaturesForAddress(
-      tokenPublicKey,
-      { limit: 50 }
+      new web3.PublicKey(REVS_TOKEN_ADDRESS),
+      { limit: 10 }
     );
 
-    console.log(`Found ${signatures.length} recent transactions for REVS`);
-
-    // Filter out already checked transactions
-    let newTransactions = signatures;
-    if (globalTimer.lastCheckedSignature) {
-      const lastCheckedIndex = signatures.findIndex(sig => sig.signature === globalTimer.lastCheckedSignature);
-      if (lastCheckedIndex !== -1) {
-        newTransactions = signatures.slice(0, lastCheckedIndex);
+    for (const sigInfo of signatures) {
+      const signature = sigInfo.signature;
+      
+      // Skip if we've already processed this transaction
+      if (processedSignatures.has(signature)) {
+        continue;
       }
-    }
 
-    console.log(`Checking ${newTransactions.length} new transactions`);
-
-    // Update the last checked signature
-    if (signatures.length > 0) {
-      globalTimer.lastCheckedSignature = signatures[0].signature;
-    }
-
-    // Check each transaction for actual token purchases
-    for (const sig of newTransactions) {
       try {
-        // Get the full transaction data
-        const transaction = await connection.getTransaction(sig.signature, {
-          maxSupportedTransactionVersion: 0,
+        const transaction = await connection.getTransaction(signature, {
+          maxSupportedTransactionVersion: 0
         });
 
-        if (!transaction || !transaction.meta) {
-          console.log(`Transaction ${sig.signature.slice(0, 8)}... has no meta data`);
+        if (!transaction) {
+          console.log(`⚠️ Could not fetch transaction: ${signature}`);
           continue;
         }
 
-        // Check if this transaction involves token transfers
-        const preTokenBalances = transaction.meta.preTokenBalances || [];
-        const postTokenBalances = transaction.meta.postTokenBalances || [];
-
-        // Look for our specific token in the balances
-        const tokenPreBalances = preTokenBalances.filter(
-          balance => balance.mint === REVS_TOKEN_ADDRESS
-        );
-        const tokenPostBalances = postTokenBalances.filter(
-          balance => balance.mint === REVS_TOKEN_ADDRESS
-        );
-
-        // Check if there was a net increase in token balance (purchase)
-        for (let i = 0; i < tokenPostBalances.length; i++) {
-          const postBalance = tokenPostBalances[i];
-          const preBalance = tokenPreBalances.find(
-            pre => pre.owner === postBalance.owner
-          );
-
-          if (preBalance) {
-            // Use raw amounts and convert manually to ensure correct decimal handling
-            const preAmountRaw = parseInt(preBalance.uiTokenAmount.amount || '0');
-            const postAmountRaw = parseInt(postBalance.uiTokenAmount.amount || '0');
-            const decimals = preBalance.uiTokenAmount.decimals || 9; // REVS has 9 decimals
-            
-            const preAmount = preAmountRaw / Math.pow(10, decimals);
-            const postAmount = postAmountRaw / Math.pow(10, decimals);
-            const netIncrease = postAmount - preAmount;
-
-            // Check if at least 1 token was purchased
-            if (netIncrease >= 1) {
-              // CRITICAL: Check if this is an actual purchase (not just a transfer)
-              const isActualPurchase = checkIfActualPurchase(transaction);
-
-              if (isActualPurchase) {
-                console.log(`🎯 REVS PURCHASE DETECTED: ${netIncrease} tokens by ${postBalance.owner}`);
-
-                // Log purchase details for verification
-                const purchaseLog = {
-                  timestamp: new Date().toISOString(),
-                  signature: sig.signature,
-                  buyerAddress: postBalance.owner,
-                  amount: netIncrease,
-                  solscanUrl: `https://solscan.io/tx/${sig.signature}`,
-                  jupiterUrl: `https://jup.ag/swap/SOL-REVS`
-                };
-                purchaseLogs.push(purchaseLog);
-
-                // Reset global timer
-                globalTimer.timeLeft = 3600;
-                globalTimer.isActive = true;
-                globalTimer.lastPurchaseTime = new Date();
-                globalTimer.lastBuyerAddress = postBalance.owner;
-                globalTimer.lastPurchaseAmount = netIncrease;
-                globalTimer.lastTxSignature = sig.signature;
-
-                // Emit timer reset to all connected clients
-                io.emit('timerReset', {
-                  timeLeft: globalTimer.timeLeft,
-                  lastPurchaseTime: globalTimer.lastPurchaseTime,
-                  lastBuyerAddress: globalTimer.lastBuyerAddress,
-                  lastPurchaseAmount: globalTimer.lastPurchaseAmount,
-                  txSignature: globalTimer.lastTxSignature
-                });
-
-                console.log('🎉 Global timer reset - all clients notified');
-                return; // Exit after finding first purchase
-              } else {
-                console.log(`🚫 Transfer/Airdrop ignored: ${netIncrease} tokens by ${postBalance.owner}`);
-              }
-            }
-          } else {
-            console.log(`🆕 New holder: ${postBalance.owner.slice(0, 8)}... with ${postBalance.uiTokenAmount.uiAmount} tokens`);
-          }
+        // Use enhanced validation function
+        const purchaseValidation = checkIfActualPurchase(transaction);
+        
+        if (purchaseValidation && purchaseValidation.isValid) {
+          console.log(`🎯 LEGITIMATE PURCHASE CONFIRMED!`);
+          console.log(`   Amount: ${purchaseValidation.amount} REVS`);
+          console.log(`   Buyer: ${purchaseValidation.buyer}`);
+          console.log(`   Signature: ${signature}`);
+          console.log(`   Solscan: https://solscan.io/tx/${signature}`);
+          
+          // Reset timer and update state
+          globalTimer.timeLeft = 3600; // Reset to 1 hour
+          globalTimer.lastBuyerAddress = purchaseValidation.buyer;
+          globalTimer.lastPurchaseAmount = purchaseValidation.amount;
+          globalTimer.lastTxSignature = signature;
+          
+          // Emit timer reset event
+          io.emit('timerReset', {
+            timeLeft: globalTimer.timeLeft,
+            lastBuyerAddress: globalTimer.lastBuyerAddress,
+            lastPurchaseAmount: globalTimer.lastPurchaseAmount,
+            txSignature: signature
+          });
+          
+          console.log(`⏰ Timer reset to ${globalTimer.timeLeft} seconds`);
+          console.log(`👤 Last buyer: ${globalTimer.lastBuyerAddress}`);
+          console.log(`💰 Last purchase: ${globalTimer.lastPurchaseAmount} REVS`);
+        } else {
+          console.log(`❌ Transaction ${signature.slice(0, 8)}... excluded from timer reset`);
         }
-      } catch (txErr) {
-        console.warn('Error parsing transaction:', txErr);
-        continue;
+
+        // Mark as processed
+        processedSignatures.add(signature);
+        
+        // Keep only last 1000 signatures to prevent memory issues
+        if (processedSignatures.size > 1000) {
+          const firstSignature = processedSignatures.values().next().value;
+          processedSignatures.delete(firstSignature);
+        }
+
+      } catch (error) {
+        console.error(`❌ Error processing transaction ${signature}:`, error);
       }
     }
-  } catch (err) {
-    console.error('Error monitoring purchases:', err);
+  } catch (error) {
+    console.error('❌ Error monitoring purchases:', error);
   }
 };
 
@@ -544,9 +478,6 @@ io.on('connection', (socket) => {
 // Purchase logs for verification
 let purchaseLogs = [];
 
-// Push notification subscriptions
-let pushSubscriptions = [];
-
 // Root route
 app.get('/', (req, res) => {
   res.json({ 
@@ -586,7 +517,7 @@ app.get('/api/purchases', (req, res) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Monitoring REVS token: ${REVS_TOKEN_ADDRESS}`);
+  console.log(`📡 Monitoring BONK token: ${REVS_TOKEN_ADDRESS}`);
   console.log(`⏰ Global timer started at ${globalTimer.timeLeft} seconds`);
   console.log(`🔌 WebSocket monitoring: DISABLED`);
   console.log(`🎯 Only detecting ACTUAL PURCHASES (not transfers/airdrops)`);
