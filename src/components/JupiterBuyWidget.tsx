@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Star, Rocket, TrendingUp, Activity, X, Bitcoin } from 'lucide-react';
+import { Target, Star, Rocket, TrendingUp, Activity, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import '@jup-ag/plugin/css';

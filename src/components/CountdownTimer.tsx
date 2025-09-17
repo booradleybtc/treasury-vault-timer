@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Gift, Zap, Activity, Clock, Target, BarChart3, Bitcoin } from 'lucide-react';
+import { Trophy, Gift, Activity, Clock, Target, BarChart3, Bitcoin } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { pushNotificationService } from '../services/pushNotifications';
 import { Button } from './ui/button';
@@ -10,7 +10,7 @@ interface CountdownTimerProps {
   tokenContract: string;
 }
 
-export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract }) => {
+export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
   const [timeLeft, setTimeLeft] = useState(3600); // 1 hour in seconds
   const [isConnected, setIsConnected] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(false);
@@ -86,8 +86,9 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ tokenContract })
   useEffect(() => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       setNotificationSupported(true);
-      const sub = pushNotificationService.getSubscription();
-      setIsNotificationEnabled(!!sub);
+      pushNotificationService.getSubscription().then(sub => {
+        setIsNotificationEnabled(!!sub);
+      });
     }
   }, []);
 

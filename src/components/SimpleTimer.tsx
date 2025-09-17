@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 
 export const SimpleTimer: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(3600); // 1 hour in seconds
-  const [isConnected, setIsConnected] = useState(false);
+  const [, setIsConnected] = useState(false);
   const [lastBuyerAddress, setLastBuyerAddress] = useState<string | null>(null);
   const [lastPurchaseAmount, setLastPurchaseAmount] = useState<number | null>(null);
 
