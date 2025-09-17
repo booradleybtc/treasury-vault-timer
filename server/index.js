@@ -48,8 +48,8 @@ const connection = new Connection(`https://rpc.helius.xyz/?api-key=${HELIUS_API_
   wsEndpoint: `wss://rpc.helius.xyz/?api-key=${HELIUS_API_KEY}`
 });
 
-// RAY token address (moderate activity DEX token)
-const REVS_TOKEN_ADDRESS = '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R';
+// REVS token address (REVSHARE token)
+const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
 
 // Token metadata and price data
 let tokenData = {
@@ -62,9 +62,9 @@ let tokenData = {
 // Vault-specific data
 let vaultData = {
   treasury: {
-    amount: 2.52, // zBTC amount
-    asset: 'zBTC',
-    usdValue: 239192
+    amount: 0, // REVS amount in distribution wallet
+    asset: 'REVS',
+    usdValue: 0
   },
   potentialWinnings: {
     multiplier: 100000000,
@@ -82,7 +82,7 @@ let vaultData = {
   airdrop: {
     nextAirdropTime: new Date(), // Will be set to next daily airdrop
     dailyTime: '15:00', // 3 PM daily
-    minimumHold: 100000,
+    minimumHold: 200000, // Based on your distribution config
     amount: 0 // Will track distribution wallet
   },
   apy: {
@@ -91,11 +91,10 @@ let vaultData = {
   }
 };
 
-// Wallet addresses to track (add your specific wallets here)
+// Wallet addresses to track
 const TRACKED_WALLETS = [
-  'YOUR_WALLET_ADDRESS_1',
-  'YOUR_WALLET_ADDRESS_2',
-  // Add more wallet addresses as needed
+  '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // Distribution wallet
+  'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH', // Developer wallet
 ];
 
 // Wallet balances cache
@@ -126,24 +125,7 @@ const processedSignatures = new Set();
 // Fetch token price data from multiple sources
 async function fetchTokenPrice() {
   try {
-    // Try CoinGecko API for RAY token (more reliable)
-    try {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=raydium&vs_currencies=usd&include_market_cap=true');
-      const data = await response.json();
-      
-      if (data.raydium && data.raydium.usd) {
-        tokenData.price = data.raydium.usd;
-        tokenData.marketCap = data.raydium.usd_market_cap || (data.raydium.usd * 1000000000);
-        tokenData.lastUpdated = new Date().toISOString();
-        
-        console.log(`💰 RAY price updated from CoinGecko: $${tokenData.price}`);
-        return;
-      }
-    } catch (coingeckoError) {
-      console.log('CoinGecko API failed, trying Jupiter...');
-    }
-    
-    // Try Jupiter API as fallback
+    // Try Jupiter API for REVS token first (more reliable for new tokens)
     try {
       const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`);
       const data = await response.json();
@@ -153,28 +135,28 @@ async function fetchTokenPrice() {
         tokenData.price = priceInfo.price;
         tokenData.lastUpdated = new Date().toISOString();
         
-        // Calculate market cap (RAY has ~1B supply)
-        tokenData.marketCap = tokenData.price * 1000000000;
+        // Calculate market cap (REVS has ~782M supply based on your data)
+        tokenData.marketCap = tokenData.price * 782491857.39;
         
-        console.log(`💰 Token price updated from Jupiter: $${tokenData.price}`);
+        console.log(`💰 REVS price updated from Jupiter: $${tokenData.price}`);
         return;
       }
     } catch (jupiterError) {
-      console.log('Jupiter API failed, using fallback...');
+      console.log('Jupiter API failed, trying CoinGecko...');
     }
     
-    // Fallback: Use a reasonable RAY price estimate
-    tokenData.price = 2.50; // More realistic RAY price estimate
-    tokenData.marketCap = tokenData.price * 1000000000; // ~$2.5B market cap
+    // Fallback: Use a reasonable REVS price estimate
+    tokenData.price = 0.0007109; // Based on your screenshot data
+    tokenData.marketCap = tokenData.price * 782491857.39; // ~$556k market cap
     tokenData.lastUpdated = new Date().toISOString();
     
-    console.log(`💰 Using fallback RAY price: $${tokenData.price}`);
+    console.log(`💰 Using fallback REVS price: $${tokenData.price}`);
     
   } catch (error) {
     console.error('❌ Error fetching token price:', error);
     // Set fallback values
-    tokenData.price = 2.50;
-    tokenData.marketCap = 2500000000;
+    tokenData.price = 0.0007109;
+    tokenData.marketCap = 556000;
     tokenData.lastUpdated = new Date().toISOString();
   }
 }
@@ -208,26 +190,55 @@ function calculateVaultData() {
   console.log(`📊 Vault data updated - Days alive: ${daysAlive}, Endgame: ${endgameHoursLeft}h, Next airdrop: ${nextAirdrop.toISOString()}`);
 }
 
-// Fetch wallet SOL balances
+// Fetch wallet REVS token balances
 async function fetchWalletBalances() {
   try {
     for (const walletAddress of TRACKED_WALLETS) {
-      if (walletAddress === 'YOUR_WALLET_ADDRESS_1' || walletAddress === 'YOUR_WALLET_ADDRESS_2') {
-        continue; // Skip placeholder addresses
-      }
       
       try {
         const publicKey = new PublicKey(walletAddress);
-        const balance = await connection.getBalance(publicKey);
-        const solBalance = balance / web3.LAMPORTS_PER_SOL;
+        
+        // Get SOL balance
+        const solBalance = await connection.getBalance(publicKey);
+        const solAmount = solBalance / web3.LAMPORTS_PER_SOL;
+        
+        // Get REVS token balance
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+          mint: new PublicKey(REVS_TOKEN_ADDRESS)
+        });
+        
+        let revsBalance = 0;
+        if (tokenAccounts.value.length > 0) {
+          revsBalance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount || 0;
+        }
+        
+        const revsUsdValue = revsBalance * tokenData.price;
         
         walletBalances[walletAddress] = {
-          sol: solBalance,
-          usd: solBalance * 100, // Assuming $100 SOL price, you can fetch this too
+          address: walletAddress,
+          sol: solAmount,
+          revs: revsBalance,
+          usd: solAmount * 150 + revsUsdValue, // SOL + REVS USD value
           lastUpdated: new Date().toISOString()
         };
+        
+        console.log(`💰 Wallet ${walletAddress.slice(0, 8)}... balance: ${solAmount.toFixed(4)} SOL, ${revsBalance.toFixed(2)} REVS`);
+        
+        // Update treasury data if this is the distribution wallet
+        if (walletAddress === '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE') {
+          vaultData.treasury.amount = revsBalance;
+          vaultData.treasury.usdValue = revsUsdValue;
+        }
+        
       } catch (error) {
         console.error(`❌ Error fetching balance for ${walletAddress}:`, error);
+        walletBalances[walletAddress] = {
+          address: walletAddress,
+          sol: 0,
+          revs: 0,
+          usd: 0,
+          lastUpdated: new Date().toISOString()
+        };
       }
     }
   } catch (error) {

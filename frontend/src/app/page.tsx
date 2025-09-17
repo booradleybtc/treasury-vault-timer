@@ -141,9 +141,10 @@ export default function Home() {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 8)}...${address.slice(-8)}`;
-  };
+const formatAddress = (address: string | null) => {
+  if (!address) return 'N/A';
+  return `${address.slice(0, 8)}...${address.slice(-8)}`;
+};
 
   if (loading) {
     return (
