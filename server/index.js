@@ -534,6 +534,7 @@ server.listen(PORT, () => {
   console.log(`⏰ Global timer started at ${globalTimer.timeLeft} seconds`);
   console.log(`🔌 WebSocket monitoring: DISABLED`);
   console.log(`🎯 Only detecting ACTUAL PURCHASES (not transfers/airdrops)`);
+  console.log(`🌐 Frontend served from: ${path.join(__dirname, '../dist')}`);
   
   // Auto-start monitoring in production
   if (process.env.NODE_ENV === 'production') {
