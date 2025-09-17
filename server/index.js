@@ -28,7 +28,18 @@ const io = new Server(server, {
 });
 
 // CORS middleware for API
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ 
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173', 
+    'https://treasury-vault-timer-backend.onrender.com',
+    'https://*.onrender.com',
+    'https://*.vercel.app'
+  ], 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Solana RPC (Helius)
