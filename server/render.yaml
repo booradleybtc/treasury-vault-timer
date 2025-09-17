@@ -3,7 +3,7 @@ services:
     name: treasury-vault-timer-backend
     env: node
     plan: free
-    buildCommand: chmod +x build.sh && ./build.sh
+    buildCommand: npm ci
     startCommand: npm start
     rootDir: server
     envVars:
