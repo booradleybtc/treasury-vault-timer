@@ -163,6 +163,10 @@ function checkIfActualPurchase(transaction) {
 
     // Check if any excluded wallets are involved
     const allAccounts = transaction.transaction.message.accountKeys;
+    if (!allAccounts || !Array.isArray(allAccounts)) {
+      console.log('❌ No account keys found in transaction');
+      return false;
+    }
     const excludedWalletFound = allAccounts.some(account => 
       excludedWalletPatterns.includes(account.pubkey)
     );
@@ -262,7 +266,7 @@ function checkIfActualPurchase(transaction) {
 // Monitor purchases with improved detection
 const monitorPurchases = async () => {
   try {
-    console.log('🔍 Monitoring for legitimate REVS purchases...');
+    console.log('🔍 Monitoring for legitimate BONK purchases...');
     
     const signatures = await connection.getSignaturesForAddress(
       new web3.PublicKey(REVS_TOKEN_ADDRESS),
