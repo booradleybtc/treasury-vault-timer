@@ -86,9 +86,8 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
   useEffect(() => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       setNotificationSupported(true);
-      pushNotificationService.getSubscription().then(sub => {
-        setIsNotificationEnabled(!!sub);
-      });
+      const sub = pushNotificationService.getSubscription();
+      setIsNotificationEnabled(!!sub);
     }
   }, []);
 
@@ -113,7 +112,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
       setDebugInfo(prev => [...prev, '🔕 Notifications disabled']);
     } else {
       const success = await pushNotificationService.subscribe();
-      setIsNotificationEnabled(success);
+      setIsNotificationEnabled(!!success);
       if (success) {
         setDebugInfo(prev => [...prev, '🔔 Notifications enabled']);
       } else {
