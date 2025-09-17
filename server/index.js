@@ -40,6 +40,24 @@ const connection = new Connection(`https://rpc.helius.xyz/?api-key=${HELIUS_API_
 // RAY token address (moderate activity DEX token)
 const REVS_TOKEN_ADDRESS = '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R';
 
+// Token metadata and price data
+let tokenData = {
+  price: 0,
+  marketCap: 0,
+  volume24h: 0,
+  lastUpdated: null
+};
+
+// Wallet addresses to track (add your specific wallets here)
+const TRACKED_WALLETS = [
+  'YOUR_WALLET_ADDRESS_1',
+  'YOUR_WALLET_ADDRESS_2',
+  // Add more wallet addresses as needed
+];
+
+// Wallet balances cache
+let walletBalances = {};
+
 // Global timer state
 let globalTimer = {
   timeLeft: 3600,
@@ -61,6 +79,61 @@ let monitoringState = {
 
 // Track processed signatures to avoid duplicates
 const processedSignatures = new Set();
+
+// Fetch token price data from Jupiter API
+async function fetchTokenPrice() {
+  try {
+    const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`);
+    const data = await response.json();
+    
+    if (data.data && data.data[REVS_TOKEN_ADDRESS]) {
+      const priceInfo = data.data[REVS_TOKEN_ADDRESS];
+      tokenData.price = priceInfo.price;
+      tokenData.lastUpdated = new Date().toISOString();
+      
+      // Calculate market cap (you'll need to get total supply from token metadata)
+      // For now, we'll use a placeholder calculation
+      tokenData.marketCap = tokenData.price * 1000000000; // Assuming 1B supply
+      
+      console.log(`💰 Token price updated: $${tokenData.price}`);
+    }
+  } catch (error) {
+    console.error('❌ Error fetching token price:', error);
+  }
+}
+
+// Fetch wallet SOL balances
+async function fetchWalletBalances() {
+  try {
+    for (const walletAddress of TRACKED_WALLETS) {
+      if (walletAddress === 'YOUR_WALLET_ADDRESS_1' || walletAddress === 'YOUR_WALLET_ADDRESS_2') {
+        continue; // Skip placeholder addresses
+      }
+      
+      try {
+        const publicKey = new PublicKey(walletAddress);
+        const balance = await connection.getBalance(publicKey);
+        const solBalance = balance / web3.LAMPORTS_PER_SOL;
+        
+        walletBalances[walletAddress] = {
+          sol: solBalance,
+          usd: solBalance * 100, // Assuming $100 SOL price, you can fetch this too
+          lastUpdated: new Date().toISOString()
+        };
+      } catch (error) {
+        console.error(`❌ Error fetching balance for ${walletAddress}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error fetching wallet balances:', error);
+  }
+}
+
+// Update token data every 30 seconds
+setInterval(() => {
+  fetchTokenPrice();
+  fetchWalletBalances();
+}, 30000);
 
 // Admin controls (dev only)
 const isAdmin = (socket) => {
@@ -270,6 +343,346 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), isMonitoring: monitoringState.isMonitoring });
 });
 
+// Token data endpoints
+app.get('/api/token/price', (req, res) => {
+  res.json({
+    token: REVS_TOKEN_ADDRESS,
+    price: tokenData.price,
+    marketCap: tokenData.marketCap,
+    volume24h: tokenData.volume24h,
+    lastUpdated: tokenData.lastUpdated
+  });
+});
+
+app.get('/api/token/data', (req, res) => {
+  res.json({
+    token: REVS_TOKEN_ADDRESS,
+    price: tokenData.price,
+    marketCap: tokenData.marketCap,
+    volume24h: tokenData.volume24h,
+    lastUpdated: tokenData.lastUpdated,
+    timer: globalTimer
+  });
+});
+
+// Wallet balances endpoint
+app.get('/api/wallets', (req, res) => {
+  res.json({
+    wallets: walletBalances,
+    totalSol: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.sol, 0),
+    totalUsd: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.usd, 0),
+    lastUpdated: new Date().toISOString()
+  });
+});
+
+// Combined data endpoint
+app.get('/api/dashboard', (req, res) => {
+  res.json({
+    timer: globalTimer,
+    token: {
+      address: REVS_TOKEN_ADDRESS,
+      price: tokenData.price,
+      marketCap: tokenData.marketCap,
+      volume24h: tokenData.volume24h,
+      lastUpdated: tokenData.lastUpdated
+    },
+    wallets: {
+      balances: walletBalances,
+      totalSol: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.sol, 0),
+      totalUsd: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.usd, 0)
+    },
+    monitoring: {
+      isMonitoring: monitoringState.isMonitoring,
+      lastUpdated: new Date().toISOString()
+    }
+  });
+});
+
+// HTML Embed endpoints for Framer
+app.get('/embed/timer', (req, res) => {
+  const timeLeft = globalTimer.timeLeft;
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { 
+          margin: 0; 
+          padding: 0; 
+          font-family: 'Courier New', monospace; 
+          background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+        .timer { 
+          font-size: 4rem; 
+          font-weight: bold; 
+          color: #f97316; 
+          text-align: center;
+          text-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+        }
+      </style>
+    </head>
+    <body>
+      <div class="timer" id="timer">${timeString}</div>
+      <script>
+        // Auto-refresh every second
+        setInterval(() => {
+          fetch('/api/timer')
+            .then(r => r.json())
+            .then(data => {
+              const timeLeft = data.timeLeft;
+              const minutes = Math.floor(timeLeft / 60);
+              const seconds = timeLeft % 60;
+              const timeString = minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+              document.getElementById('timer').textContent = timeString;
+            })
+            .catch(() => {});
+        }, 1000);
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+app.get('/embed/price', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { 
+          margin: 0; 
+          padding: 0; 
+          font-family: 'Courier New', monospace; 
+          background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+        .price { 
+          font-size: 2.5rem; 
+          font-weight: bold; 
+          color: #10b981; 
+          text-align: center;
+        }
+        .label {
+          font-size: 1rem;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+        }
+      </style>
+    </head>
+    <body>
+      <div>
+        <div class="label">RAY Price</div>
+        <div class="price" id="price">$${tokenData.price.toFixed(6)}</div>
+      </div>
+      <script>
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+          fetch('/api/token/price')
+            .then(r => r.json())
+            .then(data => {
+              document.getElementById('price').textContent = '$' + data.price.toFixed(6);
+            })
+            .catch(() => {});
+        }, 30000);
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+app.get('/embed/marketcap', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { 
+          margin: 0; 
+          padding: 0; 
+          font-family: 'Courier New', monospace; 
+          background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+        .marketcap { 
+          font-size: 2rem; 
+          font-weight: bold; 
+          color: #3b82f6; 
+          text-align: center;
+        }
+        .label {
+          font-size: 1rem;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+        }
+      </style>
+    </head>
+    <body>
+      <div>
+        <div class="label">Market Cap</div>
+        <div class="marketcap" id="marketcap">$${(tokenData.marketCap / 1000000).toFixed(2)}M</div>
+      </div>
+      <script>
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+          fetch('/api/token/price')
+            .then(r => r.json())
+            .then(data => {
+              const marketCapM = (data.marketCap / 1000000).toFixed(2);
+              document.getElementById('marketcap').textContent = '$' + marketCapM + 'M';
+            })
+            .catch(() => {});
+        }, 30000);
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+app.get('/embed/lastbuyer', (req, res) => {
+  const buyer = globalTimer.lastBuyerAddress;
+  const amount = globalTimer.lastPurchaseAmount;
+  
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { 
+          margin: 0; 
+          padding: 0; 
+          font-family: 'Courier New', monospace; 
+          background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+        .buyer { 
+          font-size: 1.2rem; 
+          font-weight: bold; 
+          color: #10b981; 
+          text-align: center;
+          word-break: break-all;
+        }
+        .amount {
+          font-size: 1.5rem;
+          color: #f97316;
+          margin-top: 0.5rem;
+        }
+        .label {
+          font-size: 1rem;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+        }
+      </style>
+    </head>
+    <body>
+      <div>
+        <div class="label">Last Buyer</div>
+        <div class="buyer" id="buyer">${buyer ? buyer.slice(0, 8) + '...' + buyer.slice(-8) : 'Awaiting purchase...'}</div>
+        ${amount ? `<div class="amount" id="amount">${amount.toFixed(2)} RAY</div>` : ''}
+      </div>
+      <script>
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+          fetch('/api/timer')
+            .then(r => r.json())
+            .then(data => {
+              const buyer = data.lastBuyerAddress;
+              const amount = data.lastPurchaseAmount;
+              document.getElementById('buyer').textContent = buyer ? 
+                buyer.slice(0, 8) + '...' + buyer.slice(-8) : 'Awaiting purchase...';
+              if (amount) {
+                document.getElementById('amount').textContent = amount.toFixed(2) + ' RAY';
+              }
+            })
+            .catch(() => {});
+        }, 5000);
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+app.get('/embed/wallets', (req, res) => {
+  const totalSol = Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.sol, 0);
+  const totalUsd = Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.usd, 0);
+  
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { 
+          margin: 0; 
+          padding: 0; 
+          font-family: 'Courier New', monospace; 
+          background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+        .wallet { 
+          font-size: 1.5rem; 
+          font-weight: bold; 
+          color: #8b5cf6; 
+          text-align: center;
+        }
+        .label {
+          font-size: 1rem;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+        }
+      </style>
+    </head>
+    <body>
+      <div>
+        <div class="label">Total Wallet Value</div>
+        <div class="wallet" id="sol">${totalSol.toFixed(2)} SOL</div>
+        <div class="wallet" id="usd">$${totalUsd.toFixed(2)}</div>
+      </div>
+      <script>
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+          fetch('/api/wallets')
+            .then(r => r.json())
+            .then(data => {
+              document.getElementById('sol').textContent = data.totalSol.toFixed(2) + ' SOL';
+              document.getElementById('usd').textContent = '$' + data.totalUsd.toFixed(2);
+            })
+            .catch(() => {});
+        }, 30000);
+      </script>
+    </body>
+    </html>
+  `);
+});
+
 // Helius webhook (highest-performance path)
 app.post('/webhook/helius', (req, res) => {
   try {
@@ -355,4 +768,9 @@ server.listen(PORT, () => {
   } else {
     console.log('⏸️ DEVELOPMENT MODE: Monitoring is PAUSED');
   }
+  
+  // Initialize token data and wallet balances
+  console.log('📊 Initializing token data and wallet balances...');
+  fetchTokenPrice();
+  fetchWalletBalances();
 });
