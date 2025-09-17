@@ -37,24 +37,22 @@ class PushNotificationService {
     }
 
     try {
-      // Try to subscribe with VAPID key if available, otherwise use basic subscription
-      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      // Optional VAPID key
+      const vapidKey = (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY as string | undefined;
       const subscriptionOptions: PushSubscriptionOptionsInit = {
         userVisibleOnly: true
       };
       
       if (vapidKey) {
         try {
-          // Convert VAPID key to proper format
           const vapidKeyArray = this.urlBase64ToUint8Array(vapidKey);
-          subscriptionOptions.applicationServerKey = vapidKeyArray as any;
+          (subscriptionOptions as any).applicationServerKey = vapidKeyArray;
         } catch (error) {
           console.warn('Failed to process VAPID key, using basic subscription:', error);
         }
       }
       
       this.subscription = await this.registration.pushManager.subscribe(subscriptionOptions);
-
       console.log('Push subscription created:', this.subscription);
       return this.subscription;
     } catch (error) {
