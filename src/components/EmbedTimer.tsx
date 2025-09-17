@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
 export const EmbedTimer: React.FC = () => {
-  const [timeLeft, setTimeLeft] = useState(3600); // seconds (for server sync)
   const [deadlineMs, setDeadlineMs] = useState<number>(Date.now() + 3600 * 1000);
   const [isConnected, setIsConnected] = useState(false);
   const [lastBuyerAddress, setLastBuyerAddress] = useState<string | null>(null);
@@ -29,7 +28,6 @@ export const EmbedTimer: React.FC = () => {
     });
 
     newSocket.on('timerState', (data: { timeLeft: number; isActive: boolean; lastBuyerAddress: string | null; lastPurchaseAmount: number | null; txSignature: string | null; }) => {
-      setTimeLeft(data.timeLeft);
       setDeadlineMs(Date.now() + data.timeLeft * 1000);
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
@@ -39,13 +37,11 @@ export const EmbedTimer: React.FC = () => {
 
     newSocket.on('timerUpdate', (data: { timeLeft: number; isMonitoring: boolean; lastBuyerAddress: string | null; lastPurchaseAmount: number | null; }) => {
       // Only adjust time; do not clear last buyer info on streaming updates
-      setTimeLeft(data.timeLeft);
       setDeadlineMs(Date.now() + data.timeLeft * 1000);
     });
 
     newSocket.on('timerReset', (data: { txSignature: string; lastBuyerAddress: string; lastPurchaseAmount: number; }) => {
-      setTimeLeft(3600); // Reset to 1 hour
-      setDeadlineMs(Date.now() + 3600 * 1000);
+      setDeadlineMs(Date.now() + 3600 * 1000); // Reset to 1 hour
       setLastBuyerAddress(data.lastBuyerAddress);
       setLastPurchaseAmount(data.lastPurchaseAmount);
       setLastTxSignature(data.txSignature);
@@ -83,8 +79,8 @@ export const EmbedTimer: React.FC = () => {
   // Millisecond countdown (hundredths) based on deadline
   useEffect(() => {
     const id = setInterval(() => {
-      const remainingMs = Math.max(0, deadlineMs - Date.now());
-      setTimeLeft(Math.ceil(remainingMs / 1000));
+      // Force re-render to update the display
+      setDeadlineMs(prev => prev);
     }, 100);
     return () => clearInterval(id);
   }, [deadlineMs]);
