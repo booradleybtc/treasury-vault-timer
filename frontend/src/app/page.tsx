@@ -31,6 +31,36 @@ interface VaultData {
     volume24h: number;
     lastUpdated: string;
   };
+  vault: {
+    treasury: {
+      amount: number;
+      asset: string;
+      usdValue: number;
+    };
+    potentialWinnings: {
+      multiplier: number;
+      usdValue: number;
+    };
+    timer: {
+      hoursLeft: number;
+      daysAlive: number;
+      gameStartDate: string;
+    };
+    endgame: {
+      endDate: string;
+      hoursLeft: number;
+    };
+    airdrop: {
+      nextAirdropTime: string;
+      dailyTime: string;
+      minimumHold: number;
+      amount: number;
+    };
+    apy: {
+      percentage: number;
+      calculatedFrom: string;
+    };
+  };
 }
 
 export default function Home() {
@@ -280,8 +310,8 @@ export default function Home() {
                   <div className="flex items-center justify-center mb-3">
                     <CurrencyDollarIcon className="w-8 h-8 text-gray-700" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">2.52 zBTC</div>
-                  <div className="text-sm text-gray-600">$239,192</div>
+                  <div className="text-2xl font-bold text-gray-900">{data.vault?.treasury?.amount || '2.52'} {data.vault?.treasury?.asset || 'zBTC'}</div>
+                  <div className="text-sm text-gray-600">${(data.vault?.treasury?.usdValue || 239192).toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">Treasury</div>
                 </motion.div>
 
@@ -290,8 +320,8 @@ export default function Home() {
                   whileHover={{ scale: 1.02, shadow: 'lg' }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="text-2xl font-bold text-gray-900">100,000,000x</div>
-                  <div className="text-sm text-gray-600">$11,049,394,242</div>
+                  <div className="text-2xl font-bold text-gray-900">{(data.vault?.potentialWinnings?.multiplier || 100000000).toLocaleString()}x</div>
+                  <div className="text-sm text-gray-600">${(data.vault?.potentialWinnings?.usdValue || 11049394242).toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">Potential Winnings</div>
                 </motion.div>
 
@@ -303,8 +333,8 @@ export default function Home() {
                   <div className="flex items-center justify-center mb-3">
                     <ClockIcon className="w-8 h-8 text-gray-700" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">1 Hour</div>
-                  <div className="text-sm text-gray-600">Alive 12 Days</div>
+                  <div className="text-2xl font-bold text-gray-900">{data.vault?.timer?.hoursLeft || 1} Hour</div>
+                  <div className="text-sm text-gray-600">Alive {data.vault?.timer?.daysAlive || 12} Days</div>
                   <div className="text-xs text-gray-500 mt-1">Timer</div>
                 </motion.div>
 
@@ -317,7 +347,7 @@ export default function Home() {
                     <GiftIcon className="w-8 h-8 text-gray-700" />
                   </div>
                   <div className="text-2xl font-bold text-gray-900">{formatTime(airdropTime)}</div>
-                  <div className="text-sm text-gray-600">Next Airdrop</div>
+                  <div className="text-sm text-gray-600">Must Hold {(data.vault?.airdrop?.minimumHold || 100000).toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">Airdrop</div>
                 </motion.div>
 
@@ -329,7 +359,7 @@ export default function Home() {
                   <div className="flex items-center justify-center mb-3">
                     <ChartBarIcon className="w-8 h-8 text-gray-700" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">464%</div>
+                  <div className="text-2xl font-bold text-gray-900">{data.vault?.apy?.percentage || 464}%</div>
                   <div className="text-sm text-gray-600">Since Launch</div>
                   <div className="text-xs text-gray-500 mt-1">APY</div>
                 </motion.div>
@@ -342,7 +372,7 @@ export default function Home() {
                   <div className="flex items-center justify-center mb-3">
                     <ExclamationTriangleIcon className="w-8 h-8 text-gray-700" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">88 Hour</div>
+                  <div className="text-2xl font-bold text-gray-900">{data.vault?.endgame?.hoursLeft || 88} Hour</div>
                   <div className="text-sm text-gray-600">Until Distribution</div>
                   <div className="text-xs text-gray-500 mt-1">Endgame</div>
                 </motion.div>

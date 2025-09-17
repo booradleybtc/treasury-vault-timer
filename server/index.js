@@ -59,6 +59,38 @@ let tokenData = {
   lastUpdated: null
 };
 
+// Vault-specific data
+let vaultData = {
+  treasury: {
+    amount: 2.52, // zBTC amount
+    asset: 'zBTC',
+    usdValue: 239192
+  },
+  potentialWinnings: {
+    multiplier: 100000000,
+    usdValue: 11049394242
+  },
+  timer: {
+    hoursLeft: 1, // Always 1 hour
+    daysAlive: 12, // Days since game started
+    gameStartDate: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000) // 12 days ago
+  },
+  endgame: {
+    endDate: new Date(Date.now() + 88 * 24 * 60 * 60 * 1000), // 88 days from now
+    hoursLeft: 88 * 24
+  },
+  airdrop: {
+    nextAirdropTime: new Date(), // Will be set to next daily airdrop
+    dailyTime: '15:00', // 3 PM daily
+    minimumHold: 100000,
+    amount: 0 // Will track distribution wallet
+  },
+  apy: {
+    percentage: 464,
+    calculatedFrom: 'daily_airdrops'
+  }
+};
+
 // Wallet addresses to track (add your specific wallets here)
 const TRACKED_WALLETS = [
   'YOUR_WALLET_ADDRESS_1',
@@ -145,6 +177,35 @@ async function fetchTokenPrice() {
     tokenData.marketCap = 2500000000;
     tokenData.lastUpdated = new Date().toISOString();
   }
+}
+
+// Calculate vault-specific data
+function calculateVaultData() {
+  const now = new Date();
+  
+  // Calculate days alive
+  const daysAlive = Math.floor((now - vaultData.timer.gameStartDate) / (1000 * 60 * 60 * 24));
+  vaultData.timer.daysAlive = daysAlive;
+  
+  // Calculate endgame countdown
+  const endgameTimeLeft = vaultData.endgame.endDate - now;
+  const endgameHoursLeft = Math.max(0, Math.floor(endgameTimeLeft / (1000 * 60 * 60)));
+  vaultData.endgame.hoursLeft = endgameHoursLeft;
+  
+  // Calculate next airdrop time
+  const today = new Date();
+  const [hours, minutes] = vaultData.airdrop.dailyTime.split(':');
+  const nextAirdrop = new Date(today);
+  nextAirdrop.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  
+  // If today's airdrop time has passed, set to tomorrow
+  if (nextAirdrop <= now) {
+    nextAirdrop.setDate(nextAirdrop.getDate() + 1);
+  }
+  
+  vaultData.airdrop.nextAirdropTime = nextAirdrop;
+  
+  console.log(`📊 Vault data updated - Days alive: ${daysAlive}, Endgame: ${endgameHoursLeft}h, Next airdrop: ${nextAirdrop.toISOString()}`);
 }
 
 // Fetch wallet SOL balances
@@ -422,6 +483,9 @@ app.get('/api/wallets', (req, res) => {
 
 // Combined data endpoint
 app.get('/api/dashboard', (req, res) => {
+  // Calculate vault data before sending
+  calculateVaultData();
+  
   res.json({
     timer: globalTimer,
     token: {
@@ -431,6 +495,7 @@ app.get('/api/dashboard', (req, res) => {
       volume24h: tokenData.volume24h,
       lastUpdated: tokenData.lastUpdated
     },
+    vault: vaultData,
     wallets: {
       balances: walletBalances,
       totalSol: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.sol, 0),
