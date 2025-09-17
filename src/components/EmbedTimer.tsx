@@ -22,6 +22,14 @@ export const EmbedTimer: React.FC = () => {
       console.log('❌ Disconnected from backend server');
     });
 
+    newSocket.on('timerState', (data: { timeLeft: number; isActive: boolean; lastBuyerAddress: string | null; lastPurchaseAmount: number | null; txSignature: string | null; }) => {
+      setTimeLeft(data.timeLeft);
+      setLastBuyerAddress(data.lastBuyerAddress);
+      setLastPurchaseAmount(data.lastPurchaseAmount);
+      setLastTxSignature(data.txSignature);
+      console.log('Initial timer state received:', data);
+    });
+
     newSocket.on('timerUpdate', (data: { timeLeft: number; isMonitoring: boolean; lastBuyerAddress: string | null; lastPurchaseAmount: number | null; }) => {
       setTimeLeft(data.timeLeft);
       setLastBuyerAddress(data.lastBuyerAddress);
@@ -73,39 +81,45 @@ export const EmbedTimer: React.FC = () => {
       </div>
 
       {/* Last Buyer Info */}
-      {lastBuyerAddress && (
-        <div className="text-center space-y-4">
-          <div className="text-xl text-gray-300">Last Buyer</div>
-          
-          {/* Buyer Address */}
-          <div className="text-2xl font-mono text-green-400">
-            {lastBuyerAddress.length > 20
-              ? `${lastBuyerAddress.slice(0, 8)}...${lastBuyerAddress.slice(-8)}`
-              : lastBuyerAddress}
+      <div className="text-center space-y-4">
+        {lastBuyerAddress ? (
+          <>
+            <div className="text-xl text-gray-300">Last Buyer</div>
+            
+            {/* Buyer Address */}
+            <div className="text-2xl font-mono text-green-400">
+              {lastBuyerAddress.length > 20
+                ? `${lastBuyerAddress.slice(0, 8)}...${lastBuyerAddress.slice(-8)}`
+                : lastBuyerAddress}
+            </div>
+            
+            {/* Purchase Amount */}
+            {lastPurchaseAmount && (
+              <div className="text-xl text-green-300">
+                {lastPurchaseAmount.toFixed(6)} REVS
+              </div>
+            )}
+            
+            {/* Solscan Link */}
+            {lastTxSignature && (
+              <div className="mt-6">
+                <a 
+                  href={`https://solscan.io/tx/${lastTxSignature}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                >
+                  🔗 Verify on Solscan
+                </a>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-lg text-gray-500">
+            Awaiting first purchase...
           </div>
-          
-          {/* Purchase Amount */}
-          {lastPurchaseAmount && (
-            <div className="text-xl text-green-300">
-              {lastPurchaseAmount.toFixed(6)} REVS
-            </div>
-          )}
-          
-          {/* Solscan Link */}
-          {lastTxSignature && (
-            <div className="mt-6">
-              <a 
-                href={`https://solscan.io/tx/${lastTxSignature}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-              >
-                🔗 Verify on Solscan
-              </a>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Connection Status (small indicator) */}
       <div className="absolute top-4 right-4">
