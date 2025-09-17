@@ -16,49 +16,33 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = createServer(app);
 
-// Serve static files from the dist directory (built frontend)
+// Serve static frontend (built into dist/)
 app.use(express.static(path.join(__dirname, '../dist')));
-// CORS allowlist using regex to support any Vercel preview for this project
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true; // allow non-browser clients
-  const allowed = [
-    /^http:\/\/localhost:3000$/,
-    /^https:\/\/fresh-project-ten\.vercel\.app$/,
-    // Any preview like fresh-project-xxxxxxxx-booradleybtcs-projects.vercel.app
-    /^https:\/\/fresh-project-[a-z0-9]+-booradleybtcs-projects\.vercel\.app$/
-  ];
-  return allowed.some((re) => re.test(origin));
-};
 
+// Socket.IO (allow localhost + your Render URL)
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
-    methods: ["GET", "POST"]
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST']
   }
 });
 
-// Middleware
-app.use(cors({
-  origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true
-}));
+// CORS middleware for API
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// Solana connection with WebSocket support
-const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '466f06cf-0f8e-4f05-9c46-a95cb4a83f67';
+// Solana RPC (Helius)
+const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '';
 const connection = new Connection(`https://rpc.helius.xyz/?api-key=${HELIUS_API_KEY}`, {
   wsEndpoint: `wss://rpc.helius.xyz/?api-key=${HELIUS_API_KEY}`
 });
 
-// BONK token address (high activity meme token)
-const REVS_TOKEN_ADDRESS = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
+// RAY token address (moderate activity DEX token)
+const REVS_TOKEN_ADDRESS = '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R';
 
 // Global timer state
 let globalTimer = {
-  timeLeft: 3600, // 1 hour in seconds
+  timeLeft: 3600,
   isActive: true,
   lastPurchaseTime: null,
   lastBuyerAddress: null,
@@ -78,82 +62,38 @@ let monitoringState = {
 // Track processed signatures to avoid duplicates
 const processedSignatures = new Set();
 
-// Push notification subscriptions
-let pushSubscriptions = [];
-
-// Admin controls - only allow monitoring control in development
+// Admin controls (dev only)
 const isAdmin = (socket) => {
-  // In production, only allow monitoring to be started once
-  // In development, allow full control
   return process.env.NODE_ENV !== 'production' || socket.handshake.auth.adminKey === process.env.ADMIN_KEY;
 };
 
-// Known DEX programs (where actual purchases happen)
-const knownDEXPrograms = [
-  'JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJBk', // Jupiter
-  '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8', // Raydium
-  'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc',   // Orca
-  '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM', // Raydium v2
-  'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX',   // Serum
-  'PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY',   // Phoenix
-];
-
-// LP Pool and Vault Authority Configuration
-const lpPoolWallets = [
-  // Add your future token LP pool addresses here
-  // 'YOUR_FUTURE_TOKEN_LP_POOL_ADDRESS'
-];
-
-const raydiumVaultAuthorities = [
-  'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL', // Current REVS Raydium Vault Authority
-  // Add your future token vault authorities here
-  // 'YOUR_FUTURE_TOKEN_VAULT_AUTHORITY'
-];
-
-// Excluded wallet patterns (burns, distributor, dev wallets)
-const excludedWalletPatterns = [
-  '11111111111111111111111111111111', // System Program
-  'Burn111111111111111111111111111111111111111', // Burn wallet
-  '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // REVS distributor/dev wallet
-  // Add your future token excluded wallets here
-  // 'YOUR_FUTURE_TOKEN_DISTRIBUTOR_WALLET'
-];
-
-// Enhanced function to check if transaction is a legitimate purchase
+// Enhanced purchase check (v0-safe, positive delta only)
 function checkIfActualPurchase(transaction) {
   try {
     console.log('🔍 Analyzing transaction for legitimate purchase...');
-    
-    // Check if transaction involves our token
-    const tokenBalances = transaction.meta.preTokenBalances || [];
-    const postTokenBalances = transaction.meta.postTokenBalances || [];
-    
+
+    // Token balance deltas (pre/post)
+    const tokenBalances = transaction.meta?.preTokenBalances || [];
+    const postTokenBalances = transaction.meta?.postTokenBalances || [];
+
     if (!tokenBalances.length || !postTokenBalances.length) {
       console.log('❌ No token balances found in transaction');
       return false;
     }
 
-    // Find our token in the balances
-    const ourTokenPre = tokenBalances.find(balance => 
-      balance.mint === REVS_TOKEN_ADDRESS
-    );
-    const ourTokenPost = postTokenBalances.find(balance => 
-      balance.mint === REVS_TOKEN_ADDRESS
-    );
-
+    const ourTokenPre = tokenBalances.find(b => b.mint === REVS_TOKEN_ADDRESS);
+    const ourTokenPost = postTokenBalances.find(b => b.mint === REVS_TOKEN_ADDRESS);
     if (!ourTokenPre || !ourTokenPost) {
       console.log('❌ Our token not found in transaction balances');
       return false;
     }
 
-    // Check for burns (decreasing balance)
-    const preAmount = parseInt(ourTokenPre.uiTokenAmount.amount);
-    const postAmount = parseInt(ourTokenPost.uiTokenAmount.amount);
-    const decimals = ourTokenPre.uiTokenAmount.decimals;
-    
-    const actualPreAmount = preAmount / Math.pow(10, decimals);
-    const actualPostAmount = postAmount / Math.pow(10, decimals);
-    
+    const preAmount = Number(ourTokenPre.uiTokenAmount.amount);
+    const postAmount = Number(ourTokenPost.uiTokenAmount.amount);
+    const decimals = ourTokenPost.uiTokenAmount.decimals || 0;
+
+    const actualPreAmount = preAmount / 10 ** decimals;
+    const actualPostAmount = postAmount / 10 ** decimals;
     console.log(`💰 Token amounts - Pre: ${actualPreAmount}, Post: ${actualPostAmount}`);
 
     if (actualPostAmount < actualPreAmount) {
@@ -161,104 +101,51 @@ function checkIfActualPurchase(transaction) {
       return false;
     }
 
-    // Check if any excluded wallets are involved
-    const allAccounts = transaction.transaction.message.accountKeys;
-    if (!allAccounts || !Array.isArray(allAccounts)) {
-      console.log('❌ No account keys found in transaction');
-      return false;
-    }
-    const excludedWalletFound = allAccounts.some(account => 
-      excludedWalletPatterns.includes(account.pubkey)
-    );
-
-    if (excludedWalletFound) {
-      console.log('❌ Excluded wallet pattern found in transaction');
-      return false;
-    }
-
-    // For BONK token, we'll be more lenient with LP detection
-    // Check if transaction involves any known DEX programs
-    const involvesDEX = allAccounts.some(account => 
-      knownDEXPrograms.includes(account.pubkey)
-    );
-
-    if (!involvesDEX) {
-      console.log('❌ Transaction does not involve known DEX programs');
-      console.log('🔍 Available accounts:', allAccounts.map(acc => acc.pubkey));
-      console.log('✅ Known DEX programs:', knownDEXPrograms);
-      return false;
-    }
-
-    // For BONK, we'll detect any positive token balance increase as a potential buy
-    // This is more lenient than the strict vault authority check
-    console.log(`🔍 Transaction type analysis:`);
-    console.log(`   Pre owner: ${ourTokenPre.owner}`);
-    console.log(`   Post owner: ${ourTokenPost.owner}`);
-    console.log(`   Amount change: ${actualPostAmount - actualPreAmount} BONK`);
-    
-    // Any positive balance increase with DEX involvement is considered a buy
-    const isPotentialBuy = actualPostAmount > actualPreAmount;
-    
-    if (!isPotentialBuy) {
-      console.log('❌ No positive balance increase detected');
-      return false;
-    }
-
-    // Additional validation: Check instruction data for burn operations
-    const instructions = transaction.transaction.message.instructions;
-    const isBurnInstruction = instructions.some(instruction => {
-      if (instruction.programId === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') {
-        const data = instruction.data;
-        if (data && data[0] === 8) { // Burn instruction
-          console.log('❌ Burn instruction detected');
-          return true;
-        }
+    // v0-safe: guard instructions
+    const instructions = transaction.transaction?.message?.instructions || [];
+    const isBurnInstruction = instructions.some(i => {
+      if (i.programId === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') {
+        const data = i.data;
+        return data && data[0] === 8; // burn
       }
       return false;
     });
+    if (isBurnInstruction) return false;
 
-    if (isBurnInstruction) {
-      return false;
-    }
-
-    // Calculate the actual purchase amount
     const purchaseAmount = actualPostAmount - actualPreAmount;
-    
-    // Set minimum purchase amount (e.g., 1000 BONK tokens)
-    const MINIMUM_PURCHASE_AMOUNT = 1000;
-    
+
+    // Threshold for RAY (tune as needed)
+    const MINIMUM_PURCHASE_AMOUNT = 1;
+
     if (purchaseAmount <= 0) {
       console.log('❌ No positive purchase amount detected');
       return false;
     }
-    
     if (purchaseAmount < MINIMUM_PURCHASE_AMOUNT) {
       console.log(`❌ Purchase amount ${purchaseAmount} below minimum threshold ${MINIMUM_PURCHASE_AMOUNT}`);
       return false;
     }
 
-    console.log(`✅ LEGITIMATE PURCHASE DETECTED!`);
-    console.log(`   Amount: ${purchaseAmount} BONK`);
+    console.log('✅ LEGITIMATE PURCHASE DETECTED!');
+    console.log(`   Amount: ${purchaseAmount} RAY`);
     console.log(`   Buyer: ${ourTokenPost.owner}`);
-    console.log(`   LP Pool: ${raydiumVaultAuthorities[0]}`);
-    
+
     return {
       isValid: true,
       amount: purchaseAmount,
       buyer: ourTokenPost.owner
     };
-
-  } catch (error) {
-    console.error('❌ Error analyzing transaction:', error);
+  } catch (e) {
+    console.error('❌ Error analyzing transaction:', e);
     return false;
   }
 }
 
-// Monitor purchases with improved detection
+// Poll-based monitor (kept as fallback)
 const monitorPurchases = async () => {
   try {
-    console.log('🔍 Monitoring for legitimate BONK purchases...');
-    
+    console.log('🔍 Monitoring for legitimate RAY purchases...');
+
     const signatures = await connection.getSignaturesForAddress(
       new web3.PublicKey(REVS_TOKEN_ADDRESS),
       { limit: 10 }
@@ -266,178 +153,71 @@ const monitorPurchases = async () => {
 
     for (const sigInfo of signatures) {
       const signature = sigInfo.signature;
-      
-      // Skip if we've already processed this transaction
-      if (processedSignatures.has(signature)) {
-        continue;
-      }
+      if (processedSignatures.has(signature)) continue;
 
       try {
         const transaction = await connection.getTransaction(signature, {
           maxSupportedTransactionVersion: 0
         });
-
         if (!transaction) {
           console.log(`⚠️ Could not fetch transaction: ${signature}`);
           continue;
         }
 
-        // Use enhanced validation function
         const purchaseValidation = checkIfActualPurchase(transaction);
-        
         if (purchaseValidation && purchaseValidation.isValid) {
-          console.log(`🎯 LEGITIMATE PURCHASE CONFIRMED!`);
-          console.log(`   Amount: ${purchaseValidation.amount} REVS`);
+          console.log('🎯 LEGITIMATE PURCHASE CONFIRMED!');
+          console.log(`   Amount: ${purchaseValidation.amount} RAY`);
           console.log(`   Buyer: ${purchaseValidation.buyer}`);
           console.log(`   Signature: ${signature}`);
           console.log(`   Solscan: https://solscan.io/tx/${signature}`);
-          
-          // Reset timer and update state
-          globalTimer.timeLeft = 3600; // Reset to 1 hour
+
+          // Reset timer and broadcast
+          globalTimer.timeLeft = 3600;
           globalTimer.lastBuyerAddress = purchaseValidation.buyer;
           globalTimer.lastPurchaseAmount = purchaseValidation.amount;
           globalTimer.lastTxSignature = signature;
-          
-          // Emit timer reset event
+
           io.emit('timerReset', {
             timeLeft: globalTimer.timeLeft,
             lastBuyerAddress: globalTimer.lastBuyerAddress,
             lastPurchaseAmount: globalTimer.lastPurchaseAmount,
             txSignature: signature
           });
-          
+
           console.log(`⏰ Timer reset to ${globalTimer.timeLeft} seconds`);
-          console.log(`👤 Last buyer: ${globalTimer.lastBuyerAddress}`);
-          console.log(`💰 Last purchase: ${globalTimer.lastPurchaseAmount} REVS`);
         } else {
           console.log(`❌ Transaction ${signature.slice(0, 8)}... excluded from timer reset`);
         }
 
-        // Mark as processed
         processedSignatures.add(signature);
-        
-        // Keep only last 1000 signatures to prevent memory issues
         if (processedSignatures.size > 1000) {
-          const firstSignature = processedSignatures.values().next().value;
-          processedSignatures.delete(firstSignature);
+          const first = processedSignatures.values().next().value;
+          processedSignatures.delete(first);
         }
-
-      } catch (error) {
-        console.error(`❌ Error processing transaction ${signature}:`, error);
+      } catch (err) {
+        console.error(`❌ Error processing transaction ${signature}:`, err);
       }
     }
-  } catch (error) {
-    console.error('❌ Error monitoring purchases:', error);
-  }
-};
-
-// WebSocket monitoring for real-time updates
-const setupWebSocketMonitoring = () => {
-  try {
-    const tokenPublicKey = new PublicKey(REVS_TOKEN_ADDRESS);
-    
-    // Subscribe to account changes
-    const subscriptionId = connection.onAccountChange(
-      tokenPublicKey,
-      (accountInfo, context) => {
-        if (monitoringState.isMonitoring) {
-          console.log('🔔 WebSocket: Account change detected!');
-          // Trigger immediate purchase check
-          monitorPurchases();
-        }
-      },
-      'confirmed'
-    );
-
-    console.log(`🔌 WebSocket monitoring enabled for REVS token`);
-    return subscriptionId;
   } catch (err) {
-    console.error('Error setting up WebSocket monitoring:', err);
-    return null;
+    console.error('❌ Error monitoring purchases:', err);
   }
 };
 
-// Start monitoring
-const startMonitoring = () => {
-  if (monitoringState.isMonitoring) {
-    console.log('⚠️ Monitoring already active');
-    return;
-  }
-
-  console.log('🚀 Starting REVS purchase monitoring...');
-  monitoringState.isMonitoring = true;
-
-  // Start polling interval
-  monitoringState.monitoringInterval = setInterval(() => {
-    if (monitoringState.isMonitoring) {
-      monitorPurchases();
-    }
-  }, 10000); // Check every 10 seconds
-
-  // Setup WebSocket monitoring
-  monitoringState.webSocketSubscription = setupWebSocketMonitoring();
-
-  console.log('✅ Monitoring started - API usage active');
-};
-
-// Stop monitoring
-const stopMonitoring = () => {
-  if (!monitoringState.isMonitoring) {
-    console.log('⚠️ Monitoring already stopped');
-    return;
-  }
-
-  console.log('⏹️ Stopping REVS purchase monitoring...');
-  monitoringState.isMonitoring = false;
-
-  // Clear polling interval
-  if (monitoringState.monitoringInterval) {
-    clearInterval(monitoringState.monitoringInterval);
-    monitoringState.monitoringInterval = null;
-  }
-
-  // Note: WebSocket subscription remains active but won't trigger purchases
-  console.log('✅ Monitoring stopped - API usage paused');
-};
-
-// Timer countdown
+// Countdown
 setInterval(() => {
   if (globalTimer.isActive && globalTimer.timeLeft > 0) {
     globalTimer.timeLeft -= 1;
-
-    // Check for notification triggers
-    const minutes = Math.floor(globalTimer.timeLeft / 60);
-    const seconds = globalTimer.timeLeft % 60;
-    
-    // Send push notifications at specific intervals
-    if (minutes === 10 && seconds === 0) {
-      console.log('🔔 Sending 10-minute warning push notifications');
-      // In a real implementation, you would send push notifications here
-      // For now, we'll just log it
-    } else if (minutes === 5 && seconds === 0) {
-      console.log('🔔 Sending 5-minute warning push notifications');
-    } else if (minutes === 1 && seconds === 0) {
-      console.log('🔔 Sending 1-minute warning push notifications');
-    }
-
-    // Emit timer update to all connected clients
-    io.emit('timerUpdate', {
-      timeLeft: globalTimer.timeLeft,
-      isActive: globalTimer.isActive
-    });
+    io.emit('timerUpdate', { timeLeft: globalTimer.timeLeft, isActive: globalTimer.isActive });
   } else if (globalTimer.timeLeft === 0) {
     globalTimer.isActive = false;
-
-    // Emit timer expired to all connected clients
     io.emit('timerExpired');
   }
 }, 1000);
 
-// WebSocket connection handling
+// Socket.IO
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-
-  // Send current timer state to new client
   socket.emit('timerState', {
     timeLeft: globalTimer.timeLeft,
     isActive: globalTimer.isActive,
@@ -448,13 +228,10 @@ io.on('connection', (socket) => {
     isMonitoring: monitoringState.isMonitoring
   });
 
-  // Handle monitoring control
   socket.on('startMonitoring', () => {
     if (isAdmin(socket)) {
       startMonitoring();
       io.emit('monitoringState', { isMonitoring: monitoringState.isMonitoring });
-    } else {
-      socket.emit('error', 'Unauthorized to start monitoring.');
     }
   });
 
@@ -462,33 +239,21 @@ io.on('connection', (socket) => {
     if (isAdmin(socket)) {
       stopMonitoring();
       io.emit('monitoringState', { isMonitoring: monitoringState.isMonitoring });
-    } else {
-      socket.emit('error', 'Unauthorized to stop monitoring.');
     }
   });
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
-
-  // Handle push notification subscriptions
-  socket.on('subscribeNotifications', (subscription) => {
-    console.log('New push notification subscription:', subscription.endpoint);
-    pushSubscriptions.push(subscription);
-  });
 });
 
-// Purchase logs for verification
-let purchaseLogs = [];
-
-// Root route - serve the frontend
+// API
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
-// API route for backend status
 app.get('/api/status', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Treasury Vault Timer Backend',
     status: 'running',
     timestamp: new Date().toISOString(),
@@ -497,45 +262,97 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// API routes
 app.get('/api/timer', (req, res) => {
-  res.json({
-    ...globalTimer,
-    isMonitoring: monitoringState.isMonitoring
-  });
+  res.json({ ...globalTimer, isMonitoring: monitoringState.isMonitoring });
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    isMonitoring: monitoringState.isMonitoring
-  });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), isMonitoring: monitoringState.isMonitoring });
 });
 
-app.get('/api/purchases', (req, res) => {
-  res.json({
-    purchases: purchaseLogs.slice(-50), // Last 50 purchases
-    total: purchaseLogs.length,
-    tokenAddress: REVS_TOKEN_ADDRESS
-  });
+// Helius webhook (highest-performance path)
+app.post('/webhook/helius', (req, res) => {
+  try {
+    const configuredSecret = process.env.WEBHOOK_SECRET;
+    if (configuredSecret) {
+      const authHeader = req.headers['authorization'] || '';
+      if (authHeader !== `Bearer ${configuredSecret}`) {
+        return res.status(401).json({ ok: false });
+      }
+    }
+
+    const events = Array.isArray(req.body) ? req.body : [req.body];
+    for (const evt of events) {
+      const signature = evt?.signature || evt?.transaction?.signature || '';
+      const pre = evt?.events?.token?.preTokenBalances || evt?.meta?.preTokenBalances || [];
+      const post = evt?.events?.token?.postTokenBalances || evt?.meta?.postTokenBalances || [];
+
+      const preBal = pre.find(b => b.mint === REVS_TOKEN_ADDRESS);
+      const postBal = post.find(b => b.mint === REVS_TOKEN_ADDRESS);
+      if (!preBal || !postBal) continue;
+
+      const decimals = postBal.uiTokenAmount?.decimals ?? 0;
+      const preAmt = Number(preBal.uiTokenAmount?.amount || 0) / 10 ** decimals;
+      const postAmt = Number(postBal.uiTokenAmount?.amount || 0) / 10 ** decimals;
+      const delta = postAmt - preAmt;
+
+      if (delta > 1) {
+        globalTimer.timeLeft = 3600;
+        globalTimer.lastBuyerAddress = postBal.owner;
+        globalTimer.lastPurchaseAmount = delta;
+        globalTimer.lastTxSignature = signature;
+
+        io.emit('timerReset', {
+          timeLeft: globalTimer.timeLeft,
+          lastBuyerAddress: globalTimer.lastBuyerAddress,
+          lastPurchaseAmount: globalTimer.lastPurchaseAmount,
+          txSignature: globalTimer.lastTxSignature
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Webhook handling error', e);
+  } finally {
+    res.status(200).json({ ok: true });
+  }
 });
+
+// Start/Stop
+const startMonitoring = () => {
+  if (monitoringState.isMonitoring) return;
+  console.log('🚀 Starting RAY purchase monitoring...');
+  monitoringState.isMonitoring = true;
+
+  monitoringState.monitoringInterval = setInterval(() => {
+    if (monitoringState.isMonitoring) {
+      monitorPurchases();
+    }
+  }, 10000);
+};
+
+const stopMonitoring = () => {
+  if (!monitoringState.isMonitoring) return;
+  console.log('⏹️ Stopping RAY purchase monitoring...');
+  monitoringState.isMonitoring = false;
+
+  if (monitoringState.monitoringInterval) {
+    clearInterval(monitoringState.monitoringInterval);
+    monitoringState.monitoringInterval = null;
+  }
+};
 
 // Start server
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Monitoring BONK token: ${REVS_TOKEN_ADDRESS}`);
+  console.log(`📡 Monitoring RAY token: ${REVS_TOKEN_ADDRESS}`);
   console.log(`⏰ Global timer started at ${globalTimer.timeLeft} seconds`);
-  console.log(`🔌 WebSocket monitoring: DISABLED`);
-  console.log(`🎯 Only detecting ACTUAL PURCHASES (not transfers/airdrops)`);
   console.log(`🌐 Frontend served from: ${path.join(__dirname, '../dist')}`);
-  
-  // Auto-start monitoring in production
+
   if (process.env.NODE_ENV === 'production') {
-    console.log(`🚀 PRODUCTION MODE: Auto-starting monitoring...`);
+    console.log('🚀 PRODUCTION MODE: Auto-starting monitoring...');
     startMonitoring();
   } else {
-    console.log(`⏸️ DEVELOPMENT MODE: Monitoring is PAUSED - use frontend to start/stop`);
+    console.log('⏸️ DEVELOPMENT MODE: Monitoring is PAUSED');
   }
 });
