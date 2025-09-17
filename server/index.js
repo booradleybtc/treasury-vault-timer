@@ -176,40 +176,31 @@ function checkIfActualPurchase(transaction) {
       return false;
     }
 
-    // CRITICAL: Check if transaction involves our approved LP pool/vault authority
-    const involvesApprovedLP = allAccounts.some(account => 
-      raydiumVaultAuthorities.includes(account.pubkey)
+    // For BONK token, we'll be more lenient with LP detection
+    // Check if transaction involves any known DEX programs
+    const involvesDEX = allAccounts.some(account => 
+      knownDEXPrograms.includes(account.pubkey)
     );
 
-    if (!involvesApprovedLP) {
-      console.log('❌ Transaction does not involve our approved LP pool/vault authority');
+    if (!involvesDEX) {
+      console.log('❌ Transaction does not involve known DEX programs');
       console.log('🔍 Available accounts:', allAccounts.map(acc => acc.pubkey));
-      console.log('✅ Approved authorities:', raydiumVaultAuthorities);
+      console.log('✅ Known DEX programs:', knownDEXPrograms);
       return false;
     }
 
-    // Check if this is a BUY (user receives tokens from vault authority)
-    const isBuyFromVault = ourTokenPre.owner === raydiumVaultAuthorities[0] && 
-                          ourTokenPost.owner !== raydiumVaultAuthorities[0];
-
-    // Check if this is a SELL (user sends tokens to vault authority)
-    const isSellToVault = ourTokenPre.owner !== raydiumVaultAuthorities[0] && 
-                         ourTokenPost.owner === raydiumVaultAuthorities[0];
-
+    // For BONK, we'll detect any positive token balance increase as a potential buy
+    // This is more lenient than the strict vault authority check
     console.log(`🔍 Transaction type analysis:`);
     console.log(`   Pre owner: ${ourTokenPre.owner}`);
     console.log(`   Post owner: ${ourTokenPost.owner}`);
-    console.log(`   Vault authority: ${raydiumVaultAuthorities[0]}`);
-    console.log(`   Is buy from vault: ${isBuyFromVault}`);
-    console.log(`   Is sell to vault: ${isSellToVault}`);
-
-    if (isSellToVault) {
-      console.log('❌ Transaction is a sell to LP (not a buy)');
-      return false;
-    }
-
-    if (!isBuyFromVault) {
-      console.log('❌ Transaction is not a buy from our approved LP');
+    console.log(`   Amount change: ${actualPostAmount - actualPreAmount} BONK`);
+    
+    // Any positive balance increase with DEX involvement is considered a buy
+    const isPotentialBuy = actualPostAmount > actualPreAmount;
+    
+    if (!isPotentialBuy) {
+      console.log('❌ No positive balance increase detected');
       return false;
     }
 
