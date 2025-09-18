@@ -19,9 +19,15 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
   };
 
   const handleBuy = () => {
-    // Open Jupiter in new tab with pre-filled token for buying
-    const jupiterUrl = `https://jup.ag/swap?inputMint=So11111111111111111111111111111111111111112&outputMint=${tokenAddress}&amount=${amount}`;
-    window.open(jupiterUrl, '_blank');
+    try {
+      // Open Jupiter in new tab with pre-filled token for buying
+      const jupiterUrl = `https://jup.ag/swap?inputMint=So11111111111111111111111111111111111111112&outputMint=${tokenAddress}`;
+      window.open(jupiterUrl, '_blank');
+    } catch (error) {
+      console.error('Error opening Jupiter:', error);
+      // Fallback to basic Jupiter URL
+      window.open('https://jup.ag/', '_blank');
+    }
   };
 
   const handleSwap = () => {

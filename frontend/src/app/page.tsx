@@ -283,47 +283,10 @@ const formatAddress = (address: string | null) => {
                   <div className="mt-4 text-right">
                     <p className="text-sm text-gray-500">Last Buyer</p>
                     <p className="text-sm font-mono text-gray-700">{formatAddress(data.timer.lastBuyerAddress)}</p>
-                    <p className="text-lg font-bold text-green-600">{data.timer.lastPurchaseAmount.toFixed(4)} SOL</p>
                   </div>
                 </div>
               </div>
 
-              {/* Buy Log */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent Buys</h3>
-                <div className="space-y-2">
-                  {data.buyLog?.slice(0, 5).map((buy, index) => (
-                    <motion.div
-                      key={buy.txSignature}
-                      className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <span className="text-green-600 text-xs font-bold">{index + 1}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-mono text-gray-700">{formatAddress(buy.address)}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(buy.timestamp).toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-green-600">{buy.amount.toFixed(2)} REVS</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                  {(!data.buyLog || data.buyLog.length === 0) && (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>No recent purchases</p>
-                      <p className="text-sm mt-1">Start trading REVS to see your recent buys here!</p>
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* Vault Door & Stream Area */}
               <div className="mb-8">
@@ -342,106 +305,137 @@ const formatAddress = (address: string | null) => {
                 </div>
               </div>
 
-              {/* Metrics Grid - Improved Hierarchy */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <motion.div
-                  className="text-center p-6 bg-gray-50 rounded-xl border border-gray-200"
-                  whileHover={{ scale: 1.02, shadow: 'lg' }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex items-center justify-center mb-3">
-                    <CurrencyDollarIcon className="w-8 h-8 text-gray-700" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {data.vault?.treasury?.amount ? 
-                      (data.vault.treasury.amount > 1000000 ? 
-                        `${(data.vault.treasury.amount / 1000000).toFixed(1)}M` : 
-                        data.vault.treasury.amount.toLocaleString()
-                      ) : '0'} {data.vault?.treasury?.asset || 'REVS'}
-                  </div>
-                  <div className="text-sm text-gray-600">${(data.vault?.treasury?.usdValue || 0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-500 mt-1">Treasury</div>
-                </motion.div>
-
-                <motion.div
-                  className="text-center p-6 bg-gray-50 rounded-xl border border-gray-200"
-                  whileHover={{ scale: 1.02, shadow: 'lg' }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex items-center justify-center mb-3">
-                    <BoltIcon className="w-8 h-8 text-gray-700" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{(data.vault?.potentialWinnings?.multiplier || 100).toLocaleString()}x</div>
-                  <div className="text-sm text-gray-600">${(data.vault?.potentialWinnings?.usdValue || 0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-500 mt-1">Potential Winnings</div>
-                </motion.div>
-
-                <motion.div
-                  className="text-center p-6 bg-gray-50 rounded-xl border border-gray-200"
-                  whileHover={{ scale: 1.02, shadow: 'lg' }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex items-center justify-center mb-3">
-                    <ClockIcon className="w-8 h-8 text-gray-700" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{data.vault?.timer?.hoursLeft || 1} Hour</div>
-                  <div className="text-sm text-gray-600">Alive {data.vault?.timer?.daysAlive || 12} Days</div>
-                  <div className="text-xs text-gray-500 mt-1">Timer</div>
-                </motion.div>
-
-                <motion.div
-                  className="text-center p-6 bg-gray-50 rounded-xl border border-gray-200"
-                  whileHover={{ scale: 1.02, shadow: 'lg' }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex items-center justify-center mb-3">
-                    <CloudArrowDownIcon className="w-8 h-8 text-gray-700" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{formatTime(airdropTime)}</div>
-                  <div className="text-sm text-gray-600">
-                    {data.vault?.airdrop?.amount ? 
-                      (data.vault.airdrop.amount > 1000000 ? 
-                        `${(data.vault.airdrop.amount / 1000000).toFixed(1)}M` : 
-                        data.vault.airdrop.amount.toLocaleString()
-                      ) : '0'} REVS
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">Next Airdrop • Noon Eastern</div>
-                </motion.div>
-
-                <motion.div
-                  className="text-center p-6 bg-gray-50 rounded-xl border border-gray-200"
-                  whileHover={{ scale: 1.02, shadow: 'lg' }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex items-center justify-center mb-3">
-                    <ChartBarIcon className="w-8 h-8 text-gray-700" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{data.vault?.apy?.percentage || 'N/A'}</div>
-                  <div className="text-sm text-gray-600">Since Launch</div>
-                  <div className="text-xs text-gray-500 mt-1">APY</div>
-                </motion.div>
-
-                <motion.div
-                  className="text-center p-6 bg-gray-50 rounded-xl border border-gray-200"
-                  whileHover={{ scale: 1.02, shadow: 'lg' }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex items-center justify-center mb-3">
-                    <ExclamationTriangleIcon className="w-8 h-8 text-gray-700" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{data.vault?.endgame?.daysLeft || 88} Days</div>
-                  <div className="text-sm text-gray-600">Until Distribution</div>
-                  <div className="text-xs text-gray-500 mt-1">Endgame</div>
-                </motion.div>
+              {/* Recent Buys Section */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Buys</h3>
+                <div className="space-y-3">
+                  {data.buyLog?.slice(0, 5).map((buy, index) => (
+                    <motion.div
+                      key={buy.txSignature}
+                      className={`flex justify-between items-center p-4 rounded-lg border ${
+                        index === 0 
+                          ? 'bg-green-50 border-green-200 shadow-sm' 
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          index === 0 ? 'bg-green-500' : 'bg-gray-300'
+                        }`}>
+                          <span className={`text-xs font-bold ${
+                            index === 0 ? 'text-white' : 'text-gray-600'
+                          }`}>
+                            {index === 0 ? '★' : index + 1}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-mono text-gray-700">{formatAddress(buy.address)}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(buy.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-green-600">{buy.amount.toFixed(2)} REVS</p>
+                        <p className="text-xs text-gray-500">{(buy.amount * 0.000711).toFixed(4)} SOL</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {(!data.buyLog || data.buyLog.length === 0) && (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No recent purchases</p>
+                      <p className="text-sm mt-1">Start trading REVS to see your recent buys here!</p>
+                    </div>
+                  )}
+                </div>
               </div>
+
             </Card>
           </div>
 
-          {/* Sidebar - Jupiter Trading Widget */}
+          {/* Sidebar - Vault Metrics & Trading */}
           <div className="space-y-6">
+            {/* Vault Metrics Cards */}
+            <div className="grid grid-cols-1 gap-4">
+              <motion.div
+                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <CurrencyDollarIcon className="w-6 h-6 text-gray-700" />
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {data.vault?.treasury?.amount ? 
+                    (data.vault.treasury.amount > 1000000 ? 
+                      `${(data.vault.treasury.amount / 1000000).toFixed(1)}M` : 
+                      data.vault.treasury.amount.toLocaleString()
+                    ) : '0'} {data.vault?.treasury?.asset || 'REVS'}
+                </div>
+                <div className="text-xs text-gray-500">Treasury</div>
+              </motion.div>
+
+              <motion.div
+                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <BoltIcon className="w-6 h-6 text-gray-700" />
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {(data.vault?.potentialWinnings?.multiplier || 100).toLocaleString()}x
+                </div>
+                <div className="text-xs text-gray-500">Potential Winnings</div>
+              </motion.div>
+
+              <motion.div
+                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <ClockIcon className="w-6 h-6 text-gray-700" />
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {data.vault?.timer?.hoursLeft || 1} Hour
+                </div>
+                <div className="text-xs text-gray-500">Alive {data.vault?.timer?.daysAlive || 2} Days</div>
+              </motion.div>
+
+              <motion.div
+                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <CloudArrowDownIcon className="w-6 h-6 text-gray-700" />
+                </div>
+                <div className="text-lg font-bold text-gray-900">{formatTime(airdropTime)}</div>
+                <div className="text-xs text-gray-500">Next Airdrop • Noon Eastern</div>
+              </motion.div>
+
+              <motion.div
+                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <ExclamationTriangleIcon className="w-6 h-6 text-gray-700" />
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  {data.vault?.endgame?.daysLeft || 98} Days
+                </div>
+                <div className="text-xs text-gray-500">Until Distribution</div>
+              </motion.div>
+            </div>
+
             {/* Jupiter Trading Widget */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Trade SCRATCH</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Trade REVS</h3>
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -464,15 +458,11 @@ const formatAddress = (address: string | null) => {
           </div>
         </div>
 
-        {/* Top Vaults Section */}
+        {/* Darwin Vaults Section */}
         <div className="mt-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Top Vaults</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Darwin Vaults</h2>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">Time Remaining</span>
-                <span className="text-sm text-gray-600">Trade: Win</span>
-              </div>
               <Button variant="outline" className="flex items-center space-x-2">
                 <span>Filter by Treasury Asset</span>
                 <ChevronDownIcon className="w-4 h-4" />
