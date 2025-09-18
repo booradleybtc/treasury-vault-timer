@@ -634,9 +634,9 @@ const formatAddress = (address: string | null) => {
                       <GiftIcon className="w-5 h-5 text-gray-700" />
                     </div>
                     <div className="text-sm font-bold text-gray-900">
-                      {data.vault?.airdrop?.totalAirdroppedSOL ? 
+                      {data.vault?.airdrop?.totalAirdroppedSOL !== undefined ? 
                         `${data.vault.airdrop.totalAirdroppedSOL.toFixed(1)} SOL` : 
-                        '1,250.5 SOL*'
+                        'N/A'
                       }
                     </div>
                     <div className="text-xs text-gray-500">Total Airdropped</div>
@@ -651,7 +651,7 @@ const formatAddress = (address: string | null) => {
                       <UserGroupIcon className="w-5 h-5 text-gray-700" />
                     </div>
                     <div className="text-sm font-bold text-gray-900">
-                      {data.vault?.airdrop?.eligibleHolders || '1,103*'}
+                      {data.vault?.airdrop?.eligibleHolders !== undefined ? data.vault.airdrop.eligibleHolders.toLocaleString() : 'N/A'}
                     </div>
                     <div className="text-xs text-gray-500">Eligible Holders</div>
                   </motion.div>
