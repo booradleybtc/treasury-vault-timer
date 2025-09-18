@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import JupiterWidget from '../components/JupiterWidget';
 import { 
   MagnifyingGlassIcon, 
   ChevronDownIcon,
@@ -192,9 +193,9 @@ const formatAddress = (address: string | null) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Clean Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      {/* Modern Header */}
+      <div className="bg-black/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center space-x-6">
@@ -211,7 +212,7 @@ const formatAddress = (address: string | null) => {
                 <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center hidden">
                   <span className="text-white text-sm font-bold">D</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">Darwin</span>
+                <span className="text-xl font-bold text-white">Darwin</span>
               </div>
               <Input
                 placeholder="Q Search Vaults"
@@ -235,7 +236,7 @@ const formatAddress = (address: string | null) => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Vault Card */}
           <div className="lg:col-span-2">
-            <Card className="p-8">
+            <Card className="p-8 bg-gray-900/50 border-gray-800 backdrop-blur-sm">
               {/* Vault Header */}
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center space-x-4">
@@ -258,8 +259,8 @@ const formatAddress = (address: string | null) => {
                     </div>
                   </motion.div>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">MicroScratchety</h1>
-                    <p className="text-lg text-gray-600">SCRATCH</p>
+                  <h1 className="text-3xl font-bold text-white">MicroScratchety</h1>
+                  <p className="text-lg text-gray-300">REVS</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -450,21 +451,11 @@ const formatAddress = (address: string | null) => {
                   </div>
                 </div>
                 
-                {/* Jupiter Widget Placeholder */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">🔄</div>
-                    <p className="text-sm text-gray-600 font-medium">Jupiter DEX Widget</p>
-                    <p className="text-xs text-gray-500 mt-1">Buy/swap SCRATCH tokens</p>
-                  </div>
-                </div>
-                
-                <Button className="w-full">
-                  Connect Wallet
-                </Button>
-                <p className="text-xs text-gray-500 text-center">
-                  Powered by Jupiter DEX
-                </p>
+                {/* Jupiter Widget */}
+                <JupiterWidget 
+                  tokenAddress={data.token.address}
+                  tokenSymbol="REVS"
+                />
               </div>
             </Card>
           </div>
@@ -486,55 +477,53 @@ const formatAddress = (address: string | null) => {
             </div>
           </div>
 
-          {/* Vaults List */}
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Vault</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Timer</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Base Asset</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Treasury</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Trade: Win</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Hold: Earn</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Must Hold</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">End Date</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  <motion.tr
-                    className="hover:bg-gray-50 transition-colors"
-                    whileHover={{ backgroundColor: '#f9fafb' }}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3">
-                          <BoltIcon className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">Dontechi</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                      {formatTime(currentTime)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">P</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">4.52 zBTC</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">1,000x</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">164%</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">100,000</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Dec 25</td>
-                  </motion.tr>
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          {/* Vaults List - Modern Horizontal Cards */}
+          <div className="space-y-4">
+            <motion.div
+              className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+              whileHover={{ scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-orange-600 font-bold text-lg">B</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">MicroScratchety</h3>
+                    <p className="text-sm text-gray-500">REVS • Active</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-8">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Timer</p>
+                    <p className="text-lg font-mono font-bold text-gray-900">{formatTime(currentTime)}</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Treasury</p>
+                    <p className="text-lg font-bold text-gray-900">{(data.vault?.treasury?.amount || 0).toFixed(2)} REVS</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Potential</p>
+                    <p className="text-lg font-bold text-gray-900">{(data.vault?.potentialWinnings?.multiplier || 100)}x</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Days Left</p>
+                    <p className="text-lg font-bold text-gray-900">{data.vault?.endgame?.daysLeft || 88}</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Must Hold</p>
+                    <p className="text-lg font-bold text-gray-900">{(data.vault?.airdrop?.minimumHold || 200000).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>
