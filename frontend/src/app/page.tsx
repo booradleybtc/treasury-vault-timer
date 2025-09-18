@@ -347,8 +347,8 @@ const formatAddress = (address: string | null) => {
                 </div>
               </div>
 
-              {/* Metrics Grid - Consistent Colors */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              {/* Metrics Grid - Improved Hierarchy */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <motion.div
                   className="text-center p-6 bg-gray-50 rounded-xl border border-gray-200"
                   whileHover={{ scale: 1.02, shadow: 'lg' }}
@@ -357,8 +357,14 @@ const formatAddress = (address: string | null) => {
                   <div className="flex items-center justify-center mb-3">
                     <CurrencyDollarIcon className="w-8 h-8 text-gray-700" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{data.vault?.treasury?.amount || '2.52'} {data.vault?.treasury?.asset || 'zBTC'}</div>
-                  <div className="text-sm text-gray-600">${(data.vault?.treasury?.usdValue || 239192).toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {data.vault?.treasury?.amount ? 
+                      (data.vault.treasury.amount > 1000000 ? 
+                        `${(data.vault.treasury.amount / 1000000).toFixed(1)}M` : 
+                        data.vault.treasury.amount.toLocaleString()
+                      ) : '0'} {data.vault?.treasury?.asset || 'REVS'}
+                  </div>
+                  <div className="text-sm text-gray-600">${(data.vault?.treasury?.usdValue || 0).toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">Treasury</div>
                 </motion.div>
 
@@ -397,7 +403,13 @@ const formatAddress = (address: string | null) => {
                     <CloudArrowDownIcon className="w-8 h-8 text-gray-700" />
                   </div>
                   <div className="text-2xl font-bold text-gray-900">{formatTime(airdropTime)}</div>
-                  <div className="text-sm text-gray-600">{(data.vault?.airdrop?.amount || 0).toFixed(2)} REVS</div>
+                  <div className="text-sm text-gray-600">
+                    {data.vault?.airdrop?.amount ? 
+                      (data.vault.airdrop.amount > 1000000 ? 
+                        `${(data.vault.airdrop.amount / 1000000).toFixed(1)}M` : 
+                        data.vault.airdrop.amount.toLocaleString()
+                      ) : '0'} REVS
+                  </div>
                   <div className="text-xs text-gray-500 mt-1">Next Airdrop • Noon Eastern</div>
                 </motion.div>
 
@@ -444,10 +456,6 @@ const formatAddress = (address: string | null) => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Market Cap</span>
                     <span className="text-sm font-medium text-gray-900">${data.token.marketCap.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Volume 24h</span>
-                    <span className="text-sm font-medium text-gray-900">{data.token.volume24h.toLocaleString()}</span>
                   </div>
                 </div>
                 

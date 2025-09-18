@@ -24,6 +24,12 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
     window.open(jupiterUrl, '_blank');
   };
 
+  const handleSwap = () => {
+    // Open Jupiter swap interface
+    const jupiterUrl = `https://jup.ag/swap?inputMint=So11111111111111111111111111111111111111112&outputMint=${tokenAddress}`;
+    window.open(jupiterUrl, '_blank');
+  };
+
   return (
     <div className="w-full">
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -96,14 +102,25 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
               </div>
             </div>
 
-            <motion.button
-              onClick={handleBuy}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Swap on Jupiter
-            </motion.button>
+            <div className="space-y-3">
+              <motion.button
+                onClick={handleBuy}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Buy {tokenSymbol}
+              </motion.button>
+              
+              <motion.button
+                onClick={handleSwap}
+                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-all"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Swap on Jupiter
+              </motion.button>
+            </div>
 
             <p className="text-xs text-gray-500 text-center">
               Powered by Jupiter DEX

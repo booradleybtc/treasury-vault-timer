@@ -73,10 +73,10 @@ let vaultData = {
   timer: {
     hoursLeft: 1, // Always 1 hour
     daysAlive: 0, // Days since September 15th noon Eastern
-    gameStartDate: new Date('2024-09-15T16:00:00Z') // September 15th noon Eastern (UTC-4)
+    gameStartDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
   },
   endgame: {
-    endDate: new Date('2024-12-24T16:00:00Z'), // 100 days from launch (Dec 24th)
+    endDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 100 * 24 * 60 * 60 * 1000), // 100 days from launch
     daysLeft: 100
   },
   airdrop: {
@@ -179,9 +179,8 @@ function calculateVaultData() {
   
   // Calculate next airdrop time (noon Eastern daily)
   const today = new Date();
-  const [hours, minutes] = vaultData.airdrop.dailyTime.split(':');
   const nextAirdrop = new Date(today);
-  nextAirdrop.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
+  nextAirdrop.setUTCHours(16, 0, 0, 0); // Noon Eastern = 4 PM UTC
   
   // If today's airdrop time has passed, set to tomorrow
   if (nextAirdrop <= now) {
