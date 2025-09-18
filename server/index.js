@@ -648,6 +648,77 @@ app.get('/api/healthz', (req, res) => {
   });
 });
 
+// Admin API endpoints
+app.get('/api/admin/vaults', (req, res) => {
+  try {
+    // Mock vault data - in production, this would come from a database
+    const vaults = [
+      {
+        id: 'revs-vault-001',
+        name: 'REVS Treasury Vault',
+        description: 'Test vault using REVS token for dynamic treasury mechanics',
+        tokenMint: '9VxExA1iRPbuLLdSJ2rBxsyLReT4aqzZBMaBaY1p',
+        distributionWallet: '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE',
+        treasuryWallet: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
+        devWallet: '6voY...ytKW',
+        startDate: '2025-09-15T12:00:00Z',
+        endgameDate: '2025-12-24T12:00:00Z',
+        timerDuration: 3600, // 1 hour
+        distributionInterval: 300, // 5 minutes
+        minHoldAmount: 200000,
+        taxSplit: { dev: 50, holders: 50 },
+        status: 'active'
+      }
+    ];
+    res.json({ vaults });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch vaults' });
+  }
+});
+
+app.post('/api/admin/vaults/:id/start', (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`🚀 Starting vault: ${id}`);
+    
+    // In production, this would update the database and start monitoring
+    // For now, just log the action
+    res.json({ success: true, message: `Vault ${id} started successfully` });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to start vault' });
+  }
+});
+
+app.post('/api/admin/vaults/:id/stop', (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`⏹️ Stopping vault: ${id}`);
+    
+    // In production, this would update the database and stop monitoring
+    // For now, just log the action
+    res.json({ success: true, message: `Vault ${id} stopped successfully` });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to stop vault' });
+  }
+});
+
+app.post('/api/admin/vaults', (req, res) => {
+  try {
+    const vaultConfig = req.body;
+    console.log('📝 Creating new vault:', vaultConfig);
+    
+    // In production, this would save to database and validate configuration
+    // For now, just return success
+    res.json({ 
+      success: true, 
+      message: 'Vault created successfully',
+      vaultId: `vault-${Date.now()}`
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create vault' });
+  }
+});
+
 // Token data endpoints
 app.get('/api/token/price', (req, res) => {
   res.json({
