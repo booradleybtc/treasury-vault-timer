@@ -233,7 +233,7 @@ export default function VaultPage({ params }: { params: { id: string } }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column - Timer and Stats */}
+          {/* Left Column - Timer, Livestream, and Data Cards */}
           <div className="lg:col-span-2 space-y-6">
             
             {/* Timer Card */}
@@ -270,6 +270,32 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                   </div>
                 </div>
               )}
+            </Card>
+
+            {/* Livestream Section */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Live Stream</h2>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-red-600 font-medium">Live</span>
+                </div>
+              </div>
+              
+              <div className="bg-gray-100 rounded-lg p-8 text-center">
+                <div className="w-16 h-16 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white text-2xl font-bold">📺</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Stream Coming Soon</h3>
+                <p className="text-gray-600 mb-4">
+                  Watch live trading activity, vault updates, and community discussions
+                </p>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <p className="text-orange-700 text-sm">
+                    🎥 Stream will show real-time vault activity and trading events
+                  </p>
+                </div>
+              </div>
             </Card>
 
             {/* Vault Stats Grid */}
@@ -384,10 +410,10 @@ export default function VaultPage({ params }: { params: { id: string } }) {
             </Card>
           </div>
 
-          {/* Right Column - Trade Widget */}
+          {/* Right Column - Trade Widget and How it Works */}
           <div className="space-y-6">
             
-            {/* Trade Widget */}
+            {/* Trade Widget - Now at the top */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900">
@@ -412,33 +438,71 @@ export default function VaultPage({ params }: { params: { id: string } }) {
               />
             </Card>
 
-            {/* Vault Info */}
+            {/* How it Works */}
+            <Card className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">How it Works</h3>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Buy Tokens</h4>
+                    <p className="text-sm text-gray-600">Purchase tokens to reset the vault timer</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Reset Timer</h4>
+                    <p className="text-sm text-gray-600">Each purchase resets the countdown timer</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Win Treasury</h4>
+                    <p className="text-sm text-gray-600">Last buyer before timer expires wins the entire treasury</p>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => window.open('https://docs.darwinvaults.com', '_blank')}
+                  >
+                    Read Full Documentation
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Vault Info - Compact version */}
             <Card className="p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Vault Information</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Vault Asset:</span>
-                  <span className="font-medium">{data.vaultConfig?.vaultAsset || 'SOL'}</span>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-gray-500">Asset:</span>
+                  <div className="font-medium">{data.vaultConfig?.vaultAsset || 'SOL'}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Airdrop Asset:</span>
-                  <span className="font-medium">{data.vaultConfig?.airdropAsset || 'REVS'}</span>
+                <div>
+                  <span className="text-gray-500">Token:</span>
+                  <div className="font-medium">{data.vaultConfig?.airdropAsset || 'REVS'}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Min Hold Amount:</span>
-                  <span className="font-medium">{data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'}</span>
+                <div>
+                  <span className="text-gray-500">Min Hold:</span>
+                  <div className="font-medium">{data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Timer Duration:</span>
-                  <span className="font-medium">{data.vaultConfig?.timerDuration || 1}h</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Created:</span>
-                  <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.createdAt).toLocaleDateString() : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Whitelisted Addresses:</span>
-                  <span className="font-medium">{data.vaultConfig?.whitelistedAddresses?.length || 0}</span>
+                <div>
+                  <span className="text-gray-500">Duration:</span>
+                  <div className="font-medium">{data.vaultConfig?.timerDuration || 1}h</div>
                 </div>
               </div>
             </Card>
