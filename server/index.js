@@ -180,7 +180,7 @@ function calculateVaultData() {
   // Calculate next airdrop time (noon Eastern daily)
   const today = new Date();
   const nextAirdrop = new Date(today);
-  nextAirdrop.setUTCHours(16, 0, 0, 0); // Noon Eastern = 4 PM UTC
+  nextAirdrop.setUTCHours(17, 0, 0, 0); // Noon Eastern = 5 PM UTC (EST/EDT)
   
   // If today's airdrop time has passed, set to tomorrow
   if (nextAirdrop <= now) {

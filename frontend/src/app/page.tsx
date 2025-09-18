@@ -193,9 +193,9 @@ const formatAddress = (address: string | null) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-white">
       {/* Modern Header */}
-      <div className="bg-black/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center space-x-6">
@@ -212,7 +212,7 @@ const formatAddress = (address: string | null) => {
                 <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center hidden">
                   <span className="text-white text-sm font-bold">D</span>
                 </div>
-                <span className="text-xl font-bold text-white">Darwin</span>
+                <span className="text-xl font-bold text-gray-900">Darwin</span>
               </div>
               <Input
                 placeholder="Q Search Vaults"
@@ -236,7 +236,7 @@ const formatAddress = (address: string | null) => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Vault Card */}
           <div className="lg:col-span-2">
-            <Card className="p-8 bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <Card className="p-8 bg-white border-gray-200 shadow-lg">
               {/* Vault Header */}
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center space-x-4">
@@ -259,8 +259,8 @@ const formatAddress = (address: string | null) => {
                     </div>
                   </motion.div>
                   <div>
-                  <h1 className="text-3xl font-bold text-white">MicroScratchety</h1>
-                  <p className="text-lg text-gray-300">REVS</p>
+                  <h1 className="text-3xl font-bold text-gray-900">MicroScratchety</h1>
+                  <p className="text-lg text-gray-700">REVS</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -319,29 +319,24 @@ const formatAddress = (address: string | null) => {
                   {(!data.buyLog || data.buyLog.length === 0) && (
                     <div className="text-center py-8 text-gray-500">
                       <p>No recent purchases</p>
+                      <p className="text-sm mt-1">Start trading REVS to see your recent buys here!</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Vault Banner Image */}
+              {/* Vault Door & Stream Area */}
               <div className="mb-8">
-                <div className="rounded-xl h-64 relative overflow-hidden">
-                  <img 
-                    src="/images/vault-banner.png" 
-                    alt="Vault Banner" 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling.style.display = 'flex';
-                    }}
-                  />
-                  <div className="w-full h-full bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center relative overflow-hidden hidden">
-                    <div className="absolute inset-0 bg-black opacity-20"></div>
-                    <div className="relative text-center text-white">
-                      <div className="text-8xl mb-4">🏦</div>
-                      <p className="text-2xl font-bold mb-2">Vault Door & SCRATCH Stacks</p>
-                      <p className="text-orange-100">Secure Treasury Vault</p>
+                <div className="rounded-xl h-64 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <div className="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-3xl font-bold">B</span>
+                    </div>
+                    <p className="text-xl font-semibold mb-2">Vault Door & Stream</p>
+                    <p className="text-sm opacity-80 mb-3">Live stream will appear here</p>
+                    <div className="flex items-center justify-center space-x-2 text-xs opacity-60">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <span>Live Stream Coming Soon</span>
                     </div>
                   </div>
                 </div>
