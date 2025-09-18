@@ -121,14 +121,23 @@ export default function VaultsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Darwin Vaults</h1>
-              <p className="mt-2 text-gray-600">Dynamic exploding treasuries on-chain</p>
+              <h1 className="text-4xl font-bold text-white mb-2">Darwin Vaults</h1>
+              <p className="text-xl text-gray-300">Dynamic exploding treasuries on-chain</p>
+              <div className="flex items-center space-x-4 mt-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-gray-300">Live Platform</span>
+                </div>
+                <div className="text-sm text-gray-400">
+                  {vaults.length} vault{vaults.length !== 1 ? 's' : ''} available
+                </div>
+              </div>
             </div>
-            <Button className="flex items-center space-x-2">
+            <Button className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 border-0">
               <PlusIcon className="w-5 h-5" />
               <span>Create Vault</span>
             </Button>
