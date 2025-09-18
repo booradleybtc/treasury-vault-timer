@@ -27,6 +27,17 @@ interface VaultConfig {
   minHoldAmount: number;
   taxSplit: { dev: number; holders: number };
   status: 'draft' | 'active' | 'paused' | 'ended';
+  // New fields
+  vaultAsset: string; // SOL, zBTC, Scratchers, etc.
+  airdropAsset: string; // What gets airdropped
+  timerStartedAt: string | null; // When timer actually started
+  currentTimerEndsAt: string | null; // When current timer expires
+  whitelistedAddresses: string[]; // Addresses exempt from timer resets
+  lastPurchaseSignature: string | null;
+  totalPurchases: number;
+  totalVolume: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function AdminDashboard() {
@@ -101,14 +112,28 @@ export default function AdminDashboard() {
           tokenMint: '9VxExA1iRPbuLLdSJ2rBxsyLReT4aqzZBMaBaY1p',
           distributionWallet: '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE',
           treasuryWallet: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
-          devWallet: '6voY...ytKW',
+          devWallet: '6voYG6Us...ZtLMytKW',
           startDate: '2025-09-15T12:00:00Z',
           endgameDate: '2025-12-24T12:00:00Z',
           timerDuration: 3600, // 1 hour
           distributionInterval: 300, // 5 minutes
           minHoldAmount: 200000,
           taxSplit: { dev: 50, holders: 50 },
-          status: 'active'
+          status: 'active',
+          // New fields
+          vaultAsset: 'SOL',
+          airdropAsset: 'REVS',
+          timerStartedAt: '2025-09-18T15:30:00Z',
+          currentTimerEndsAt: '2025-09-18T16:30:00Z',
+          whitelistedAddresses: [
+            '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // Distribution wallet
+            'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH'  // Treasury wallet
+          ],
+          lastPurchaseSignature: '3JQijH41SGrSbGG9v4fSd6iREVbV1Fa1XQJkMjvfhAobVd9fPeRwiFzPfZrFo2hsqtxpzmoonJKVazWnkpznmFGS',
+          totalPurchases: 47,
+          totalVolume: 125000,
+          createdAt: '2025-09-15T10:00:00Z',
+          updatedAt: '2025-09-18T15:30:00Z'
         }
       ];
       setVaults(mockVaults);
@@ -240,12 +265,40 @@ export default function AdminDashboard() {
                   <span className="ml-2 font-mono text-xs">{vault.tokenMint.slice(0, 8)}...</span>
                 </div>
                 <div className="text-sm">
+                  <span className="text-gray-500">Vault Asset:</span>
+                  <span className="ml-2">{vault.vaultAsset}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-gray-500">Airdrop Asset:</span>
+                  <span className="ml-2">{vault.airdropAsset}</span>
+                </div>
+                <div className="text-sm">
                   <span className="text-gray-500">Timer:</span>
                   <span className="ml-2">{vault.timerDuration / 60} minutes</span>
                 </div>
                 <div className="text-sm">
                   <span className="text-gray-500">Min Hold:</span>
                   <span className="ml-2">{vault.minHoldAmount.toLocaleString()} tokens</span>
+                </div>
+                {vault.timerStartedAt && (
+                  <div className="text-sm">
+                    <span className="text-gray-500">Started:</span>
+                    <span className="ml-2">{new Date(vault.timerStartedAt).toLocaleString()}</span>
+                  </div>
+                )}
+                {vault.currentTimerEndsAt && (
+                  <div className="text-sm">
+                    <span className="text-gray-500">Ends:</span>
+                    <span className="ml-2">{new Date(vault.currentTimerEndsAt).toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="text-sm">
+                  <span className="text-gray-500">Purchases:</span>
+                  <span className="ml-2">{vault.totalPurchases}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-gray-500">Whitelisted:</span>
+                  <span className="ml-2">{vault.whitelistedAddresses.length} addresses</span>
                 </div>
               </div>
 
@@ -328,7 +381,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Configuration</h3>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-3 text-sm">
                     <div>
                       <span className="text-gray-500">Token Mint:</span>
                       <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">
@@ -347,11 +400,25 @@ export default function AdminDashboard() {
                         {selectedVault.treasuryWallet}
                       </div>
                     </div>
+                    <div>
+                      <span className="text-gray-500">Dev Wallet:</span>
+                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">
+                        {selectedVault.devWallet}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Vault Asset:</span>
+                      <span className="ml-2 font-semibold">{selectedVault.vaultAsset}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Airdrop Asset:</span>
+                      <span className="ml-2 font-semibold">{selectedVault.airdropAsset}</span>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Settings</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">Settings & Status</h3>
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="text-gray-500">Timer Duration:</span>
@@ -369,9 +436,81 @@ export default function AdminDashboard() {
                       <span className="text-gray-500">Tax Split:</span>
                       <span className="ml-2">{selectedVault.taxSplit.dev}% dev, {selectedVault.taxSplit.holders}% holders</span>
                     </div>
+                    <div>
+                      <span className="text-gray-500">Start Date:</span>
+                      <span className="ml-2">{new Date(selectedVault.startDate).toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Endgame Date:</span>
+                      <span className="ml-2">{new Date(selectedVault.endgameDate).toLocaleString()}</span>
+                    </div>
+                    {selectedVault.timerStartedAt && (
+                      <div>
+                        <span className="text-gray-500">Timer Started:</span>
+                        <span className="ml-2">{new Date(selectedVault.timerStartedAt).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {selectedVault.currentTimerEndsAt && (
+                      <div>
+                        <span className="text-gray-500">Timer Ends:</span>
+                        <span className="ml-2">{new Date(selectedVault.currentTimerEndsAt).toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-gray-500">Total Purchases:</span>
+                      <span className="ml-2">{selectedVault.totalPurchases}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Total Volume:</span>
+                      <span className="ml-2">{selectedVault.totalVolume.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Whitelisted Addresses Section */}
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Whitelisted Addresses</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {selectedVault.whitelistedAddresses.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedVault.whitelistedAddresses.map((address, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="font-mono text-xs bg-white p-2 rounded border">
+                            {address}
+                          </div>
+                          <button className="text-red-600 hover:text-red-800 text-xs">
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">No whitelisted addresses</p>
+                  )}
+                  <button className="mt-3 text-blue-600 hover:text-blue-800 text-sm">
+                    + Add Whitelisted Address
+                  </button>
+                </div>
+              </div>
+
+              {/* Last Purchase Section */}
+              {selectedVault.lastPurchaseSignature && (
+                <div className="mt-6">
+                  <h3 className="font-semibold text-gray-900 mb-3">Last Purchase</h3>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="font-mono text-xs bg-white p-2 rounded border">
+                      {selectedVault.lastPurchaseSignature}
+                    </div>
+                    <button 
+                      onClick={() => window.open(`https://solscan.io/tx/${selectedVault.lastPurchaseSignature}`, '_blank')}
+                      className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      View on Solscan →
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-6 pt-6 border-t">
                 <div className="flex space-x-3">

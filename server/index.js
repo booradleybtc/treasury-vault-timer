@@ -660,14 +660,28 @@ app.get('/api/admin/vaults', (req, res) => {
         tokenMint: '9VxExA1iRPbuLLdSJ2rBxsyLReT4aqzZBMaBaY1p',
         distributionWallet: '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE',
         treasuryWallet: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
-        devWallet: '6voY...ytKW',
+        devWallet: '6voYG6Us...ZtLMytKW',
         startDate: '2025-09-15T12:00:00Z',
         endgameDate: '2025-12-24T12:00:00Z',
         timerDuration: 3600, // 1 hour
         distributionInterval: 300, // 5 minutes
         minHoldAmount: 200000,
         taxSplit: { dev: 50, holders: 50 },
-        status: 'active'
+        status: 'active',
+        // New fields
+        vaultAsset: 'SOL',
+        airdropAsset: 'REVS',
+        timerStartedAt: '2025-09-18T15:30:00Z',
+        currentTimerEndsAt: '2025-09-18T16:30:00Z',
+        whitelistedAddresses: [
+          '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // Distribution wallet
+          'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH'  // Treasury wallet
+        ],
+        lastPurchaseSignature: '3JQijH41SGrSbGG9v4fSd6iREVbV1Fa1XQJkMjvfhAobVd9fPeRwiFzPfZrFo2hsqtxpzmoonJKVazWnkpznmFGS',
+        totalPurchases: 47,
+        totalVolume: 125000,
+        createdAt: '2025-09-15T10:00:00Z',
+        updatedAt: '2025-09-18T15:30:00Z'
       }
     ];
     res.json({ vaults });
