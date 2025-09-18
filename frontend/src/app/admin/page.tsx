@@ -105,40 +105,19 @@ export default function AdminDashboard() {
 
   const loadVaults = async () => {
     try {
-      // Mock data for now - in production, this would fetch from backend
-      const mockVaults: VaultConfig[] = [
-        {
-          id: 'revs-vault-001',
-          name: 'REVS Treasury Vault',
-          description: 'Test vault using REVS token for dynamic treasury mechanics',
-          tokenMint: '9VxExA1iRPbuLLdSJ2rBxsyLReT4aqzZBMaBaY1p',
-          distributionWallet: '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE',
-          treasuryWallet: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
-          devWallet: '6voYG6Us...ZtLMytKW',
-          startDate: '2025-09-15T12:00:00Z',
-          endgameDate: '2025-12-24T12:00:00Z',
-          timerDuration: 3600, // 1 hour
-          distributionInterval: 300, // 5 minutes
-          minHoldAmount: 200000,
-          taxSplit: { dev: 50, holders: 50 },
-          status: 'active',
-          // New fields
-          vaultAsset: 'SOL',
-          airdropAsset: 'REVS',
-          timerStartedAt: '2025-09-18T15:30:00Z',
-          currentTimerEndsAt: '2025-09-18T16:30:00Z',
-          whitelistedAddresses: [
-            '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // Distribution wallet
-            'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH'  // Treasury wallet
-          ],
-          lastPurchaseSignature: '3JQijH41SGrSbGG9v4fSd6iREVbV1Fa1XQJkMjvfhAobVd9fPeRwiFzPfZrFo2hsqtxpzmoonJKVazWnkpznmFGS',
-          totalPurchases: 47,
-          totalVolume: 125000,
-          createdAt: '2025-09-15T10:00:00Z',
-          updatedAt: '2025-09-18T15:30:00Z'
-        }
-      ];
-      setVaults(mockVaults);
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const response = await fetch(`${BACKEND_URL}/api/admin/vaults`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setVaults(data.vaults);
+      } else {
+        console.error('Failed to fetch vaults:', response.statusText);
+      }
     } catch (error) {
       console.error('Failed to load vaults:', error);
     }
@@ -207,16 +186,47 @@ export default function AdminDashboard() {
     setEditingField(null);
   };
 
-  const addWhitelistedAddress = (vault: VaultConfig, address: string) => {
+  const addWhitelistedAddress = async (vault: VaultConfig, address: string) => {
     if (address.trim() && !vault.whitelistedAddresses.includes(address.trim())) {
-      const newAddresses = [...vault.whitelistedAddresses, address.trim()];
-      handleFieldEdit(vault, 'whitelistedAddresses', newAddresses);
+      try {
+        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+        const response = await fetch(`${BACKEND_URL}/api/admin/vaults/${vault.id}/whitelisted-addresses`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: address.trim() }),
+          mode: 'cors'
+        });
+        
+        if (response.ok) {
+          // Reload vaults to get updated data
+          await loadVaults();
+        } else {
+          console.error('Failed to add whitelisted address:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error adding whitelisted address:', error);
+      }
     }
   };
 
-  const removeWhitelistedAddress = (vault: VaultConfig, address: string) => {
-    const newAddresses = vault.whitelistedAddresses.filter(addr => addr !== address);
-    handleFieldEdit(vault, 'whitelistedAddresses', newAddresses);
+  const removeWhitelistedAddress = async (vault: VaultConfig, address: string) => {
+    try {
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const response = await fetch(`${BACKEND_URL}/api/admin/vaults/${vault.id}/whitelisted-addresses/${encodeURIComponent(address)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors'
+      });
+      
+      if (response.ok) {
+        // Reload vaults to get updated data
+        await loadVaults();
+      } else {
+        console.error('Failed to remove whitelisted address:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error removing whitelisted address:', error);
+    }
   };
 
   if (!isAuthenticated) {
