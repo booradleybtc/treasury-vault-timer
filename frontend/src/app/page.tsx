@@ -15,7 +15,9 @@ import {
   ChartBarIcon,
   ExclamationTriangleIcon,
   BoltIcon,
-  CloudArrowDownIcon
+  CloudArrowDownIcon,
+  DocumentTextIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 
 interface BuyLogEntry {
@@ -79,6 +81,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [airdropTime, setAirdropTime] = useState(86400); // 24 hours in seconds
+  const [activeTab, setActiveTab] = useState<'vault' | 'airdrop'>('vault');
 
   // Real-time countdown timer
   useEffect(() => {
@@ -231,228 +234,370 @@ const formatAddress = (address: string | null) => {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center justify-center space-x-4">
+          <motion.button
+            onClick={() => setActiveTab('vault')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              activeTab === 'vault'
+                ? 'bg-green-600 text-white shadow-lg'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span>Hunt the Treasury</span>
+            </div>
+          </motion.button>
+          
+          <motion.button
+            onClick={() => setActiveTab('airdrop')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              activeTab === 'airdrop'
+                ? 'bg-green-600 text-white shadow-lg'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Farm Daily Airdrops</span>
+            </div>
+          </motion.button>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Vault Card */}
+          {/* Left Column - Main Content */}
           <div className="lg:col-span-2">
-            <Card className="p-8 bg-white border-gray-200 shadow-lg">
-              {/* Vault Header */}
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center space-x-4">
-                  <motion.div
-                    className="w-16 h-16 rounded-lg shadow-lg overflow-hidden"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <img 
-                      src="/images/vault-profile.png" 
-                      alt="Vault Profile" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center hidden">
-                      <span className="text-white text-2xl font-bold">B</span>
+            {activeTab === 'vault' ? (
+              /* Vault Tab Content */
+              <div className="space-y-6">
+                {/* Vault Header */}
+                <Card className="p-8 bg-white border-gray-200 shadow-lg">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center space-x-4">
+                      <motion.div
+                        className="w-16 h-16 rounded-lg shadow-lg overflow-hidden"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <img 
+                          src="/images/vault-profile.png" 
+                          alt="Vault Profile" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center hidden">
+                          <span className="text-white text-2xl font-bold">B</span>
+                        </div>
+                      </motion.div>
+                      <div>
+                        <h1 className="text-3xl font-bold text-gray-900">MicroScratchety</h1>
+                        <p className="text-lg text-gray-700">REVS</p>
+                      </div>
                     </div>
-                  </motion.div>
-                  <div>
-                  <h1 className="text-3xl font-bold text-gray-900">MicroScratchety</h1>
-                  <p className="text-lg text-gray-700">REVS</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  {/* Timer */}
-                  <motion.div
-                    className="text-5xl font-mono font-bold text-gray-900"
-                    key={currentTime}
-                    initial={{ scale: 1.05 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {formatTime(currentTime)}
-                  </motion.div>
-                  {/* Last Buyer Info */}
-                  <div className="mt-4 text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <p className="text-sm text-gray-500">Last Buyer:</p>
-                      <p className="text-sm font-mono text-gray-700">{formatAddress(data.timer.lastBuyerAddress)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-
-              {/* Vault Door & Stream Area */}
-              <div className="mb-8">
-                <div className="rounded-xl h-64 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <div className="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl font-bold">B</span>
-                    </div>
-                    <p className="text-xl font-semibold mb-2">Vault Door & Stream</p>
-                    <p className="text-sm opacity-80 mb-3">Live stream will appear here</p>
-                    <div className="flex items-center justify-center space-x-2 text-xs opacity-60">
-                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                      <span>Live Stream Coming Soon</span>
+                    <div className="text-right">
+                      {/* Timer */}
+                      <motion.div
+                        className="text-5xl font-mono font-bold text-gray-900"
+                        key={currentTime}
+                        initial={{ scale: 1.05 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {formatTime(currentTime)}
+                      </motion.div>
+                      {/* Last Buyer Info */}
+                      <div className="mt-4 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <p className="text-sm text-gray-500">Last Buyer:</p>
+                          <p className="text-sm font-mono text-gray-700">{formatAddress(data.timer.lastBuyerAddress)}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </Card>
 
-              {/* Recent Buys Section */}
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Buys</h3>
-                <div className="space-y-3">
-                  {data.buyLog?.slice(0, 5).map((buy, index) => (
-                    <motion.div
-                      key={buy.txSignature}
-                      className={`flex justify-between items-center p-4 rounded-lg border ${
-                        index === 0 
-                          ? 'bg-green-50 border-green-200 shadow-sm' 
-                          : 'bg-gray-50 border-gray-200'
-                      }`}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          index === 0 ? 'bg-green-500' : 'bg-gray-300'
-                        }`}>
-                          <span className={`text-xs font-bold ${
-                            index === 0 ? 'text-white' : 'text-gray-600'
+                {/* How it Works Section */}
+                <Card className="p-6 bg-white border-gray-200 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                      <DocumentTextIcon className="w-5 h-5" />
+                      <span>How it Works</span>
+                    </h3>
+                    <Button variant="outline" size="sm">
+                      Read Docs
+                    </Button>
+                  </div>
+                  <div className="rounded-xl h-48 bg-gradient-to-br from-green-800 to-green-900 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <div className="text-6xl mb-2">🐢</div>
+                      <p className="text-lg font-semibold">Jungle Treasury Hunt</p>
+                      <p className="text-sm opacity-80">Navigate the vault to win big!</p>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Recent Buys Section */}
+                <Card className="p-6 bg-white border-gray-200 shadow-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Buys</h3>
+                  <div className="space-y-3">
+                    {data.buyLog?.slice(0, 5).map((buy, index) => (
+                      <motion.div
+                        key={buy.txSignature}
+                        className={`flex justify-between items-center p-4 rounded-lg border ${
+                          index === 0 
+                            ? 'bg-green-50 border-green-200 shadow-sm' 
+                            : 'bg-gray-50 border-gray-200'
+                        }`}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            index === 0 ? 'bg-green-500' : 'bg-gray-300'
                           }`}>
-                            {index === 0 ? '★' : index + 1}
-                          </span>
+                            <span className={`text-xs font-bold ${
+                              index === 0 ? 'text-white' : 'text-gray-600'
+                            }`}>
+                              {index === 0 ? '★' : index + 1}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-mono text-gray-700">{formatAddress(buy.address)}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(buy.timestamp).toLocaleTimeString()}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-mono text-gray-700">{formatAddress(buy.address)}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(buy.timestamp).toLocaleTimeString()}
-                          </p>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-green-600">{buy.amount.toFixed(2)} REVS</p>
+                          <p className="text-xs text-gray-500">{(buy.amount * 0.000711).toFixed(4)} SOL</p>
                         </div>
+                      </motion.div>
+                    ))}
+                    {(!data.buyLog || data.buyLog.length === 0) && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No recent purchases</p>
+                        <p className="text-sm mt-1">Start trading REVS to see your recent buys here!</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-green-600">{buy.amount.toFixed(2)} REVS</p>
-                        <p className="text-xs text-gray-500">{(buy.amount * 0.000711).toFixed(4)} SOL</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                  {(!data.buyLog || data.buyLog.length === 0) && (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>No recent purchases</p>
-                      <p className="text-sm mt-1">Start trading REVS to see your recent buys here!</p>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                </Card>
               </div>
+            ) : (
+              /* Airdrop Tab Content */
+              <div className="space-y-6">
+                {/* Airdrop Header */}
+                <Card className="p-8 bg-white border-gray-200 shadow-lg">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center space-x-4">
+                      <motion.div
+                        className="w-16 h-16 rounded-lg shadow-lg overflow-hidden"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                          <span className="text-white text-2xl font-bold">A</span>
+                        </div>
+                      </motion.div>
+                      <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Daily Airdrops</h1>
+                        <p className="text-lg text-gray-700">REVS Distribution</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {/* Airdrop Timer */}
+                      <motion.div
+                        className="text-5xl font-mono font-bold text-gray-900"
+                        key={airdropTime}
+                        initial={{ scale: 1.05 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {formatTime(airdropTime)}
+                      </motion.div>
+                      <div className="mt-4 text-right">
+                        <p className="text-sm text-gray-500">Next Airdrop</p>
+                        <p className="text-sm font-semibold text-blue-600">Noon Eastern</p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
 
-            </Card>
+                {/* How it Works Section */}
+                <Card className="p-6 bg-white border-gray-200 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                      <DocumentTextIcon className="w-5 h-5" />
+                      <span>How Airdrops Work</span>
+                    </h3>
+                    <Button variant="outline" size="sm">
+                      Read Docs
+                    </Button>
+                  </div>
+                  <div className="rounded-xl h-48 bg-gradient-to-br from-blue-800 to-blue-900 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <div className="text-6xl mb-2">🎁</div>
+                      <p className="text-lg font-semibold">Daily Rewards</p>
+                      <p className="text-sm opacity-80">Hold REVS and earn daily!</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
           </div>
 
-          {/* Sidebar - Vault Metrics & Trading */}
+          {/* Sidebar - Tab-based Content */}
           <div className="space-y-6">
-            {/* Vault Metrics Cards - 2 Columns x 3 Rows */}
-            <div className="grid grid-cols-2 gap-3">
-              <motion.div
-                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <CurrencyDollarIcon className="w-5 h-5 text-gray-700" />
-                </div>
-                <div className="text-sm font-bold text-gray-900">
-                  {data.vault?.treasury?.amount ? 
-                    (data.vault.treasury.amount > 1000000 ? 
-                      `${(data.vault.treasury.amount / 1000000).toFixed(1)}M` : 
-                      data.vault.treasury.amount.toLocaleString()
-                    ) : '0'} {data.vault?.treasury?.asset || 'REVS'}
-                </div>
-                <div className="text-xs text-gray-600">${(data.vault?.treasury?.usdValue || 0).toLocaleString()}</div>
-                <div className="text-xs text-gray-500">Treasury</div>
-              </motion.div>
+            {activeTab === 'vault' ? (
+              /* Vault Tab Sidebar */
+              <div className="space-y-6">
+                {/* Large Treasury Card */}
+                <Card className="p-6 bg-white border-gray-200 shadow-lg">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-4">
+                      <CurrencyDollarIcon className="w-8 h-8 text-gray-700" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Treasury Vault</h3>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                      {data.vault?.treasury?.amount ? 
+                        (data.vault.treasury.amount > 1000000 ? 
+                          `${(data.vault.treasury.amount / 1000000).toFixed(1)}M` : 
+                          data.vault.treasury.amount.toLocaleString()
+                        ) : '0'} {data.vault?.treasury?.asset || 'REVS'}
+                    </div>
+                    <div className="text-sm text-gray-600">${(data.vault?.treasury?.usdValue || 0).toLocaleString()}</div>
+                  </div>
+                </Card>
 
-              <motion.div
-                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <BoltIcon className="w-5 h-5 text-gray-700" />
-                </div>
-                <div className="text-sm font-bold text-gray-900">
-                  {(data.vault?.potentialWinnings?.multiplier || 100).toLocaleString()}x
-                </div>
-                <div className="text-xs text-gray-600">${(data.vault?.potentialWinnings?.usdValue || 0).toLocaleString()}</div>
-                <div className="text-xs text-gray-500">Potential Winnings</div>
-              </motion.div>
+                {/* Vault Metrics Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <motion.div
+                    className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <BoltIcon className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">
+                      {(data.vault?.potentialWinnings?.multiplier || 100).toLocaleString()}x
+                    </div>
+                    <div className="text-xs text-gray-500">Potential Winnings</div>
+                  </motion.div>
 
-              <motion.div
-                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <ClockIcon className="w-5 h-5 text-gray-700" />
-                </div>
-                <div className="text-sm font-bold text-gray-900">
-                  {data.vault?.timer?.hoursLeft || 1} Hour
-                </div>
-                <div className="text-xs text-gray-600">Alive {data.vault?.timer?.daysAlive || 2} Days</div>
-                <div className="text-xs text-gray-500">Timer</div>
-              </motion.div>
+                  <motion.div
+                    className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <ExclamationTriangleIcon className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">
+                      {data.vault?.endgame?.daysLeft || 98} Days
+                    </div>
+                    <div className="text-xs text-gray-500">Endgame</div>
+                  </motion.div>
 
-              <motion.div
-                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <CloudArrowDownIcon className="w-5 h-5 text-gray-700" />
+                  <motion.div
+                    className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200 col-span-2"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <ClockIcon className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">
+                      Min Buy: 1 REVS
+                    </div>
+                    <div className="text-xs text-gray-500">To Reset Timer</div>
+                  </motion.div>
                 </div>
-                <div className="text-sm font-bold text-gray-900">{formatTime(airdropTime)}</div>
-                <div className="text-xs text-gray-600">
-                  {data.vault?.airdrop?.amount ? 
-                    (data.vault.airdrop.amount > 1000000 ? 
-                      `${(data.vault.airdrop.amount / 1000000).toFixed(1)}M` : 
-                      data.vault.airdrop.amount.toLocaleString()
-                    ) : '0'} REVS
-                </div>
-                <div className="text-xs text-gray-500">Next Airdrop • Noon Eastern</div>
-              </motion.div>
+              </div>
+            ) : (
+              /* Airdrop Tab Sidebar */
+              <div className="space-y-6">
+                {/* Large Airdrop Card */}
+                <Card className="p-6 bg-white border-gray-200 shadow-lg">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-4">
+                      <CloudArrowDownIcon className="w-8 h-8 text-gray-700" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Next Airdrop</h3>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">{formatTime(airdropTime)}</div>
+                    <div className="text-sm text-gray-600">REVS Distribution</div>
+                  </div>
+                </Card>
 
-              <motion.div
-                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <ChartBarIcon className="w-5 h-5 text-gray-700" />
-                </div>
-                <div className="text-sm font-bold text-gray-900">{data.vault?.apy?.percentage || 'N/A'}</div>
-                <div className="text-xs text-gray-600">Since Launch</div>
-                <div className="text-xs text-gray-500">APY</div>
-              </motion.div>
+                {/* Airdrop Metrics Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <motion.div
+                    className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <GiftIcon className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">293</div>
+                    <div className="text-xs text-gray-500">Total Airdropped</div>
+                  </motion.div>
 
-              <motion.div
-                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <ExclamationTriangleIcon className="w-5 h-5 text-gray-700" />
+                  <motion.div
+                    className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <UserGroupIcon className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">1,103</div>
+                    <div className="text-xs text-gray-500">Eligible Holders</div>
+                  </motion.div>
+
+                  <motion.div
+                    className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <CurrencyDollarIcon className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">200K</div>
+                    <div className="text-xs text-gray-500">Must Hold</div>
+                  </motion.div>
+
+                  <motion.div
+                    className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <ChartBarIcon className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">143%</div>
+                    <div className="text-xs text-gray-500">APY</div>
+                  </motion.div>
                 </div>
-                <div className="text-sm font-bold text-gray-900">
-                  {data.vault?.endgame?.daysLeft || 98} Days
-                </div>
-                <div className="text-xs text-gray-600">Until Distribution</div>
-                <div className="text-xs text-gray-500">Endgame</div>
-              </motion.div>
-            </div>
+              </div>
+            )}
 
             {/* Jupiter Trading Widget */}
             <Card className="p-6">
