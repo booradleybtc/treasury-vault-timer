@@ -166,13 +166,12 @@ async function scanEligibleHolders() {
       }
     }
     
-    vaultData.airdrop.eligibleHolders = eligibleCount;
-    console.log(`Found ${eligibleCount} eligible REVS holders`);
+    vaultData.vault.airdrop.eligibleHolders = eligibleCount;
+    console.log(`📊 Found ${eligibleCount} eligible REVS holders`);
     
   } catch (error) {
     console.error('Error scanning eligible holders:', error);
-    // Set a reasonable default
-    vaultData.airdrop.eligibleHolders = 1103;
+    // Keep existing value on error
   }
 }
 
@@ -397,6 +396,10 @@ async function fetchWalletBalances() {
     console.error('❌ Error fetching wallet balances:', error);
   }
 }
+
+// Cache for expensive operations
+const eligibleHoldersCache = { data: null, timestamp: 0, ttl: 300000 }; // 5 minutes
+const airdroppedSOLCache = { data: null, timestamp: 0, ttl: 600000 }; // 10 minutes
 
 // Update token data every 2 minutes (reduced frequency to avoid rate limits)
 setInterval(() => {
