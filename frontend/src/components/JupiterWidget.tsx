@@ -17,6 +17,20 @@ interface JupiterWidgetProps {
 }
 
 export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidgetProps) {
+  // Safety check to prevent useRef errors
+  if (typeof window === 'undefined') {
+    return (
+      <div className="w-full">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade {tokenSymbol}</h3>
+          <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">Loading trading widget...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
