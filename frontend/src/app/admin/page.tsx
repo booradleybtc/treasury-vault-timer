@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '../../../components/ui/Button';
+import { Button } from '../../../components/ui';
 import { 
   CogIcon, 
   PlayIcon, 

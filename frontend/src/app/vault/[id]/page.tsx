@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
+import { Card, Button } from '../../../components/ui';
 import { ArrowLeftIcon, ClockIcon, CurrencyDollarIcon, GiftIcon, ChartBarIcon, CloudArrowDownIcon, BoltIcon } from '@heroicons/react/24/outline';
 import dynamic from 'next/dynamic';
 
