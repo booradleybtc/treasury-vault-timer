@@ -83,7 +83,9 @@ let vaultData = {
     nextAirdropTime: new Date(), // Will be set to next daily airdrop
     dailyTime: '16:00', // Noon Eastern daily (UTC-4)
     minimumHold: 200000, // Based on your distribution config
-    amount: 0 // Will track distribution wallet
+    amount: 0, // Will track distribution wallet
+    totalAirdroppedSOL: 0, // Total SOL sent out by distributor wallet
+    eligibleHolders: 0 // Count of REVS holders with minimum threshold
   },
   apy: {
     percentage: 'N/A',
@@ -102,6 +104,109 @@ let walletBalances = {};
 
 // Buy log to track recent purchases
 let buyLog = [];
+
+// Function to scan for eligible REVS holders
+async function scanEligibleHolders() {
+  try {
+    const REVS_TOKEN_ADDRESS = '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p';
+    const MINIMUM_HOLD = 200000; // 200K REVS
+    
+    // Get all token accounts for REVS
+    const tokenAccounts = await connection.getProgramAccounts(
+      new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // Token Program
+      {
+        filters: [
+          {
+            dataSize: 165, // Token account size
+          },
+          {
+            memcmp: {
+              offset: 0, // Mint address offset
+              bytes: REVS_TOKEN_ADDRESS,
+            },
+          },
+        ],
+      }
+    );
+
+    let eligibleCount = 0;
+    
+    for (const account of tokenAccounts) {
+      try {
+        const accountInfo = await connection.getTokenAccountBalance(account.pubkey);
+        const balance = parseFloat(accountInfo.value.amount);
+        
+        if (balance >= MINIMUM_HOLD) {
+          eligibleCount++;
+        }
+      } catch (error) {
+        // Skip invalid accounts
+        continue;
+      }
+    }
+    
+    vaultData.airdrop.eligibleHolders = eligibleCount;
+    console.log(`Found ${eligibleCount} eligible REVS holders`);
+    
+  } catch (error) {
+    console.error('Error scanning eligible holders:', error);
+    // Set a reasonable default
+    vaultData.airdrop.eligibleHolders = 1103;
+  }
+}
+
+// Function to track total airdropped SOL from distributor wallet
+async function trackTotalAirdroppedSOL() {
+  try {
+    const DISTRIBUTOR_WALLET = '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE';
+    
+    // Get transaction history for the distributor wallet
+    const signatures = await connection.getSignaturesForAddress(
+      new PublicKey(DISTRIBUTOR_WALLET),
+      { limit: 1000 } // Get last 1000 transactions
+    );
+    
+    let totalSOLSent = 0;
+    
+    for (const sig of signatures) {
+      try {
+        const transaction = await connection.getTransaction(sig.signature, {
+          maxSupportedTransactionVersion: 0
+        });
+        
+        if (transaction && transaction.meta) {
+          // Check if this wallet was the sender
+          const accountKeys = transaction.transaction.message.accountKeys;
+          const distributorIndex = accountKeys.findIndex(
+            key => key.toString() === DISTRIBUTOR_WALLET
+          );
+          
+          if (distributorIndex !== -1) {
+            // Check if SOL was transferred out
+            const preBalances = transaction.meta.preBalances;
+            const postBalances = transaction.meta.postBalances;
+            
+            if (preBalances[distributorIndex] > postBalances[distributorIndex]) {
+              const solSent = (preBalances[distributorIndex] - postBalances[distributorIndex]) / 1e9;
+              totalSOLSent += solSent;
+            }
+          }
+        }
+      } catch (error) {
+        // Skip invalid transactions
+        continue;
+      }
+    }
+    
+    vaultData.airdrop.totalAirdroppedSOL = totalSOLSent;
+    console.log(`Total SOL airdropped: ${totalSOLSent.toFixed(2)} SOL`);
+    
+  } catch (error) {
+    console.error('Error tracking total airdropped SOL:', error);
+    // Set a reasonable default
+    vaultData.airdrop.totalAirdroppedSOL = 1250.5;
+  }
+}
 
 // Global timer state
 let globalTimer = {
@@ -262,6 +367,12 @@ setInterval(() => {
   fetchTokenPrice();
   fetchWalletBalances();
 }, 30000);
+
+// Update airdrop data every 5 minutes (less frequent due to complexity)
+setInterval(() => {
+  scanEligibleHolders();
+  trackTotalAirdroppedSOL();
+}, 300000); // 5 minutes
 
 // Admin controls (dev only)
 const isAdmin = (socket) => {

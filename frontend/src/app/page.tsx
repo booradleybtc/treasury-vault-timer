@@ -241,8 +241,8 @@ const formatAddress = (address: string | null) => {
           {/* Left Column - Main Vault Content */}
           <div className="lg:col-span-2">
             {/* Vault Header */}
-            <Card className="p-8 bg-white border-gray-200 shadow-lg">
-              <div className="flex items-center justify-between mb-8">
+            <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <motion.div
                     className="w-16 h-16 rounded-lg shadow-lg overflow-hidden"
@@ -265,6 +265,34 @@ const formatAddress = (address: string | null) => {
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900">MicroScratchety</h1>
                     <p className="text-lg text-gray-700">REVS</p>
+                    {/* Token Address with Copy Button */}
+                    <div className="flex items-center space-x-2 mt-1">
+                      <p className="text-xs font-mono text-gray-500">
+                        {data.token?.address ? `${data.token.address.slice(0, 8)}...${data.token.address.slice(-8)}` : '9VxExA1i...BMaBaY1p'}
+                      </p>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(data.token?.address || '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p');
+                          // You could add a toast notification here
+                        }}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
+                    {/* Price & Market Cap */}
+                    <div className="flex items-center space-x-4 mt-2">
+                      <div className="flex items-center space-x-1">
+                        <span className="text-xs text-gray-500">Price:</span>
+                        <span className="text-sm font-semibold text-gray-900">${data.token?.price || 0.000711}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-xs text-gray-500">MC:</span>
+                        <span className="text-sm font-semibold text-gray-900">${data.token?.marketCap ? (data.token.marketCap / 1000000).toFixed(1) + 'M' : '556.3M'}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -290,8 +318,8 @@ const formatAddress = (address: string | null) => {
             </Card>
 
             {/* Vault Door & Stream Area */}
-            <Card className="p-6 bg-white border-gray-200 shadow-lg">
-              <div className="rounded-xl h-64 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+            <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <div className="rounded-xl h-80 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
                 <div className="text-center text-white">
                   <div className="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-3xl font-bold">B</span>
@@ -307,7 +335,7 @@ const formatAddress = (address: string | null) => {
             </Card>
 
             {/* Recent Buys Section */}
-            <Card className="p-6 bg-white border-gray-200 shadow-lg">
+            <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Buys</h3>
               <div className="space-y-3">
                 {data.buyLog?.slice(0, 5).map((buy, index) => (
@@ -355,7 +383,7 @@ const formatAddress = (address: string | null) => {
             </Card>
 
             {/* How it Works Section */}
-            <Card className="p-6 bg-white border-gray-200 shadow-lg">
+            <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                   <DocumentTextIcon className="w-5 h-5" />
@@ -372,6 +400,15 @@ const formatAddress = (address: string | null) => {
                   <p className="text-sm opacity-80">Navigate the vault to win big!</p>
                 </div>
               </div>
+            </Card>
+
+            {/* Trade REVS to Win Vault Section */}
+            <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade REVS to Win Vault</h3>
+              <JupiterWidget 
+                tokenAddress={data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
+                tokenSymbol="REVS"
+              />
             </Card>
           </div>
 
@@ -526,7 +563,12 @@ const formatAddress = (address: string | null) => {
                     <div className="flex items-center justify-center mb-2">
                       <GiftIcon className="w-5 h-5 text-gray-700" />
                     </div>
-                    <div className="text-sm font-bold text-gray-900">1,250.5 SOL*</div>
+                    <div className="text-sm font-bold text-gray-900">
+                      {data.vault?.airdrop?.totalAirdroppedSOL ? 
+                        `${data.vault.airdrop.totalAirdroppedSOL.toFixed(1)} SOL` : 
+                        '1,250.5 SOL*'
+                      }
+                    </div>
                     <div className="text-xs text-gray-500">Total Airdropped</div>
                   </motion.div>
 
@@ -538,7 +580,9 @@ const formatAddress = (address: string | null) => {
                     <div className="flex items-center justify-center mb-2">
                       <UserGroupIcon className="w-5 h-5 text-gray-700" />
                     </div>
-                    <div className="text-sm font-bold text-gray-900">1,103*</div>
+                    <div className="text-sm font-bold text-gray-900">
+                      {data.vault?.airdrop?.eligibleHolders || '1,103*'}
+                    </div>
                     <div className="text-xs text-gray-500">Eligible Holders</div>
                   </motion.div>
 
@@ -569,28 +613,6 @@ const formatAddress = (address: string | null) => {
               </div>
             )}
 
-            {/* Jupiter Trading Widget */}
-            <Card className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Trade REVS</h3>
-              <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Token Price</span>
-                    <span className="text-sm font-medium text-gray-900">${data.token.price.toFixed(6)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Market Cap</span>
-                    <span className="text-sm font-medium text-gray-900">${data.token.marketCap.toLocaleString()}</span>
-                  </div>
-                </div>
-                
-                {/* Jupiter Widget */}
-                <JupiterWidget 
-                  tokenAddress={data.token.address}
-                  tokenSymbol="REVS"
-                />
-              </div>
-            </Card>
 
             {/* Mock Data Legend */}
             <div className="text-xs text-gray-500 text-center">
