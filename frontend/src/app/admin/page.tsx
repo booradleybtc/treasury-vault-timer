@@ -325,22 +325,6 @@ export default function AdminDashboard() {
                   <span className="text-gray-500">Min Hold:</span>
                   <span className="ml-2">{vault.minHoldAmount.toLocaleString()} tokens</span>
                 </div>
-                {vault.timerStartedAt && (
-                  <div className="text-sm">
-                    <span className="text-gray-500">Started:</span>
-                    <span className="ml-2">{new Date(vault.timerStartedAt).toLocaleString()}</span>
-                  </div>
-                )}
-                {vault.currentTimerEndsAt && (
-                  <div className="text-sm">
-                    <span className="text-gray-500">Ends:</span>
-                    <span className="ml-2">{new Date(vault.currentTimerEndsAt).toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="text-sm">
-                  <span className="text-gray-500">Purchases:</span>
-                  <span className="ml-2">{vault.totalPurchases}</span>
-                </div>
                 <div className="text-sm">
                   <span className="text-gray-500">Whitelisted:</span>
                   <span className="ml-2">{vault.whitelistedAddresses.length} addresses</span>
@@ -552,40 +536,12 @@ export default function AdminDashboard() {
                       <span className="text-gray-500">Endgame Date:</span>
                       <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{new Date(selectedVault.endgameDate).toLocaleString()}</span>
                     </div>
-                    {selectedVault.timerStartedAt && (
-                      <div>
-                        <span className="text-gray-500">Timer Started:</span>
-                        <span className="ml-2 bg-blue-50 px-2 py-1 rounded text-blue-700">{new Date(selectedVault.timerStartedAt).toLocaleString()}</span>
-                      </div>
-                    )}
-                    {selectedVault.currentTimerEndsAt && (
-                      <div>
-                        <span className="text-gray-500">Timer Ends:</span>
-                        <span className="ml-2 bg-blue-50 px-2 py-1 rounded text-blue-700">{new Date(selectedVault.currentTimerEndsAt).toLocaleString()}</span>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-gray-500">Total Purchases:</span>
-                      <span className="ml-2 bg-green-50 px-2 py-1 rounded text-green-700">{selectedVault.totalPurchases}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Total Volume:</span>
-                      <span className="ml-2 bg-green-50 px-2 py-1 rounded text-green-700">{selectedVault.totalVolume.toLocaleString()}</span>
-                    </div>
                   </div>
                   
                   <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-2 text-xs text-gray-600">
                       <div className="w-3 h-3 bg-red-200 rounded"></div>
                       <span>Immutable (set at launch)</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
-                      <div className="w-3 h-3 bg-blue-200 rounded"></div>
-                      <span>Live data (auto-updated)</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
-                      <div className="w-3 h-3 bg-green-200 rounded"></div>
-                      <span>Analytics (read-only)</span>
                     </div>
                   </div>
                 </div>
