@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import web3 from '@solana/web3.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import Database from './database.js';
 
 dotenv.config();
 
@@ -16,6 +17,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = createServer(app);
 const STARTED_AT = new Date().toISOString();
+
+// Initialize database
+const db = new Database();
+
+// Initialize default vault after database is ready
+setTimeout(async () => {
+  await db.initializeDefaultVault();
+}, 1000);
 
 // Serve static frontend (built into dist/)
 app.use(express.static(path.join(__dirname, '../dist')));
@@ -716,20 +725,59 @@ app.post('/api/admin/vaults/:id/stop', (req, res) => {
   }
 });
 
-app.post('/api/admin/vaults', (req, res) => {
+app.post('/api/admin/vaults', async (req, res) => {
   try {
     const vaultConfig = req.body;
     console.log('📝 Creating new vault:', vaultConfig);
     
-    // In production, this would save to database and validate configuration
-    // For now, just return success
+    const vault = await db.createVault(vaultConfig);
     res.json({ 
       success: true, 
       message: 'Vault created successfully',
-      vaultId: `vault-${Date.now()}`
+      vault
     });
   } catch (error) {
+    console.error('Error creating vault:', error);
     res.status(500).json({ error: 'Failed to create vault' });
+  }
+});
+
+// Whitelisted addresses management
+app.post('/api/admin/vaults/:id/whitelisted-addresses', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { address } = req.body;
+    
+    await db.addWhitelistedAddress(id, address);
+    res.json({ success: true, message: 'Address added to whitelist' });
+  } catch (error) {
+    console.error('Error adding whitelisted address:', error);
+    res.status(500).json({ error: 'Failed to add whitelisted address' });
+  }
+});
+
+app.delete('/api/admin/vaults/:id/whitelisted-addresses/:address', async (req, res) => {
+  try {
+    const { id, address } = req.params;
+    
+    await db.removeWhitelistedAddress(id, address);
+    res.json({ success: true, message: 'Address removed from whitelist' });
+  } catch (error) {
+    console.error('Error removing whitelisted address:', error);
+    res.status(500).json({ error: 'Failed to remove whitelisted address' });
+  }
+});
+
+app.put('/api/admin/vaults/:id/whitelisted-addresses', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { addresses } = req.body;
+    
+    await db.updateWhitelistedAddresses(id, addresses);
+    res.json({ success: true, message: 'Whitelisted addresses updated' });
+  } catch (error) {
+    console.error('Error updating whitelisted addresses:', error);
+    res.status(500).json({ error: 'Failed to update whitelisted addresses' });
   }
 });
 
