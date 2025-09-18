@@ -62,31 +62,31 @@ let tokenData = {
 // Vault-specific data
 let vaultData = {
   treasury: {
-    amount: 0, // REVS amount in distribution wallet
+    amount: 0, // REVS amount in developer wallet
     asset: 'REVS',
     usdValue: 0
   },
   potentialWinnings: {
-    multiplier: 100000000,
-    usdValue: 11049394242
+    multiplier: 100,
+    usdValue: 0 // treasury * 100
   },
   timer: {
     hoursLeft: 1, // Always 1 hour
-    daysAlive: 12, // Days since game started
-    gameStartDate: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000) // 12 days ago
+    daysAlive: 0, // Days since September 15th noon Eastern
+    gameStartDate: new Date('2024-09-15T16:00:00Z') // September 15th noon Eastern (UTC-4)
   },
   endgame: {
-    endDate: new Date(Date.now() + 88 * 24 * 60 * 60 * 1000), // 88 days from now
-    hoursLeft: 88 * 24
+    endDate: new Date('2024-12-24T16:00:00Z'), // 100 days from launch (Dec 24th)
+    daysLeft: 100
   },
   airdrop: {
     nextAirdropTime: new Date(), // Will be set to next daily airdrop
-    dailyTime: '15:00', // 3 PM daily
+    dailyTime: '16:00', // Noon Eastern daily (UTC-4)
     minimumHold: 200000, // Based on your distribution config
     amount: 0 // Will track distribution wallet
   },
   apy: {
-    percentage: 464,
+    percentage: 'N/A',
     calculatedFrom: 'daily_airdrops'
   }
 };
@@ -99,6 +99,9 @@ const TRACKED_WALLETS = [
 
 // Wallet balances cache
 let walletBalances = {};
+
+// Buy log to track recent purchases
+let buyLog = [];
 
 // Global timer state
 let globalTimer = {
@@ -165,29 +168,29 @@ async function fetchTokenPrice() {
 function calculateVaultData() {
   const now = new Date();
   
-  // Calculate days alive
+  // Calculate days alive since September 15th noon Eastern
   const daysAlive = Math.floor((now - vaultData.timer.gameStartDate) / (1000 * 60 * 60 * 24));
-  vaultData.timer.daysAlive = daysAlive;
+  vaultData.timer.daysAlive = Math.max(0, daysAlive);
   
-  // Calculate endgame countdown
+  // Calculate endgame countdown in days
   const endgameTimeLeft = vaultData.endgame.endDate - now;
-  const endgameHoursLeft = Math.max(0, Math.floor(endgameTimeLeft / (1000 * 60 * 60)));
-  vaultData.endgame.hoursLeft = endgameHoursLeft;
+  const endgameDaysLeft = Math.max(0, Math.floor(endgameTimeLeft / (1000 * 60 * 60 * 24)));
+  vaultData.endgame.daysLeft = endgameDaysLeft;
   
-  // Calculate next airdrop time
+  // Calculate next airdrop time (noon Eastern daily)
   const today = new Date();
   const [hours, minutes] = vaultData.airdrop.dailyTime.split(':');
   const nextAirdrop = new Date(today);
-  nextAirdrop.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  nextAirdrop.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
   
   // If today's airdrop time has passed, set to tomorrow
   if (nextAirdrop <= now) {
-    nextAirdrop.setDate(nextAirdrop.getDate() + 1);
+    nextAirdrop.setUTCDate(nextAirdrop.getUTCDate() + 1);
   }
   
   vaultData.airdrop.nextAirdropTime = nextAirdrop;
   
-  console.log(`📊 Vault data updated - Days alive: ${daysAlive}, Endgame: ${endgameHoursLeft}h, Next airdrop: ${nextAirdrop.toISOString()}`);
+  console.log(`📊 Vault data updated - Days alive: ${daysAlive}, Endgame: ${endgameDaysLeft} days, Next airdrop: ${nextAirdrop.toISOString()}`);
 }
 
 // Fetch wallet REVS token balances
@@ -224,10 +227,17 @@ async function fetchWalletBalances() {
         
         console.log(`💰 Wallet ${walletAddress.slice(0, 8)}... balance: ${solAmount.toFixed(4)} SOL, ${revsBalance.toFixed(2)} REVS`);
         
-        // Update treasury data if this is the distribution wallet
-        if (walletAddress === '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE') {
+        // Update treasury data if this is the developer wallet
+        if (walletAddress === 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH') {
           vaultData.treasury.amount = revsBalance;
           vaultData.treasury.usdValue = revsUsdValue;
+          // Calculate potential winnings as treasury * 100
+          vaultData.potentialWinnings.usdValue = revsUsdValue * 100;
+        }
+        
+        // Update airdrop amount if this is the distribution wallet
+        if (walletAddress === '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE') {
+          vaultData.airdrop.amount = revsBalance;
         }
         
       } catch (error) {
@@ -499,6 +509,7 @@ app.get('/api/dashboard', (req, res) => {
   
   res.json({
     timer: globalTimer,
+    buyLog: buyLog,
     token: {
       address: REVS_TOKEN_ADDRESS,
       price: tokenData.price,
@@ -927,12 +938,30 @@ app.post('/webhook/helius', (req, res) => {
         globalTimer.lastBuyerAddress = postBal.owner;
         globalTimer.lastPurchaseAmount = delta;
         globalTimer.lastTxSignature = signature;
+        globalTimer.lastPurchaseTime = new Date().toISOString();
+        globalTimer.isActive = true;
+
+        // Add to buy log
+        const buyEntry = {
+          address: postBal.owner,
+          amount: delta,
+          timestamp: new Date().toISOString(),
+          txSignature: signature
+        };
+        
+        buyLog.unshift(buyEntry); // Add to beginning
+        if (buyLog.length > 5) {
+          buyLog.pop(); // Keep only last 5
+        }
 
         io.emit('timerReset', {
           timeLeft: globalTimer.timeLeft,
           lastBuyerAddress: globalTimer.lastBuyerAddress,
           lastPurchaseAmount: globalTimer.lastPurchaseAmount,
-          txSignature: globalTimer.lastTxSignature
+          txSignature: globalTimer.lastTxSignature,
+          lastPurchaseTime: globalTimer.lastPurchaseTime,
+          isActive: globalTimer.isActive,
+          buyLog: buyLog
         });
       }
     }

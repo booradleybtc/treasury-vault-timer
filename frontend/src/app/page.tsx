@@ -13,8 +13,16 @@ import {
   GiftIcon,
   ChartBarIcon,
   ExclamationTriangleIcon,
-  BoltIcon
+  BoltIcon,
+  CloudArrowDownIcon
 } from '@heroicons/react/24/outline';
+
+interface BuyLogEntry {
+  address: string;
+  amount: number;
+  timestamp: string;
+  txSignature: string;
+}
 
 interface VaultData {
   timer: {
@@ -24,6 +32,7 @@ interface VaultData {
     lastBuyerAddress: string;
     lastPurchaseAmount: number;
   };
+  buyLog: BuyLogEntry[];
   token: {
     address: string;
     price: number;
@@ -48,7 +57,7 @@ interface VaultData {
     };
     endgame: {
       endDate: string;
-      hoursLeft: number;
+      daysLeft: number;
     };
     airdrop: {
       nextAirdropTime: string;
@@ -57,7 +66,7 @@ interface VaultData {
       amount: number;
     };
     apy: {
-      percentage: number;
+      percentage: string | number;
       calculatedFrom: string;
     };
   };
@@ -278,6 +287,42 @@ const formatAddress = (address: string | null) => {
                 </div>
               </div>
 
+              {/* Buy Log */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent Buys</h3>
+                <div className="space-y-2">
+                  {data.buyLog?.slice(0, 5).map((buy, index) => (
+                    <motion.div
+                      key={buy.txSignature}
+                      className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <span className="text-green-600 text-xs font-bold">{index + 1}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-mono text-gray-700">{formatAddress(buy.address)}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(buy.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-green-600">{buy.amount.toFixed(2)} REVS</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {(!data.buyLog || data.buyLog.length === 0) && (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No recent purchases</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Vault Banner Image */}
               <div className="mb-8">
                 <div className="rounded-xl h-64 relative overflow-hidden">
@@ -321,8 +366,11 @@ const formatAddress = (address: string | null) => {
                   whileHover={{ scale: 1.02, shadow: 'lg' }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="text-2xl font-bold text-gray-900">{(data.vault?.potentialWinnings?.multiplier || 100000000).toLocaleString()}x</div>
-                  <div className="text-sm text-gray-600">${(data.vault?.potentialWinnings?.usdValue || 11049394242).toLocaleString()}</div>
+                  <div className="flex items-center justify-center mb-3">
+                    <BoltIcon className="w-8 h-8 text-gray-700" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{(data.vault?.potentialWinnings?.multiplier || 100).toLocaleString()}x</div>
+                  <div className="text-sm text-gray-600">${(data.vault?.potentialWinnings?.usdValue || 0).toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">Potential Winnings</div>
                 </motion.div>
 
@@ -345,11 +393,11 @@ const formatAddress = (address: string | null) => {
                   transition={{ duration: 0.2 }}
                 >
                   <div className="flex items-center justify-center mb-3">
-                    <GiftIcon className="w-8 h-8 text-gray-700" />
+                    <CloudArrowDownIcon className="w-8 h-8 text-gray-700" />
                   </div>
                   <div className="text-2xl font-bold text-gray-900">{formatTime(airdropTime)}</div>
-                  <div className="text-sm text-gray-600">Must Hold {(data.vault?.airdrop?.minimumHold || 100000).toLocaleString()}</div>
-                  <div className="text-xs text-gray-500 mt-1">Airdrop</div>
+                  <div className="text-sm text-gray-600">{(data.vault?.airdrop?.amount || 0).toFixed(2)} REVS</div>
+                  <div className="text-xs text-gray-500 mt-1">Next Airdrop • Noon Eastern</div>
                 </motion.div>
 
                 <motion.div
@@ -360,7 +408,7 @@ const formatAddress = (address: string | null) => {
                   <div className="flex items-center justify-center mb-3">
                     <ChartBarIcon className="w-8 h-8 text-gray-700" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{data.vault?.apy?.percentage || 464}%</div>
+                  <div className="text-2xl font-bold text-gray-900">{data.vault?.apy?.percentage || 'N/A'}</div>
                   <div className="text-sm text-gray-600">Since Launch</div>
                   <div className="text-xs text-gray-500 mt-1">APY</div>
                 </motion.div>
@@ -373,7 +421,7 @@ const formatAddress = (address: string | null) => {
                   <div className="flex items-center justify-center mb-3">
                     <ExclamationTriangleIcon className="w-8 h-8 text-gray-700" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{data.vault?.endgame?.hoursLeft || 88} Hour</div>
+                  <div className="text-2xl font-bold text-gray-900">{data.vault?.endgame?.daysLeft || 88} Days</div>
                   <div className="text-sm text-gray-600">Until Distribution</div>
                   <div className="text-xs text-gray-500 mt-1">Endgame</div>
                 </motion.div>
