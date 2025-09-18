@@ -336,12 +336,48 @@ export default function VaultPage() {
               </div>
               
               <div className="text-center mb-8">
-                <div className="text-8xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 mb-4">
+                <motion.div 
+                  className="text-8xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 mb-4"
+                  animate={{ 
+                    scale: data.timer.isActive ? [1, 1.02, 1] : 1,
+                    textShadow: data.timer.isActive ? [
+                      "0 0 20px rgba(251, 146, 60, 0.5)",
+                      "0 0 30px rgba(251, 146, 60, 0.8)",
+                      "0 0 20px rgba(251, 146, 60, 0.5)"
+                    ] : "0 0 0px rgba(251, 146, 60, 0)"
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: data.timer.isActive ? Infinity : 0,
+                    ease: "easeInOut"
+                  }}
+                >
                   {formatTime(currentTime)}
-                </div>
-                <p className="text-xl text-gray-300">
+                </motion.div>
+                <motion.p 
+                  className="text-xl text-gray-300"
+                  animate={{ opacity: data.timer.isActive ? [0.7, 1, 0.7] : 1 }}
+                  transition={{ 
+                    duration: 1.5,
+                    repeat: data.timer.isActive ? Infinity : 0,
+                    ease: "easeInOut"
+                  }}
+                >
                   {data.timer.isActive ? 'Timer Active - Buy to Reset!' : 'Timer Inactive'}
-                </p>
+                </motion.p>
+                {data.timer.isActive && (
+                  <motion.div 
+                    className="mt-4 text-sm text-orange-400"
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ 
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    ⚡ Timer resets with each purchase!
+                  </motion.div>
+                )}
               </div>
               
               {data.timer.lastBuyerAddress && (
@@ -362,45 +398,91 @@ export default function VaultPage() {
             </Card>
 
             {/* Vault Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               
               {/* Treasury Card */}
-              <Card className="p-6 bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-500/30 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-white">Treasury</h3>
-                  <CurrencyDollarIcon className="w-8 h-8 text-green-400" />
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-green-400 mb-2">
-                    {data.vault.treasury.amount.toFixed(2)} {data.vault.treasury.asset}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card className="p-6 bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-500/30 backdrop-blur-sm hover:border-green-400/50 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white">Treasury</h3>
+                    <motion.div
+                      animate={{ rotate: [0, 5, -5, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <CurrencyDollarIcon className="w-8 h-8 text-green-400" />
+                    </motion.div>
                   </div>
-                  <div className="text-2xl text-white font-semibold">
-                    ${data.vault.treasury.usdValue.toFixed(2)}
+                  <div className="text-center">
+                    <motion.div 
+                      className="text-4xl font-bold text-green-400 mb-2"
+                      animate={{ 
+                        textShadow: [
+                          "0 0 10px rgba(34, 197, 94, 0.3)",
+                          "0 0 20px rgba(34, 197, 94, 0.6)",
+                          "0 0 10px rgba(34, 197, 94, 0.3)"
+                        ]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      {data.vault.treasury.amount.toFixed(2)} {data.vault.treasury.asset}
+                    </motion.div>
+                    <div className="text-2xl text-white font-semibold">
+                      ${data.vault.treasury.usdValue.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-green-300 mt-2">
+                      Growing with each purchase
+                    </div>
+                    <div className="mt-3 text-xs text-green-400">
+                      💰 Tax feeds treasury automatically
+                    </div>
                   </div>
-                  <div className="text-sm text-green-300 mt-2">
-                    Growing with each purchase
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
 
               {/* Potential Winnings Card */}
-              <Card className="p-6 bg-gradient-to-br from-purple-900/20 to-purple-800/20 border-purple-500/30 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-white">Potential Winnings</h3>
-                  <GiftIcon className="w-8 h-8 text-purple-400" />
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-purple-400 mb-2">
-                    {data.vault.potentialWinnings.multiplier}x
+              <motion.div
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card className="p-6 bg-gradient-to-br from-purple-900/20 to-purple-800/20 border-purple-500/30 backdrop-blur-sm hover:border-purple-400/50 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white">Potential Winnings</h3>
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <GiftIcon className="w-8 h-8 text-purple-400" />
+                    </motion.div>
                   </div>
-                  <div className="text-2xl text-white font-semibold">
-                    ${data.vault.potentialWinnings.usdValue.toFixed(2)}
+                  <div className="text-center">
+                    <motion.div 
+                      className="text-4xl font-bold text-purple-400 mb-2"
+                      animate={{ 
+                        textShadow: [
+                          "0 0 10px rgba(168, 85, 247, 0.3)",
+                          "0 0 20px rgba(168, 85, 247, 0.6)",
+                          "0 0 10px rgba(168, 85, 247, 0.3)"
+                        ]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      {data.vault.potentialWinnings.multiplier}x
+                    </motion.div>
+                    <div className="text-2xl text-white font-semibold">
+                      ${data.vault.potentialWinnings.usdValue.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-purple-300 mt-2">
+                      Last buyer wins all
+                    </div>
+                    <div className="mt-3 text-xs text-purple-400">
+                      🎯 Winner takes the entire treasury
+                    </div>
                   </div>
-                  <div className="text-sm text-purple-300 mt-2">
-                    Last buyer wins all
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
 
               {/* Endgame Days Left Card */}
               <Card className="p-6 bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-500/30 backdrop-blur-sm">
@@ -422,23 +504,120 @@ export default function VaultPage() {
               </Card>
 
               {/* Airdrop Countdown Card */}
-              <Card className="p-6 bg-gradient-to-br from-indigo-900/20 to-indigo-800/20 border-indigo-500/30 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-white">Next Airdrop</h3>
-                  <CloudArrowDownIcon className="w-8 h-8 text-indigo-400" />
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-indigo-400 mb-2 font-mono">
-                    {formatTime(airdropTime)}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card className="p-6 bg-gradient-to-br from-indigo-900/20 to-indigo-800/20 border-indigo-500/30 backdrop-blur-sm hover:border-indigo-400/50 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white">Next Airdrop</h3>
+                    <motion.div
+                      animate={{ y: [0, -2, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <CloudArrowDownIcon className="w-8 h-8 text-indigo-400" />
+                    </motion.div>
                   </div>
-                  <div className="text-lg text-white font-semibold">
-                    Daily at 12 PM ET
+                  <div className="text-center">
+                    <motion.div 
+                      className="text-4xl font-bold text-indigo-400 mb-2 font-mono"
+                      animate={{ 
+                        textShadow: [
+                          "0 0 10px rgba(99, 102, 241, 0.3)",
+                          "0 0 20px rgba(99, 102, 241, 0.6)",
+                          "0 0 10px rgba(99, 102, 241, 0.3)"
+                        ]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      {formatTime(airdropTime)}
+                    </motion.div>
+                    <div className="text-lg text-white font-semibold">
+                      Daily at 12 PM ET
+                    </div>
+                    <div className="text-sm text-indigo-300 mt-2">
+                      Hold {data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'} tokens
+                    </div>
+                    <div className="mt-3 text-xs text-indigo-400">
+                      🎁 Automatic distribution to holders
+                    </div>
                   </div>
-                  <div className="text-sm text-indigo-300 mt-2">
-                    Hold {data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'} tokens
+                </Card>
+              </motion.div>
+
+              {/* Token Price Card */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card className="p-6 bg-gradient-to-br from-yellow-900/20 to-yellow-800/20 border-yellow-500/30 backdrop-blur-sm hover:border-yellow-400/50 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white">Token Price</h3>
+                    <motion.div
+                      animate={{ rotate: [0, 360] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                    >
+                      <ChartBarIcon className="w-8 h-8 text-yellow-400" />
+                    </motion.div>
                   </div>
-                </div>
-              </Card>
+                  <div className="text-center">
+                    <motion.div 
+                      className="text-4xl font-bold text-yellow-400 mb-2"
+                      animate={{ 
+                        textShadow: [
+                          "0 0 10px rgba(234, 179, 8, 0.3)",
+                          "0 0 20px rgba(234, 179, 8, 0.6)",
+                          "0 0 10px rgba(234, 179, 8, 0.3)"
+                        ]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      ${data.token?.price ? data.token.price.toFixed(6) : 'N/A'}
+                    </motion.div>
+                    <div className="text-lg text-white font-semibold">
+                      Market Cap: ${data.token?.marketCap ? (data.token.marketCap / 1000000).toFixed(1) + 'M' : 'N/A'}
+                    </div>
+                    <div className="text-sm text-yellow-300 mt-2">
+                      24h Volume: ${data.token?.volume24h ? (data.token.volume24h / 1000).toFixed(1) + 'K' : 'N/A'}
+                    </div>
+                    <div className="mt-3 text-xs text-yellow-400">
+                      📈 Real-time price updates
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+
+              {/* Vault Activity Card */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card className="p-6 bg-gradient-to-br from-pink-900/20 to-pink-800/20 border-pink-500/30 backdrop-blur-sm hover:border-pink-400/50 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white">Vault Activity</h3>
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <BoltIcon className="w-8 h-8 text-pink-400" />
+                    </motion.div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-pink-400 mb-2">
+                      {recentBuys.length}
+                    </div>
+                    <div className="text-lg text-white font-semibold">
+                      Recent Purchases
+                    </div>
+                    <div className="text-sm text-pink-300 mt-2">
+                      Last 24 hours
+                    </div>
+                    <div className="mt-3 text-xs text-pink-400">
+                      🔥 High activity = more competition
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
             </div>
 
             {/* Recent Buys */}
@@ -482,29 +661,59 @@ export default function VaultPage() {
           <div className="space-y-6">
             
             {/* Trade Widget */}
-            <Card className="p-6 bg-gradient-to-br from-gray-900/80 to-gray-800/80 border-gray-700 shadow-2xl backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white">
-                  Trade {data.vaultConfig?.airdropAsset || 'TOKEN'}
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-400">Live</span>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Card className="p-6 bg-gradient-to-br from-gray-900/80 to-gray-800/80 border-gray-700 shadow-2xl backdrop-blur-sm hover:border-orange-500/30 transition-all duration-300">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-white">
+                    Trade {data.vaultConfig?.airdropAsset || 'TOKEN'}
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <motion.div 
+                      className="w-2 h-2 bg-green-400 rounded-full"
+                      animate={{ 
+                        scale: [1, 1.2, 1],
+                        opacity: [0.7, 1, 0.7]
+                      }}
+                      transition={{ 
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    ></motion.div>
+                    <span className="text-sm text-green-400 font-medium">Live Trading</span>
+                  </div>
                 </div>
-              </div>
-              <div className="mb-4">
-                <p className="text-gray-300 text-sm mb-2">Buy to reset the timer and win the vault!</p>
-                <div className="bg-orange-500/20 border border-orange-500/30 rounded-lg p-3">
-                  <p className="text-orange-300 text-sm font-medium">
-                    ⚡ Last buyer wins {data.vault.potentialWinnings.multiplier}x the treasury!
-                  </p>
+                <div className="mb-4">
+                  <p className="text-gray-300 text-sm mb-2">Buy to reset the timer and win the vault!</p>
+                  <motion.div 
+                    className="bg-orange-500/20 border border-orange-500/30 rounded-lg p-3"
+                    animate={{ 
+                      borderColor: [
+                        "rgba(249, 115, 22, 0.3)",
+                        "rgba(249, 115, 22, 0.6)",
+                        "rgba(249, 115, 22, 0.3)"
+                      ]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <p className="text-orange-300 text-sm font-medium">
+                      ⚡ Last buyer wins {data.vault.potentialWinnings.multiplier}x the treasury!
+                    </p>
+                  </motion.div>
                 </div>
-              </div>
-              <JupiterWidget 
-                tokenAddress={data.vaultConfig?.tokenMint || data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
-                tokenSymbol={data.vaultConfig?.airdropAsset || "TOKEN"}
-              />
-            </Card>
+                <JupiterWidget 
+                  tokenAddress={data.vaultConfig?.tokenMint || data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
+                  tokenSymbol={data.vaultConfig?.airdropAsset || "TOKEN"}
+                />
+              </Card>
+            </motion.div>
 
             {/* Vault Info */}
             <Card className="p-6 bg-gradient-to-br from-gray-900/50 to-gray-800/50 border-gray-700 backdrop-blur-sm">
