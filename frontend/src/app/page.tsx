@@ -234,46 +234,6 @@ const formatAddress = (address: string | null) => {
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-center space-x-4">
-          <motion.button
-            onClick={() => setActiveTab('vault')}
-            className={`px-6 py-3 rounded-lg font-medium transition-all ${
-              activeTab === 'vault'
-                ? 'bg-green-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <span>Hunt the Treasury</span>
-            </div>
-          </motion.button>
-          
-          <motion.button
-            onClick={() => setActiveTab('airdrop')}
-            className={`px-6 py-3 rounded-lg font-medium transition-all ${
-              activeTab === 'airdrop'
-                ? 'bg-green-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Farm Daily Airdrops</span>
-            </div>
-          </motion.button>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -417,6 +377,44 @@ const formatAddress = (address: string | null) => {
 
           {/* Sidebar - Tab-based Content */}
           <div className="space-y-6">
+            {/* Tab Navigation - Only Above Sidebar */}
+            <div className="flex space-x-2">
+              <motion.button
+                onClick={() => setActiveTab('vault')}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === 'vault'
+                    ? 'bg-green-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span>Vault</span>
+                </div>
+              </motion.button>
+              
+              <motion.button
+                onClick={() => setActiveTab('airdrop')}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === 'airdrop'
+                    ? 'bg-green-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Airdrop</span>
+                </div>
+              </motion.button>
+            </div>
             {activeTab === 'vault' ? (
               /* Vault Tab Sidebar */
               <div className="space-y-6">
@@ -477,7 +475,7 @@ const formatAddress = (address: string | null) => {
                       <ClockIcon className="w-5 h-5 text-gray-700" />
                     </div>
                     <div className="text-sm font-bold text-gray-900">
-                      Min Buy: 1 REVS
+                      Min Buy: 1 REVS*
                     </div>
                     <div className="text-xs text-gray-500">To Reset Timer</div>
                   </motion.div>
@@ -528,7 +526,7 @@ const formatAddress = (address: string | null) => {
                     <div className="flex items-center justify-center mb-2">
                       <GiftIcon className="w-5 h-5 text-gray-700" />
                     </div>
-                    <div className="text-sm font-bold text-gray-900">1,250.5 SOL</div>
+                    <div className="text-sm font-bold text-gray-900">1,250.5 SOL*</div>
                     <div className="text-xs text-gray-500">Total Airdropped</div>
                   </motion.div>
 
@@ -540,7 +538,7 @@ const formatAddress = (address: string | null) => {
                     <div className="flex items-center justify-center mb-2">
                       <UserGroupIcon className="w-5 h-5 text-gray-700" />
                     </div>
-                    <div className="text-sm font-bold text-gray-900">1,103</div>
+                    <div className="text-sm font-bold text-gray-900">1,103*</div>
                     <div className="text-xs text-gray-500">Eligible Holders</div>
                   </motion.div>
 
@@ -552,7 +550,7 @@ const formatAddress = (address: string | null) => {
                     <div className="flex items-center justify-center mb-2">
                       <CurrencyDollarIcon className="w-5 h-5 text-gray-700" />
                     </div>
-                    <div className="text-sm font-bold text-gray-900">200K</div>
+                    <div className="text-sm font-bold text-gray-900">200K*</div>
                     <div className="text-xs text-gray-500">Must Hold</div>
                   </motion.div>
 
@@ -564,7 +562,7 @@ const formatAddress = (address: string | null) => {
                     <div className="flex items-center justify-center mb-2">
                       <ChartBarIcon className="w-5 h-5 text-gray-700" />
                     </div>
-                    <div className="text-sm font-bold text-gray-900">143%</div>
+                    <div className="text-sm font-bold text-gray-900">143%*</div>
                     <div className="text-xs text-gray-500">APY</div>
                   </motion.div>
                 </div>
@@ -593,6 +591,11 @@ const formatAddress = (address: string | null) => {
                 />
               </div>
             </Card>
+
+            {/* Mock Data Legend */}
+            <div className="text-xs text-gray-500 text-center">
+              * = Mock data (not live)
+            </div>
           </div>
         </div>
 
@@ -644,12 +647,12 @@ const formatAddress = (address: string | null) => {
                   
                   <div className="text-center">
                     <p className="text-sm text-gray-500">Days Left</p>
-                    <p className="text-lg font-bold text-gray-900">{data.vault?.endgame?.daysLeft || 88}</p>
+                    <p className="text-lg font-bold text-gray-900">{data.vault?.endgame?.daysLeft || 88}*</p>
                   </div>
                   
                   <div className="text-center">
                     <p className="text-sm text-gray-500">Must Hold</p>
-                    <p className="text-lg font-bold text-gray-900">{(data.vault?.airdrop?.minimumHold || 200000).toLocaleString()}</p>
+                    <p className="text-lg font-bold text-gray-900">{(data.vault?.airdrop?.minimumHold || 200000).toLocaleString()}*</p>
                   </div>
                 </div>
               </div>

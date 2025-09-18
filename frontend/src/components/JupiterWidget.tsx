@@ -27,22 +27,30 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
     document.head.appendChild(script);
 
     script.onload = () => {
-      // Initialize Jupiter plugin
-      if (window.Jupiter) {
-        window.Jupiter.init({
-          displayMode: "integrated",
-          integratedTargetId: "jupiter-widget-container",
-          endpoint: "https://api.mainnet-beta.solana.com",
-          platformFeeAndAccounts: {
-            feeBps: 0,
-            accounts: []
-          },
-          defaultExplorer: "Solscan",
-          containerStyles: {
-            background: "transparent"
-          }
-        });
-      }
+      // Wait a bit for the script to fully load
+      setTimeout(() => {
+        if (window.Jupiter) {
+          window.Jupiter.init({
+            displayMode: "integrated",
+            integratedTargetId: "jupiter-widget-container",
+            endpoint: "https://api.mainnet-beta.solana.com",
+            platformFeeAndAccounts: {
+              feeBps: 0,
+              accounts: []
+            },
+            defaultExplorer: "Solscan",
+            containerStyles: {
+              background: "transparent"
+            },
+            onSuccess: ({ txid }) => {
+              console.log('Swap successful:', txid);
+            },
+            onSwapError: ({ error }) => {
+              console.error('Swap error:', error);
+            }
+          });
+        }
+      }, 1000);
     };
 
     return () => {
