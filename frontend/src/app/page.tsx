@@ -264,11 +264,6 @@ const formatAddress = (address: string | null) => {
                   </div>
                 </div>
                 <div className="text-right">
-                  {/* Active Status */}
-                  <div className="flex items-center justify-end space-x-2 mb-2">
-                    <div className={`w-3 h-3 rounded-full ${data.timer.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="text-sm text-gray-600">{data.timer.isActive ? 'Active' : 'Inactive'}</span>
-                  </div>
                   {/* Timer */}
                   <motion.div
                     className="text-5xl font-mono font-bold text-gray-900"
@@ -281,8 +276,10 @@ const formatAddress = (address: string | null) => {
                   </motion.div>
                   {/* Last Buyer Info */}
                   <div className="mt-4 text-right">
-                    <p className="text-sm text-gray-500">Last Buyer</p>
-                    <p className="text-sm font-mono text-gray-700">{formatAddress(data.timer.lastBuyerAddress)}</p>
+                    <div className="flex items-center justify-end space-x-2">
+                      <p className="text-sm text-gray-500">Last Buyer:</p>
+                      <p className="text-sm font-mono text-gray-700">{formatAddress(data.timer.lastBuyerAddress)}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -358,23 +355,24 @@ const formatAddress = (address: string | null) => {
 
           {/* Sidebar - Vault Metrics & Trading */}
           <div className="space-y-6">
-            {/* Vault Metrics Cards */}
-            <div className="grid grid-cols-1 gap-4">
+            {/* Vault Metrics Cards - 2 Columns x 3 Rows */}
+            <div className="grid grid-cols-2 gap-3">
               <motion.div
                 className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-center mb-2">
-                  <CurrencyDollarIcon className="w-6 h-6 text-gray-700" />
+                  <CurrencyDollarIcon className="w-5 h-5 text-gray-700" />
                 </div>
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-sm font-bold text-gray-900">
                   {data.vault?.treasury?.amount ? 
                     (data.vault.treasury.amount > 1000000 ? 
                       `${(data.vault.treasury.amount / 1000000).toFixed(1)}M` : 
                       data.vault.treasury.amount.toLocaleString()
                     ) : '0'} {data.vault?.treasury?.asset || 'REVS'}
                 </div>
+                <div className="text-xs text-gray-600">${(data.vault?.treasury?.usdValue || 0).toLocaleString()}</div>
                 <div className="text-xs text-gray-500">Treasury</div>
               </motion.div>
 
@@ -384,11 +382,12 @@ const formatAddress = (address: string | null) => {
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-center mb-2">
-                  <BoltIcon className="w-6 h-6 text-gray-700" />
+                  <BoltIcon className="w-5 h-5 text-gray-700" />
                 </div>
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-sm font-bold text-gray-900">
                   {(data.vault?.potentialWinnings?.multiplier || 100).toLocaleString()}x
                 </div>
+                <div className="text-xs text-gray-600">${(data.vault?.potentialWinnings?.usdValue || 0).toLocaleString()}</div>
                 <div className="text-xs text-gray-500">Potential Winnings</div>
               </motion.div>
 
@@ -398,12 +397,13 @@ const formatAddress = (address: string | null) => {
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-center mb-2">
-                  <ClockIcon className="w-6 h-6 text-gray-700" />
+                  <ClockIcon className="w-5 h-5 text-gray-700" />
                 </div>
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-sm font-bold text-gray-900">
                   {data.vault?.timer?.hoursLeft || 1} Hour
                 </div>
-                <div className="text-xs text-gray-500">Alive {data.vault?.timer?.daysAlive || 2} Days</div>
+                <div className="text-xs text-gray-600">Alive {data.vault?.timer?.daysAlive || 2} Days</div>
+                <div className="text-xs text-gray-500">Timer</div>
               </motion.div>
 
               <motion.div
@@ -412,9 +412,16 @@ const formatAddress = (address: string | null) => {
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-center mb-2">
-                  <CloudArrowDownIcon className="w-6 h-6 text-gray-700" />
+                  <CloudArrowDownIcon className="w-5 h-5 text-gray-700" />
                 </div>
-                <div className="text-lg font-bold text-gray-900">{formatTime(airdropTime)}</div>
+                <div className="text-sm font-bold text-gray-900">{formatTime(airdropTime)}</div>
+                <div className="text-xs text-gray-600">
+                  {data.vault?.airdrop?.amount ? 
+                    (data.vault.airdrop.amount > 1000000 ? 
+                      `${(data.vault.airdrop.amount / 1000000).toFixed(1)}M` : 
+                      data.vault.airdrop.amount.toLocaleString()
+                    ) : '0'} REVS
+                </div>
                 <div className="text-xs text-gray-500">Next Airdrop • Noon Eastern</div>
               </motion.div>
 
@@ -424,12 +431,26 @@ const formatAddress = (address: string | null) => {
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-center mb-2">
-                  <ExclamationTriangleIcon className="w-6 h-6 text-gray-700" />
+                  <ChartBarIcon className="w-5 h-5 text-gray-700" />
                 </div>
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-sm font-bold text-gray-900">{data.vault?.apy?.percentage || 'N/A'}</div>
+                <div className="text-xs text-gray-600">Since Launch</div>
+                <div className="text-xs text-gray-500">APY</div>
+              </motion.div>
+
+              <motion.div
+                className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <ExclamationTriangleIcon className="w-5 h-5 text-gray-700" />
+                </div>
+                <div className="text-sm font-bold text-gray-900">
                   {data.vault?.endgame?.daysLeft || 98} Days
                 </div>
-                <div className="text-xs text-gray-500">Until Distribution</div>
+                <div className="text-xs text-gray-600">Until Distribution</div>
+                <div className="text-xs text-gray-500">Endgame</div>
               </motion.div>
             </div>
 

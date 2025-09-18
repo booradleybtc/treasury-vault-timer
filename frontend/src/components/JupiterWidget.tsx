@@ -85,7 +85,12 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
                   <p className="text-xs text-gray-500">Balance: 1.25 SOL</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">1.0</p>
+                  <input
+                    type="number"
+                    value="1.0"
+                    className="w-16 text-right text-sm font-medium text-gray-900 bg-transparent border-none outline-none"
+                    readOnly
+                  />
                 </div>
               </div>
 

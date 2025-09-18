@@ -101,7 +101,26 @@ const TRACKED_WALLETS = [
 let walletBalances = {};
 
 // Buy log to track recent purchases
-let buyLog = [];
+let buyLog = [
+  {
+    address: "7rhxnLV8C77o6d8oz26AgK8x8m5ePsdeRawjqvojbjnQ",
+    amount: 1000,
+    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    txSignature: "mock_tx_1"
+  },
+  {
+    address: "5g8DQ532mntVZw5G7rhxnLV8C77o6d8oz26AgK8x8m5ePsdeRawjqvojbjnQ",
+    amount: 500,
+    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    txSignature: "mock_tx_2"
+  },
+  {
+    address: "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p",
+    amount: 750,
+    timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    txSignature: "mock_tx_3"
+  }
+];
 
 // Global timer state
 let globalTimer = {
