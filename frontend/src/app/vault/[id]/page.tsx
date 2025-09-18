@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui/Button';
 import { ArrowLeftIcon, ClockIcon, CurrencyDollarIcon, GiftIcon, ChartBarIcon, CloudArrowDownIcon, BoltIcon } from '@heroicons/react/24/outline';
 import dynamic from 'next/dynamic';
 
 // Dynamically import JupiterWidget to avoid SSR issues
-const JupiterWidget = dynamic(() => import('../../components/JupiterWidget'), {
+const JupiterWidget = dynamic(() => import('../../../components/JupiterWidget'), {
   ssr: false,
   loading: () => <div className="p-4 text-center text-gray-500">Loading trading widget...</div>
 });
