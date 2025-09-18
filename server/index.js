@@ -15,6 +15,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = createServer(app);
+const STARTED_AT = new Date().toISOString();
 
 // Serve static frontend (built into dist/)
 app.use(express.static(path.join(__dirname, '../dist')));
@@ -71,12 +72,12 @@ let vaultData = {
     usdValue: 0 // treasury * 100
   },
   timer: {
-    hoursLeft: 1, // Always 1 hour
-    daysAlive: 0, // Days since September 15th noon Eastern
-    gameStartDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+    hoursLeft: 1,
+    daysAlive: 0,
+    gameStartDate: null
   },
   endgame: {
-    endDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 100 * 24 * 60 * 60 * 1000), // 100 days from launch
+    endDate: null,
     daysLeft: 100
   },
   airdrop: {
@@ -102,28 +103,28 @@ const TRACKED_WALLETS = [
 // Wallet balances cache
 let walletBalances = {};
 
-// Buy log to track recent purchases
-let buyLog = [
-  // Mock data for testing - remove when real data is available
-  {
-    address: '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE',
-    amount: 1500000,
-    txSignature: 'mock_tx_1',
-    timestamp: Date.now() - 300000 // 5 minutes ago
-  },
-  {
-    address: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
-    amount: 850000,
-    txSignature: 'mock_tx_2',
-    timestamp: Date.now() - 600000 // 10 minutes ago
-  },
-  {
-    address: '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p',
-    amount: 1200000,
-    txSignature: 'mock_tx_3',
-    timestamp: Date.now() - 900000 // 15 minutes ago
+// Buy log to track recent purchases (live)
+let buyLog = [];
+
+// Initialize fixed launch time: Sept 15, 2025 at 12:00 PM America/New_York
+function initializeLaunchTimes() {
+  try {
+    const nyLaunchLocal = new Date(
+      new Date('2025-09-15T12:00:00').toLocaleString('en-US', { timeZone: 'America/New_York' })
+    );
+    // Convert to actual UTC Date preserving clock
+    const nyLaunchUTC = new Date(nyLaunchLocal.toLocaleString('en-US', { timeZone: 'UTC' }));
+    vaultData.timer.gameStartDate = nyLaunchUTC;
+    const endDate = new Date(nyLaunchUTC.getTime() + 100 * 24 * 60 * 60 * 1000);
+    vaultData.endgame.endDate = endDate;
+  } catch (e) {
+    // Fallback to now if timezone conversion fails
+    const now = new Date();
+    vaultData.timer.gameStartDate = now;
+    vaultData.endgame.endDate = new Date(now.getTime() + 100 * 24 * 60 * 60 * 1000);
   }
-];
+}
+initializeLaunchTimes();
 
 // Function to scan for eligible REVS holders
 async function scanEligibleHolders() {
@@ -302,7 +303,7 @@ async function fetchTokenPrice() {
 function calculateVaultData() {
   const now = new Date();
   
-  // Calculate days alive since September 15th noon Eastern
+  // Calculate days alive since configured launch time
   const daysAlive = Math.floor((now - vaultData.timer.gameStartDate) / (1000 * 60 * 60 * 24));
   vaultData.timer.daysAlive = Math.max(0, daysAlive);
   
@@ -613,8 +614,35 @@ app.get('/api/timer', (req, res) => {
   res.json({ ...globalTimer, isMonitoring: monitoringState.isMonitoring });
 });
 
+// Recent purchases (last 3)
+app.get('/api/purchases', (req, res) => {
+  try {
+    const lastThree = buyLog.slice(0, 3).map(p => ({
+      buyer: p.address,
+      amount: p.amount,
+      signature: p.txSignature,
+      timestamp: p.timestamp
+    }));
+    res.json({ purchases: lastThree, count: lastThree.length });
+  } catch (e) {
+    res.json({ purchases: [], count: 0 });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), isMonitoring: monitoringState.isMonitoring });
+});
+
+// Enhanced health endpoint with version and commit info
+app.get('/api/healthz', (req, res) => {
+  res.json({
+    ok: true,
+    startedAt: STARTED_AT,
+    now: new Date().toISOString(),
+    isMonitoring: monitoringState.isMonitoring,
+    commit: process.env.COMMIT_SHA || null,
+    version: process.env.BUILD_VERSION || null
+  });
 });
 
 // Token data endpoints
@@ -1129,7 +1157,7 @@ const startMonitoring = () => {
     if (monitoringState.isMonitoring) {
       monitorPurchases();
     }
-  }, 10000);
+  }, 30000);
 };
 
 const stopMonitoring = () => {

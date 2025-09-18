@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import * as React from 'react';
+const { useEffect, useRef, useState } = React;
 
 // Declare Jupiter global
 declare global {
@@ -17,14 +18,28 @@ interface JupiterWidgetProps {
 }
 
 export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidgetProps) {
-  // Safety check to prevent useRef errors
-  if (typeof window === 'undefined') {
+  // Safety check to prevent useRef errors and ensure client-side only
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
     return (
       <div className="w-full">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade {tokenSymbol}</h3>
           <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
             <p className="text-gray-600">Loading trading widget...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure React hooks are available
+  if (!useRef || !useState || !useEffect) {
+    return (
+      <div className="w-full">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade {tokenSymbol}</h3>
+          <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">Widget temporarily unavailable</p>
           </div>
         </div>
       </div>
@@ -38,18 +53,42 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
     // Only load if we have a valid container
     if (!containerRef.current) return;
 
-    // Load Jupiter plugin script
-    const script = document.createElement('script');
-    script.src = 'https://plugin.jup.ag/plugin-v1.js';
-    script.async = true;
-    document.head.appendChild(script);
+    // Wallet standard polyfill to avoid "window.navigator.wallets is not an array"
+    try {
+      const navAny: any = window.navigator as any;
+      if (!Array.isArray(navAny.wallets)) {
+        navAny.wallets = [];
+      }
+    } catch {}
 
-    script.onload = () => {
+    // Load Jupiter plugin script
+    const ensureScript = (): Promise<void> => new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-jupiter-plugin]') as HTMLScriptElement | null;
+      if (existing) {
+        existing.addEventListener('load', () => resolve());
+        if ((window as any).Jupiter) return resolve();
+        return; // wait for load
+      }
+      const s = document.createElement('script');
+      s.src = 'https://plugin.jup.ag/plugin-v1.js';
+      s.async = true;
+      s.setAttribute('data-jupiter-plugin', 'true');
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed to load Jupiter plugin script'));
+      document.head.appendChild(s);
+    });
+
+    ensureScript().then(() => {
       // Wait a bit for the script to fully load
       setTimeout(() => {
-        if (window.Jupiter && containerRef.current) {
+        const w: any = window as any;
+        if (w.__JUP_INITED) {
+          setIsLoaded(true);
+          return;
+        }
+        if (w.Jupiter && containerRef.current) {
           try {
-            window.Jupiter.init({
+            w.Jupiter.init({
               displayMode: "integrated",
               integratedTargetId: "jupiter-widget-container",
               endpoint: "https://api.mainnet-beta.solana.com",
@@ -68,23 +107,20 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
                 console.error('Swap error:', error);
               }
             });
+            w.__JUP_INITED = true;
             setIsLoaded(true);
           } catch (error) {
             console.error('Error initializing Jupiter widget:', error);
           }
         }
       }, 1000);
-    };
-
-    script.onerror = () => {
+    }).catch(() => {
       console.error('Failed to load Jupiter plugin script');
-    };
+    });
 
     return () => {
       // Cleanup
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
+      // Keep script cached; just hide container on unmount
     };
   }, []);
 

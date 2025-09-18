@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
-import JupiterWidget from '../components/JupiterWidget';
+// Load Jupiter client-only to avoid SSR/react default import issues
+const JupiterWidget = dynamic(() => import('../components/JupiterWidget'), { ssr: false });
 import { 
   MagnifyingGlassIcon, 
   ChevronDownIcon,
@@ -80,8 +82,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [airdropTime, setAirdropTime] = useState(86400); // 24 hours in seconds
+  const [airdropTime, setAirdropTime] = useState(0);
   const [activeTab, setActiveTab] = useState<'vault' | 'airdrop'>('vault');
+  const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
   // Real-time countdown timer
   useEffect(() => {
@@ -102,17 +105,29 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [data]);
 
-  // Airdrop countdown timer
+  // Airdrop countdown timer -> next 12:00 PM America/New_York daily
   useEffect(() => {
-    const interval = setInterval(() => {
-      setAirdropTime(prev => {
-        if (prev <= 1) {
-          return 86400; // Reset to 24 hours
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const computeSecondsToNextNoonNY = () => {
+      const now = new Date();
+      const nyNow = new Date(
+        new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+      );
+      const target = new Date(nyNow);
+      target.setHours(12, 0, 0, 0); // 12:00:00 local NY time
+      if (nyNow >= target) {
+        target.setDate(target.getDate() + 1);
+      }
+      // Convert target NY time back to UTC milliseconds via timezone trick
+      const targetUTC = new Date(
+        target.toLocaleString('en-US', { timeZone: 'UTC' })
+      );
+      return Math.max(0, Math.floor((targetUTC.getTime() - now.getTime()) / 1000));
+    };
 
+    setAirdropTime(computeSecondsToNextNoonNY());
+    const interval = setInterval(() => {
+      setAirdropTime((prev) => (prev > 0 ? prev - 1 : computeSecondsToNextNoonNY()));
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -120,11 +135,8 @@ export default function Home() {
     try {
       console.log('🔄 Fetching data from backend...');
       
-      // Try multiple backend URLs
-      const backendUrls = [
-        'https://treasury-vault-timer-backend.onrender.com/api/dashboard',
-        'http://localhost:3001/api/dashboard' // Local fallback
-      ];
+      // Use configured backend URL (with local fallback)
+      const backendUrls = [`${BACKEND}/api/dashboard`];
       
       let response = null;
       let lastError = null;
@@ -161,59 +173,27 @@ export default function Home() {
       }
 
       const result = await response.json();
+      // Never trust dashboard.buyLog (may contain seed data). Start empty.
+      result.buyLog = [];
+      // If purchases endpoint exists, hydrate buyLog with it to ensure live last 3
+      try {
+        const purchasesRaw = await fetch(`${BACKEND}/api/purchases`).catch(() => null);
+        const purchasesRes = purchasesRaw && purchasesRaw.ok ? await purchasesRaw.json() : null;
+        if (purchasesRes?.purchases) {
+          result.buyLog = purchasesRes.purchases.map((p: any) => ({
+            address: p.buyer || p.address,
+            amount: Number(p.amount || 0),
+            txSignature: p.signature || p.txSignature,
+            timestamp: p.timestamp || Date.now()
+          }));
+        }
+      } catch {}
       console.log('✅ Data fetched successfully:', result);
       setData(result);
       setError(null);
     } catch (err) {
       console.error('❌ Fetch error:', err);
-      console.log('🔄 Using fallback data...');
-      
-      // Set comprehensive fallback data
-      setData({
-        timer: {
-          timeLeft: 3600,
-          isActive: true,
-          lastPurchaseTime: new Date().toISOString(),
-          lastBuyerAddress: '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE',
-          daysAlive: 2
-        },
-        token: {
-          price: 0.000711,
-          marketCap: 556273.461,
-          address: '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p'
-        },
-        vault: {
-          treasury: { amount: 17204455.31, usdValue: 12230.647 },
-          potentialWinnings: { multiplier: 100, usdValue: 1223064.7 },
-          endgame: { daysLeft: 98 },
-          airdrop: { 
-            amount: 78.37, 
-            totalAirdroppedSOL: 1250.5, 
-            eligibleHolders: 1103 
-          }
-        },
-        buyLog: [
-          {
-            address: '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE',
-            amount: 1500000,
-            txSignature: 'mock_tx_1',
-            timestamp: Date.now() - 300000
-          },
-          {
-            address: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
-            amount: 850000,
-            txSignature: 'mock_tx_2',
-            timestamp: Date.now() - 600000
-          },
-          {
-            address: '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p',
-            amount: 1200000,
-            txSignature: 'mock_tx_3',
-            timestamp: Date.now() - 900000
-          }
-        ]
-      });
-      setError('Backend unavailable - showing demo data');
+      setError('Backend unavailable');
     } finally {
       setLoading(false);
     }
@@ -362,12 +342,11 @@ const formatAddress = (address: string | null) => {
                     </div>
                   </motion.div>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">RevShare</h1>
-                    {/* REVS and Wallet Address Side by Side */}
-                    <div className="flex items-center space-x-4 mt-1">
-                      <p className="text-lg font-semibold text-gray-700">REVS</p>
+                    <h1 className="text-3xl font-bold text-gray-900">RevShare <span className="ml-2 text-sm font-semibold text-gray-600 align-middle">REVS</span></h1>
+                    {/* Token address under name, small */}
+                    <div className="flex items-center space-x-2 mt-1">
                       <div className="flex items-center space-x-2">
-                        <p className="text-lg font-mono text-gray-500">
+                        <p className="text-xs font-mono text-gray-500">
                           {data.token?.address ? `${data.token.address.slice(0, 8)}...${data.token.address.slice(-8)}` : '9VxExA1i...BMaBaY1p'}
                         </p>
                         <button
@@ -387,11 +366,11 @@ const formatAddress = (address: string | null) => {
                     <div className="flex items-center space-x-4 mt-2">
                       <div className="flex items-center space-x-1">
                         <span className="text-xs text-gray-500">Price:</span>
-                        <span className="text-sm font-semibold text-gray-900">${data.token?.price || 0.000711}</span>
+                        <span className="text-sm font-semibold text-gray-900">{typeof data.token?.price === 'number' && data.token.price > 0 ? `$${data.token.price.toFixed(6)}` : 'N/A'}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <span className="text-xs text-gray-500">MC:</span>
-                        <span className="text-sm font-semibold text-gray-900">${data.token?.marketCap ? (data.token.marketCap / 1000000).toFixed(1) + 'M' : '556.3M'}</span>
+                        <span className="text-sm font-semibold text-gray-900">{typeof data.token?.marketCap === 'number' && data.token.marketCap > 0 ? `$${(data.token.marketCap / 1000000).toFixed(1)}M` : 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -439,7 +418,7 @@ const formatAddress = (address: string | null) => {
             <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Buys</h3>
               <div className="space-y-3">
-                {data.buyLog?.slice(0, 5).map((buy, index) => (
+                {data.buyLog && data.buyLog.length > 0 ? data.buyLog.slice(0, 3).map((buy, index) => (
                   <motion.div
                     key={buy.txSignature}
                     className={`flex justify-between items-center p-4 rounded-lg border ${
@@ -470,14 +449,14 @@ const formatAddress = (address: string | null) => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-green-600">{buy.amount.toFixed(2)} REVS</p>
-                      <p className="text-xs text-gray-500">{(buy.amount * 0.000711).toFixed(4)} SOL</p>
+                      {data.token?.price ? (
+                        <p className="text-xs text-gray-500">${(buy.amount * data.token.price).toFixed(2)}</p>
+                      ) : null}
                     </div>
                   </motion.div>
-                ))}
-                {(!data.buyLog || data.buyLog.length === 0) && (
+                )) : (
                   <div className="text-center py-8 text-gray-500">
                     <p>No recent purchases</p>
-                    <p className="text-sm mt-1">Start trading REVS to see your recent buys here!</p>
                   </div>
                 )}
               </div>
@@ -577,9 +556,9 @@ const formatAddress = (address: string | null) => {
                       <BoltIcon className="w-5 h-5 text-gray-700" />
                     </div>
                     <div className="text-sm font-bold text-gray-900">
-                      {(data.vault?.potentialWinnings?.multiplier || 100).toLocaleString()}x
+                      ${(data.vault?.treasury?.usdValue ? (data.vault.treasury.usdValue * 100).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0')}
                     </div>
-                    <div className="text-xs text-gray-500">Potential Winnings</div>
+                    <div className="text-xs text-gray-500">Potential Winnings (USD)</div>
                   </motion.div>
 
                   <motion.div
@@ -590,9 +569,7 @@ const formatAddress = (address: string | null) => {
                     <div className="flex items-center justify-center mb-2">
                       <ExclamationTriangleIcon className="w-5 h-5 text-gray-700" />
                     </div>
-                    <div className="text-sm font-bold text-gray-900">
-                      {data.vault?.endgame?.daysLeft || 98} Days
-                    </div>
+                    <div className="text-sm font-bold text-gray-900">{data.vault?.endgame?.daysLeft ?? 0} Days</div>
                     <div className="text-xs text-gray-500">Endgame</div>
                   </motion.div>
 
