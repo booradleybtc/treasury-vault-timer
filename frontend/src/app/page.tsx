@@ -111,6 +111,11 @@ export default function Home() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
+  // Redirect to vaults page on mount
+  useEffect(() => {
+    window.location.href = '/vaults';
+  }, []);
+
   // Socket.IO connection for real-time updates
   useEffect(() => {
     const newSocket = io(BACKEND, {
