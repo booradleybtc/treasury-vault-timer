@@ -782,6 +782,26 @@ app.put('/api/admin/vaults/:id/whitelisted-addresses', async (req, res) => {
 });
 
 // Token data endpoints
+// Vault configuration endpoint for frontend
+app.get('/api/vault/:id/config', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVault(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    // Add whitelisted addresses
+    vault.whitelistedAddresses = await db.getWhitelistedAddresses(id);
+    
+    res.json({ vault });
+  } catch (error) {
+    console.error('Error fetching vault config:', error);
+    res.status(500).json({ error: 'Failed to fetch vault configuration' });
+  }
+});
+
 app.get('/api/token/price', (req, res) => {
   res.json({
     token: REVS_TOKEN_ADDRESS,
