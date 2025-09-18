@@ -47,6 +47,8 @@ export default function AdminDashboard() {
   const [selectedVault, setSelectedVault] = useState<VaultConfig | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editingVault, setEditingVault] = useState<VaultConfig | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
 
   // Mock admin wallets (in production, this would be in environment variables)
   const ADMIN_WALLETS = [
@@ -172,6 +174,49 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Define which fields are editable vs immutable
+  const getFieldEditability = (field: string) => {
+    const immutableFields = [
+      'tokenMint', 'distributionWallet', 'treasuryWallet', 'devWallet',
+      'startDate', 'endgameDate', 'timerDuration', 'distributionInterval',
+      'minHoldAmount', 'taxSplit', 'vaultAsset', 'airdropAsset',
+      'createdAt', 'updatedAt'
+    ];
+    
+    const semiEditableFields = [
+      'name', 'description' // Can edit but only when vault is draft
+    ];
+    
+    const fullyEditableFields = [
+      'whitelistedAddresses' // Can always edit
+    ];
+    
+    return {
+      isImmutable: immutableFields.includes(field),
+      isSemiEditable: semiEditableFields.includes(field),
+      isFullyEditable: fullyEditableFields.includes(field)
+    };
+  };
+
+  const handleFieldEdit = (vault: VaultConfig, field: string, value: any) => {
+    setVaults(prev => prev.map(v => 
+      v.id === vault.id ? { ...v, [field]: value, updatedAt: new Date().toISOString() } : v
+    ));
+    setEditingField(null);
+  };
+
+  const addWhitelistedAddress = (vault: VaultConfig, address: string) => {
+    if (address.trim() && !vault.whitelistedAddresses.includes(address.trim())) {
+      const newAddresses = [...vault.whitelistedAddresses, address.trim()];
+      handleFieldEdit(vault, 'whitelistedAddresses', newAddresses);
+    }
+  };
+
+  const removeWhitelistedAddress = (vault: VaultConfig, address: string) => {
+    const newAddresses = vault.whitelistedAddresses.filter(addr => addr !== address);
+    handleFieldEdit(vault, 'whitelistedAddresses', newAddresses);
   };
 
   if (!isAuthenticated) {
@@ -366,13 +411,76 @@ export default function AdminDashboard() {
           >
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedVault.name}</h2>
-                  <p className="text-gray-600 mt-1">{selectedVault.description}</p>
+                <div className="flex-1">
+                  {editingField === 'name' ? (
+                    <input
+                      type="text"
+                      defaultValue={selectedVault.name}
+                      className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-blue-500 outline-none"
+                      onBlur={(e) => {
+                        if (e.target.value !== selectedVault.name) {
+                          handleFieldEdit(selectedVault, 'name', e.target.value);
+                        }
+                        setEditingField(null);
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <h2 className="text-2xl font-bold text-gray-900">{selectedVault.name}</h2>
+                      {selectedVault.status === 'draft' && (
+                        <button
+                          onClick={() => setEditingField('name')}
+                          className="text-gray-400 hover:text-gray-600 text-sm"
+                          title="Edit name"
+                        >
+                          ✏️
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {editingField === 'description' ? (
+                    <textarea
+                      defaultValue={selectedVault.description}
+                      className="text-gray-600 mt-1 bg-transparent border-b-2 border-blue-500 outline-none w-full resize-none"
+                      rows={2}
+                      onBlur={(e) => {
+                        if (e.target.value !== selectedVault.description) {
+                          handleFieldEdit(selectedVault, 'description', e.target.value);
+                        }
+                        setEditingField(null);
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.ctrlKey) {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <div className="flex items-start space-x-2">
+                      <p className="text-gray-600 mt-1">{selectedVault.description}</p>
+                      {selectedVault.status === 'draft' && (
+                        <button
+                          onClick={() => setEditingField('description')}
+                          className="text-gray-400 hover:text-gray-600 text-sm mt-1"
+                          title="Edit description"
+                        >
+                          ✏️
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setSelectedVault(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 ml-4"
                 >
                   ✕
                 </button>
@@ -380,39 +488,39 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Configuration</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">Configuration <span className="text-xs text-gray-500">(Immutable)</span></h3>
                   <div className="space-y-3 text-sm">
                     <div>
                       <span className="text-gray-500">Token Mint:</span>
-                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">
+                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1 border-l-4 border-red-200">
                         {selectedVault.tokenMint}
                       </div>
                     </div>
                     <div>
                       <span className="text-gray-500">Distribution Wallet:</span>
-                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">
+                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1 border-l-4 border-red-200">
                         {selectedVault.distributionWallet}
                       </div>
                     </div>
                     <div>
                       <span className="text-gray-500">Treasury Wallet:</span>
-                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">
+                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1 border-l-4 border-red-200">
                         {selectedVault.treasuryWallet}
                       </div>
                     </div>
                     <div>
                       <span className="text-gray-500">Dev Wallet:</span>
-                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">
+                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1 border-l-4 border-red-200">
                         {selectedVault.devWallet}
                       </div>
                     </div>
                     <div>
                       <span className="text-gray-500">Vault Asset:</span>
-                      <span className="ml-2 font-semibold">{selectedVault.vaultAsset}</span>
+                      <span className="ml-2 font-semibold bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.vaultAsset}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Airdrop Asset:</span>
-                      <span className="ml-2 font-semibold">{selectedVault.airdropAsset}</span>
+                      <span className="ml-2 font-semibold bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.airdropAsset}</span>
                     </div>
                   </div>
                 </div>
@@ -422,47 +530,62 @@ export default function AdminDashboard() {
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="text-gray-500">Timer Duration:</span>
-                      <span className="ml-2">{selectedVault.timerDuration / 60} minutes</span>
+                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.timerDuration / 60} minutes</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Distribution Interval:</span>
-                      <span className="ml-2">{selectedVault.distributionInterval / 60} minutes</span>
+                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.distributionInterval / 60} minutes</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Min Hold Amount:</span>
-                      <span className="ml-2">{selectedVault.minHoldAmount.toLocaleString()}</span>
+                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.minHoldAmount.toLocaleString()}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Tax Split:</span>
-                      <span className="ml-2">{selectedVault.taxSplit.dev}% dev, {selectedVault.taxSplit.holders}% holders</span>
+                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.taxSplit.dev}% dev, {selectedVault.taxSplit.holders}% holders</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Start Date:</span>
-                      <span className="ml-2">{new Date(selectedVault.startDate).toLocaleString()}</span>
+                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{new Date(selectedVault.startDate).toLocaleString()}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Endgame Date:</span>
-                      <span className="ml-2">{new Date(selectedVault.endgameDate).toLocaleString()}</span>
+                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{new Date(selectedVault.endgameDate).toLocaleString()}</span>
                     </div>
                     {selectedVault.timerStartedAt && (
                       <div>
                         <span className="text-gray-500">Timer Started:</span>
-                        <span className="ml-2">{new Date(selectedVault.timerStartedAt).toLocaleString()}</span>
+                        <span className="ml-2 bg-blue-50 px-2 py-1 rounded text-blue-700">{new Date(selectedVault.timerStartedAt).toLocaleString()}</span>
                       </div>
                     )}
                     {selectedVault.currentTimerEndsAt && (
                       <div>
                         <span className="text-gray-500">Timer Ends:</span>
-                        <span className="ml-2">{new Date(selectedVault.currentTimerEndsAt).toLocaleString()}</span>
+                        <span className="ml-2 bg-blue-50 px-2 py-1 rounded text-blue-700">{new Date(selectedVault.currentTimerEndsAt).toLocaleString()}</span>
                       </div>
                     )}
                     <div>
                       <span className="text-gray-500">Total Purchases:</span>
-                      <span className="ml-2">{selectedVault.totalPurchases}</span>
+                      <span className="ml-2 bg-green-50 px-2 py-1 rounded text-green-700">{selectedVault.totalPurchases}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Total Volume:</span>
-                      <span className="ml-2">{selectedVault.totalVolume.toLocaleString()}</span>
+                      <span className="ml-2 bg-green-50 px-2 py-1 rounded text-green-700">{selectedVault.totalVolume.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-2 text-xs text-gray-600">
+                      <div className="w-3 h-3 bg-red-200 rounded"></div>
+                      <span>Immutable (set at launch)</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
+                      <div className="w-3 h-3 bg-blue-200 rounded"></div>
+                      <span>Live data (auto-updated)</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
+                      <div className="w-3 h-3 bg-green-200 rounded"></div>
+                      <span>Analytics (read-only)</span>
                     </div>
                   </div>
                 </div>
@@ -476,10 +599,13 @@ export default function AdminDashboard() {
                     <div className="space-y-2">
                       {selectedVault.whitelistedAddresses.map((address, index) => (
                         <div key={index} className="flex items-center justify-between">
-                          <div className="font-mono text-xs bg-white p-2 rounded border">
+                          <div className="font-mono text-xs bg-white p-2 rounded border flex-1 mr-2">
                             {address}
                           </div>
-                          <button className="text-red-600 hover:text-red-800 text-xs">
+                          <button 
+                            onClick={() => removeWhitelistedAddress(selectedVault, address)}
+                            className="text-red-600 hover:text-red-800 text-xs px-2 py-1 rounded hover:bg-red-50"
+                          >
                             Remove
                           </button>
                         </div>
@@ -488,9 +614,35 @@ export default function AdminDashboard() {
                   ) : (
                     <p className="text-gray-500 text-sm">No whitelisted addresses</p>
                   )}
-                  <button className="mt-3 text-blue-600 hover:text-blue-800 text-sm">
-                    + Add Whitelisted Address
-                  </button>
+                  
+                  {/* Add new address form */}
+                  <div className="mt-3 flex space-x-2">
+                    <input
+                      type="text"
+                      placeholder="Enter wallet address..."
+                      className="flex-1 text-xs p-2 border rounded"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          addWhitelistedAddress(selectedVault, e.currentTarget.value);
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                    />
+                    <button 
+                      onClick={(e) => {
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                        addWhitelistedAddress(selectedVault, input.value);
+                        input.value = '';
+                      }}
+                      className="text-blue-600 hover:text-blue-800 text-xs px-3 py-2 rounded hover:bg-blue-50"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  
+                  <p className="text-xs text-gray-500 mt-2">
+                    Whitelisted addresses won't reset the timer when they make purchases
+                  </p>
                 </div>
               </div>
 
