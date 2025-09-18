@@ -834,31 +834,67 @@ app.get('/api/wallets', (req, res) => {
 });
 
 // Combined data endpoint
-app.get('/api/dashboard', (req, res) => {
-  // Calculate vault data before sending
-  calculateVaultData();
-  
-  res.json({
-    timer: globalTimer,
-    buyLog: buyLog,
-    token: {
-      address: REVS_TOKEN_ADDRESS,
-      price: tokenData.price,
-      marketCap: tokenData.marketCap,
-      volume24h: tokenData.volume24h,
-      lastUpdated: tokenData.lastUpdated
-    },
-    vault: vaultData,
-    wallets: {
-      balances: walletBalances,
-      totalSol: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.sol, 0),
-      totalUsd: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.usd, 0)
-    },
-    monitoring: {
-      isMonitoring: monitoringState.isMonitoring,
-      lastUpdated: new Date().toISOString()
-    }
-  });
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    // Calculate vault data before sending
+    calculateVaultData();
+    
+    // Get vault configuration from database
+    const vaultConfig = await db.getVault('revs-vault-001');
+    const whitelistedAddresses = vaultConfig ? await db.getWhitelistedAddresses('revs-vault-001') : [];
+    
+    res.json({
+      timer: globalTimer,
+      buyLog: buyLog,
+      token: {
+        address: REVS_TOKEN_ADDRESS,
+        price: tokenData.price,
+        marketCap: tokenData.marketCap,
+        volume24h: tokenData.volume24h,
+        lastUpdated: tokenData.lastUpdated
+      },
+      vault: vaultData,
+      vaultConfig: vaultConfig ? {
+        ...vaultConfig,
+        whitelistedAddresses
+      } : null,
+      wallets: {
+        balances: walletBalances,
+        totalSol: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.sol, 0),
+        totalUsd: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.usd, 0)
+      },
+      monitoring: {
+        isMonitoring: monitoringState.isMonitoring,
+        lastUpdated: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error in dashboard API:', error);
+    // Fallback to original response if database fails
+    calculateVaultData();
+    res.json({
+      timer: globalTimer,
+      buyLog: buyLog,
+      token: {
+        address: REVS_TOKEN_ADDRESS,
+        price: tokenData.price,
+        marketCap: tokenData.marketCap,
+        volume24h: tokenData.volume24h,
+        lastUpdated: tokenData.lastUpdated
+      },
+      vault: vaultData,
+      vaultConfig: null,
+      wallets: {
+        balances: walletBalances,
+        totalSol: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.sol, 0),
+        totalUsd: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.usd, 0)
+      },
+      monitoring: {
+        isMonitoring: monitoringState.isMonitoring,
+        lastUpdated: new Date().toISOString()
+      }
+    });
+  }
 });
 
 // Custom styled embed endpoint

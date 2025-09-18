@@ -29,6 +29,28 @@ interface BuyLogEntry {
   txSignature: string;
 }
 
+interface VaultConfig {
+  id: string;
+  name: string;
+  description: string;
+  tokenMint: string;
+  distributionWallet: string;
+  treasuryWallet: string;
+  devWallet: string;
+  startDate: string;
+  endgameDate: string;
+  timerDuration: number;
+  distributionInterval: number;
+  minHoldAmount: number;
+  taxSplit: { dev: number; holders: number };
+  vaultAsset: string;
+  airdropAsset: string;
+  status: 'draft' | 'active' | 'paused' | 'ended';
+  whitelistedAddresses: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface VaultData {
   timer: {
     timeLeft: number;
@@ -75,6 +97,7 @@ interface VaultData {
       calculatedFrom: string;
     };
   };
+  vaultConfig: VaultConfig | null;
 }
 
 export default function Home() {
@@ -342,16 +365,22 @@ const formatAddress = (address: string | null) => {
                     </div>
                   </motion.div>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">RevShare <span className="ml-2 text-sm font-semibold text-gray-600 align-middle">REVS</span></h1>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      {data.vaultConfig?.name || 'RevShare'} 
+                      <span className="ml-2 text-sm font-semibold text-gray-600 align-middle">
+                        {data.vaultConfig?.airdropAsset || 'REVS'}
+                      </span>
+                    </h1>
                     {/* Token address under name, small */}
                     <div className="flex items-center space-x-2 mt-1">
                       <div className="flex items-center space-x-2">
                         <p className="text-xs font-mono text-gray-500">
-                          {data.token?.address ? `${data.token.address.slice(0, 8)}...${data.token.address.slice(-8)}` : '9VxExA1i...BMaBaY1p'}
+                          {data.vaultConfig?.tokenMint ? `${data.vaultConfig.tokenMint.slice(0, 8)}...${data.vaultConfig.tokenMint.slice(-8)}` : 
+                           data.token?.address ? `${data.token.address.slice(0, 8)}...${data.token.address.slice(-8)}` : '9VxExA1i...BMaBaY1p'}
                         </p>
                         <button
                           onClick={() => {
-                            navigator.clipboard.writeText(data.token?.address || '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p');
+                            navigator.clipboard.writeText(data.vaultConfig?.tokenMint || data.token?.address || '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p');
                             // You could add a toast notification here
                           }}
                           className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -686,10 +715,12 @@ const formatAddress = (address: string | null) => {
 
             {/* Trade REVS to Win Vault Card */}
             <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade REVS to Win Vault</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Trade {data.vaultConfig?.airdropAsset || 'REVS'} to Win Vault
+              </h3>
               <JupiterWidget 
-                tokenAddress={data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
-                tokenSymbol="REVS"
+                tokenAddress={data.vaultConfig?.tokenMint || data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
+                tokenSymbol={data.vaultConfig?.airdropAsset || "REVS"}
               />
             </Card>
 
