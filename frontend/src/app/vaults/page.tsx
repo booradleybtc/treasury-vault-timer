@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, Button } from '../../../components/ui';
+import { Card, Button } from '@/components/ui';
 import { 
   ClockIcon,
   CurrencyDollarIcon,

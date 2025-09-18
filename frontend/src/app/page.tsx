@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { Button, Card, Input } from '../../components/ui';
+import { Button, Card, Input } from '@/components/ui';
 import { io, Socket } from 'socket.io-client';
 // Load Jupiter client-only to avoid SSR/react default import issues
-const JupiterWidget = dynamic(() => import('../../components/JupiterWidget'), { ssr: false });
+const JupiterWidget = dynamic(() => import('@/components/JupiterWidget'), { ssr: false });
 import { 
   MagnifyingGlassIcon, 
   ChevronDownIcon,
