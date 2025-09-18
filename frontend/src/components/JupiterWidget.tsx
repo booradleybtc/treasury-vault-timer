@@ -80,12 +80,36 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
         {/* Custom CSS for Jupiter widget colors */}
         <style jsx>{`
           :global(:root) {
-            --jupiter-plugin-primary: 199, 242, 132;
+            --jupiter-plugin-primary: 34, 197, 94;
             --jupiter-plugin-background: 255, 255, 255;
             --jupiter-plugin-primary-text: 0, 0, 0;
             --jupiter-plugin-warning: 251, 191, 36;
-            --jupiter-plugin-interactive: 33, 42, 54;
+            --jupiter-plugin-interactive: 255, 255, 255;
             --jupiter-plugin-module: 248, 250, 252;
+            --jupiter-plugin-text: 0, 0, 0;
+            --jupiter-plugin-text-secondary: 107, 114, 128;
+            --jupiter-plugin-border: 229, 231, 235;
+          }
+          
+          :global(#jupiter-widget-container) {
+            background: white !important;
+            color: black !important;
+          }
+          
+          :global(#jupiter-widget-container *) {
+            color: black !important;
+          }
+          
+          :global(#jupiter-widget-container button) {
+            background: white !important;
+            color: black !important;
+            border: 1px solid #e5e7eb !important;
+          }
+          
+          :global(#jupiter-widget-container input) {
+            background: white !important;
+            color: black !important;
+            border: 1px solid #e5e7eb !important;
           }
         `}</style>
       </div>

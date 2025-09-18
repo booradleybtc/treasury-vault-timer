@@ -263,24 +263,26 @@ const formatAddress = (address: string | null) => {
                     </div>
                   </motion.div>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">MicroScratchety</h1>
-                    <p className="text-lg text-gray-700">REVS</p>
-                    {/* Token Address with Copy Button */}
-                    <div className="flex items-center space-x-2 mt-1">
-                      <p className="text-xs font-mono text-gray-500">
-                        {data.token?.address ? `${data.token.address.slice(0, 8)}...${data.token.address.slice(-8)}` : '9VxExA1i...BMaBaY1p'}
-                      </p>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(data.token?.address || '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p');
-                          // You could add a toast notification here
-                        }}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </button>
+                    <h1 className="text-3xl font-bold text-gray-900">RevShare</h1>
+                    {/* REVS and Wallet Address Side by Side */}
+                    <div className="flex items-center space-x-4 mt-1">
+                      <p className="text-lg font-semibold text-gray-700">REVS</p>
+                      <div className="flex items-center space-x-2">
+                        <p className="text-lg font-mono text-gray-500">
+                          {data.token?.address ? `${data.token.address.slice(0, 8)}...${data.token.address.slice(-8)}` : '9VxExA1i...BMaBaY1p'}
+                        </p>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(data.token?.address || '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p');
+                            // You could add a toast notification here
+                          }}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     {/* Price & Market Cap */}
                     <div className="flex items-center space-x-4 mt-2">
@@ -402,14 +404,6 @@ const formatAddress = (address: string | null) => {
               </div>
             </Card>
 
-            {/* Trade REVS to Win Vault Section */}
-            <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade REVS to Win Vault</h3>
-              <JupiterWidget 
-                tokenAddress={data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
-                tokenSymbol="REVS"
-              />
-            </Card>
           </div>
 
           {/* Sidebar - Tab-based Content */}
@@ -614,6 +608,15 @@ const formatAddress = (address: string | null) => {
             )}
 
 
+            {/* Trade REVS to Win Vault Card */}
+            <Card className="p-6 bg-white border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade REVS to Win Vault</h3>
+              <JupiterWidget 
+                tokenAddress={data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
+                tokenSymbol="REVS"
+              />
+            </Card>
+
             {/* Mock Data Legend */}
             <div className="text-xs text-gray-500 text-center">
               * = Mock data (not live)
@@ -646,7 +649,7 @@ const formatAddress = (address: string | null) => {
                     <span className="text-orange-600 font-bold text-lg">B</span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">MicroScratchety</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">RevShare</h3>
                     <p className="text-sm text-gray-500">REVS • Active</p>
                   </div>
                 </div>

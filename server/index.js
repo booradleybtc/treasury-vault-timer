@@ -103,7 +103,27 @@ const TRACKED_WALLETS = [
 let walletBalances = {};
 
 // Buy log to track recent purchases
-let buyLog = [];
+let buyLog = [
+  // Mock data for testing - remove when real data is available
+  {
+    address: '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE',
+    amount: 1500000,
+    txSignature: 'mock_tx_1',
+    timestamp: Date.now() - 300000 // 5 minutes ago
+  },
+  {
+    address: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
+    amount: 850000,
+    txSignature: 'mock_tx_2',
+    timestamp: Date.now() - 600000 // 10 minutes ago
+  },
+  {
+    address: '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p',
+    amount: 1200000,
+    txSignature: 'mock_tx_3',
+    timestamp: Date.now() - 900000 // 15 minutes ago
+  }
+];
 
 // Function to scan for eligible REVS holders
 async function scanEligibleHolders() {
