@@ -749,6 +749,10 @@ app.post('/api/admin/vaults/:id/whitelisted-addresses', async (req, res) => {
     const { address } = req.body;
     
     await db.addWhitelistedAddress(id, address);
+    
+    // Emit real-time update
+    io.emit('vaultConfigUpdated', { vaultId: id, type: 'whitelistedAddressAdded', address });
+    
     res.json({ success: true, message: 'Address added to whitelist' });
   } catch (error) {
     console.error('Error adding whitelisted address:', error);
@@ -761,6 +765,10 @@ app.delete('/api/admin/vaults/:id/whitelisted-addresses/:address', async (req, r
     const { id, address } = req.params;
     
     await db.removeWhitelistedAddress(id, address);
+    
+    // Emit real-time update
+    io.emit('vaultConfigUpdated', { vaultId: id, type: 'whitelistedAddressRemoved', address });
+    
     res.json({ success: true, message: 'Address removed from whitelist' });
   } catch (error) {
     console.error('Error removing whitelisted address:', error);
@@ -774,6 +782,10 @@ app.put('/api/admin/vaults/:id/whitelisted-addresses', async (req, res) => {
     const { addresses } = req.body;
     
     await db.updateWhitelistedAddresses(id, addresses);
+    
+    // Emit real-time update
+    io.emit('vaultConfigUpdated', { vaultId: id, type: 'whitelistedAddressesUpdated', addresses });
+    
     res.json({ success: true, message: 'Whitelisted addresses updated' });
   } catch (error) {
     console.error('Error updating whitelisted addresses:', error);

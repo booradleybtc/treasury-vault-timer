@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import { io, Socket } from 'socket.io-client';
 // Load Jupiter client-only to avoid SSR/react default import issues
 const JupiterWidget = dynamic(() => import('../components/JupiterWidget'), { ssr: false });
 import { 
@@ -107,7 +108,35 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState(0);
   const [airdropTime, setAirdropTime] = useState(0);
   const [activeTab, setActiveTab] = useState<'vault' | 'airdrop'>('vault');
+  const [socket, setSocket] = useState<Socket | null>(null);
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
+
+  // Socket.IO connection for real-time updates
+  useEffect(() => {
+    const newSocket = io(BACKEND, {
+      transports: ['websocket', 'polling']
+    });
+    
+    newSocket.on('connect', () => {
+      console.log('🔌 Connected to backend via Socket.IO');
+    });
+    
+    newSocket.on('vaultConfigUpdated', (updateData) => {
+      console.log('🔄 Vault config updated:', updateData);
+      // Refresh data when vault config changes
+      fetchData();
+    });
+    
+    newSocket.on('disconnect', () => {
+      console.log('🔌 Disconnected from backend');
+    });
+    
+    setSocket(newSocket);
+    
+    return () => {
+      newSocket.close();
+    };
+  }, [BACKEND]);
 
   // Real-time countdown timer
   useEffect(() => {
