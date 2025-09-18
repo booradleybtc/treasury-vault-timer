@@ -255,7 +255,16 @@ async function fetchTokenPrice() {
   try {
     // Try Jupiter API for REVS token first (more reliable for new tokens)
     try {
-      const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`);
+      const response = await fetch(`https://price.jup.ag/v4/price?ids=${REVS_TOKEN_ADDRESS}`, {
+        headers: {
+          'User-Agent': 'RevShare-Dashboard/1.0'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       
       if (data.data && data.data[REVS_TOKEN_ADDRESS]) {
@@ -327,9 +336,15 @@ async function fetchWalletBalances() {
       try {
         const publicKey = new PublicKey(walletAddress);
         
+        // Add delay to prevent rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Get SOL balance
         const solBalance = await connection.getBalance(publicKey);
         const solAmount = solBalance / web3.LAMPORTS_PER_SOL;
+        
+        // Add delay between requests
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Get REVS token balance
         const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
@@ -382,17 +397,17 @@ async function fetchWalletBalances() {
   }
 }
 
-// Update token data every 30 seconds
+// Update token data every 2 minutes (reduced frequency to avoid rate limits)
 setInterval(() => {
   fetchTokenPrice();
   fetchWalletBalances();
-}, 30000);
+}, 120000); // 2 minutes
 
-// Update airdrop data every 5 minutes (less frequent due to complexity)
+// Update airdrop data every 10 minutes (less frequent due to complexity)
 setInterval(() => {
   scanEligibleHolders();
   trackTotalAirdroppedSOL();
-}, 300000); // 5 minutes
+}, 600000); // 10 minutes
 
 // Admin controls (dev only)
 const isAdmin = (socket) => {
