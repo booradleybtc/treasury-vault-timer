@@ -118,24 +118,102 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('https://treasury-vault-timer-backend.onrender.com/api/dashboard', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        mode: 'cors',
-      });
+      console.log('🔄 Fetching data from backend...');
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Try multiple backend URLs
+      const backendUrls = [
+        'https://treasury-vault-timer-backend.onrender.com/api/dashboard',
+        'http://localhost:3001/api/dashboard' // Local fallback
+      ];
+      
+      let response = null;
+      let lastError = null;
+      
+      for (const url of backendUrls) {
+        try {
+          console.log(`🔄 Trying: ${url}`);
+          response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            mode: 'cors',
+            // Add timeout
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          });
+
+          if (response.ok) {
+            console.log(`✅ Successfully connected to: ${url}`);
+            break;
+          } else {
+            console.log(`❌ HTTP ${response.status} from: ${url}`);
+            lastError = new Error(`HTTP ${response.status} from ${url}`);
+          }
+        } catch (error) {
+          console.log(`❌ Failed to connect to: ${url}`, error.message);
+          lastError = error;
+          response = null;
+        }
       }
-      
+
+      if (!response || !response.ok) {
+        throw lastError || new Error('All backend URLs failed');
+      }
+
       const result = await response.json();
+      console.log('✅ Data fetched successfully:', result);
       setData(result);
       setError(null);
     } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error('❌ Fetch error:', err);
+      console.log('🔄 Using fallback data...');
+      
+      // Set comprehensive fallback data
+      setData({
+        timer: {
+          timeLeft: 3600,
+          isActive: true,
+          lastPurchaseTime: new Date().toISOString(),
+          lastBuyerAddress: '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE',
+          daysAlive: 2
+        },
+        token: {
+          price: 0.000711,
+          marketCap: 556273.461,
+          address: '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p'
+        },
+        vault: {
+          treasury: { amount: 17204455.31, usdValue: 12230.647 },
+          potentialWinnings: { multiplier: 100, usdValue: 1223064.7 },
+          endgame: { daysLeft: 98 },
+          airdrop: { 
+            amount: 78.37, 
+            totalAirdroppedSOL: 1250.5, 
+            eligibleHolders: 1103 
+          }
+        },
+        buyLog: [
+          {
+            address: '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE',
+            amount: 1500000,
+            txSignature: 'mock_tx_1',
+            timestamp: Date.now() - 300000
+          },
+          {
+            address: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
+            amount: 850000,
+            txSignature: 'mock_tx_2',
+            timestamp: Date.now() - 600000
+          },
+          {
+            address: '9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p',
+            amount: 1200000,
+            txSignature: 'mock_tx_3',
+            timestamp: Date.now() - 900000
+          }
+        ]
+      });
+      setError('Backend unavailable - showing demo data');
     } finally {
       setLoading(false);
     }
@@ -175,6 +253,9 @@ const formatAddress = (address: string | null) => {
     );
   }
 
+  // Show error banner if backend is unavailable
+  const showErrorBanner = error && error.includes('Backend unavailable');
+
   if (error || !data) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -197,6 +278,24 @@ const formatAddress = (address: string | null) => {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Error Banner */}
+      {showErrorBanner && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>Demo Mode:</strong> Backend is currently unavailable. Showing sample data.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modern Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6">
