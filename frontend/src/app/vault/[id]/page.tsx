@@ -183,7 +183,7 @@ export default function VaultPage({ params }: { params: { id: string } }) {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button 
@@ -195,23 +195,11 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                 <span>Back to Vaults</span>
               </Button>
               
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-xl font-bold">
-                    {data.vaultConfig?.name?.charAt(0) || 'V'}
-                  </span>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">D</span>
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {data.vaultConfig?.name || 'Vault'}
-                    <span className="ml-2 text-sm font-medium text-orange-600 bg-orange-100 px-2 py-1 rounded">
-                      {data.vaultConfig?.airdropAsset || 'TOKEN'}
-                    </span>
-                  </h1>
-                  <p className="text-gray-600">
-                    {data.vaultConfig?.description || 'Dynamic exploding treasury vault'}
-                  </p>
-                </div>
+                <h1 className="text-xl font-bold text-gray-900">Darwin</h1>
               </div>
             </div>
             
@@ -236,40 +224,64 @@ export default function VaultPage({ params }: { params: { id: string } }) {
           {/* Left Column - Timer, Livestream, and Data Cards */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Timer Card */}
+            {/* Vault Info & Timer Card */}
             <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Vault Timer</h2>
-                <div className="flex items-center space-x-2">
-                  <ClockIcon className="w-5 h-5 text-gray-500" />
-                  <div className={`w-2 h-2 rounded-full ${data.timer.isActive ? 'bg-green-400' : 'bg-red-400'}`}></div>
-                </div>
-              </div>
-              
-              <div className="text-center mb-6">
-                <div className="text-6xl font-mono font-bold text-gray-900 mb-2">
-                  {formatTime(currentTime)}
-                </div>
-                <p className="text-lg text-gray-600">
-                  {data.timer.isActive ? 'Timer Active - Buy to Reset!' : 'Timer Inactive'}
-                </p>
-              </div>
-              
-              {data.timer.lastBuyerAddress && (
-                <div className="bg-gray-50 rounded-lg p-4 border">
-                  <h3 className="font-semibold text-gray-900 mb-3">Last Purchase</h3>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Buyer</p>
-                      <p className="font-mono text-sm text-gray-900">{formatAddress(data.timer.lastBuyerAddress)}</p>
+              <div className="flex items-center justify-between">
+                {/* Left Side - Vault Info */}
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-orange-500 rounded-xl flex items-center justify-center">
+                    <span className="text-white text-2xl font-bold">
+                      {data.vaultConfig?.name?.charAt(0) || 'V'}
+                    </span>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      {data.vaultConfig?.name || 'Vault'}
+                      <span className="ml-3 text-sm font-medium text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                        {data.vaultConfig?.airdropAsset || 'TOKEN'}
+                      </span>
+                    </h1>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className="font-mono text-sm text-gray-600">
+                        {data.vaultConfig?.tokenMint ? 
+                          `${data.vaultConfig.tokenMint.slice(0, 4)}...${data.vaultConfig.tokenMint.slice(-4)}` : 
+                          'N/A'
+                        }
+                      </span>
+                      <button 
+                        onClick={() => navigator.clipboard.writeText(data.vaultConfig?.tokenMint || '')}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        📋
+                      </button>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">Amount</p>
-                      <p className="font-semibold text-green-600 text-lg">{data.timer.lastPurchaseAmount.toFixed(2)} SOL</p>
-                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {data.vaultConfig?.description || 'Dynamic exploding treasury vault'}
+                    </p>
                   </div>
                 </div>
-              )}
+                
+                {/* Right Side - Timer */}
+                <div className="text-right">
+                  <div className="flex items-center justify-end space-x-2 mb-2">
+                    <ClockIcon className="w-5 h-5 text-gray-500" />
+                    <div className={`w-2 h-2 rounded-full ${data.timer.isActive ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                  </div>
+                  <div className="text-4xl font-mono font-bold text-gray-900 mb-1">
+                    {formatTime(currentTime)}
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {data.timer.isActive ? 'Timer Active - Buy to Reset!' : 'Timer Inactive'}
+                  </p>
+                  
+                  {data.timer.lastBuyerAddress && (
+                    <div className="text-left">
+                      <p className="text-xs text-gray-500">Last Buyer</p>
+                      <p className="font-mono text-xs text-gray-900">{formatAddress(data.timer.lastBuyerAddress)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </Card>
 
             {/* Livestream Section */}
@@ -378,67 +390,12 @@ export default function VaultPage({ params }: { params: { id: string } }) {
               </Card>
             </div>
 
-            {/* Recent Buys */}
-            <Card className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Buys</h3>
-              {recentBuys.length > 0 ? (
-                <div className="space-y-3">
-                  {recentBuys.map((buy, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-mono text-sm text-gray-900">{formatAddress(buy.buyerAddress)}</p>
-                          <p className="text-xs text-gray-500">{new Date(buy.timestamp).toLocaleString()}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-green-600">{buy.amount.toFixed(2)} SOL</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <BoltIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No recent purchases</p>
-                  <p className="text-sm text-gray-400 mt-1">Be the first to buy and reset the timer!</p>
-                </div>
-              )}
-            </Card>
           </div>
 
-          {/* Right Column - Trade Widget and How it Works */}
+          {/* Right Column - How it Works and Trade Widget */}
           <div className="space-y-6">
             
-            {/* Trade Widget - Now at the top */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">
-                  Trade {data.vaultConfig?.airdropAsset || 'TOKEN'}
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-sm text-green-600">Live</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <p className="text-gray-600 text-sm mb-2">Buy to reset the timer and win the vault!</p>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                  <p className="text-orange-700 text-sm font-medium">
-                    ⚡ Last buyer wins {data.vault.potentialWinnings.multiplier}x the treasury!
-                  </p>
-                </div>
-              </div>
-              <JupiterWidget 
-                tokenAddress={data.vaultConfig?.tokenMint || data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
-                tokenSymbol={data.vaultConfig?.airdropAsset || "TOKEN"}
-              />
-            </Card>
-
-            {/* How it Works */}
+            {/* How it Works - Now at the top */}
             <Card className="p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">How it Works</h3>
               <div className="space-y-4">
@@ -447,8 +404,8 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                     1
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">Buy Tokens</h4>
-                    <p className="text-sm text-gray-600">Purchase tokens to reset the vault timer</p>
+                    <h4 className="font-semibold text-gray-900">Buy {data.vaultConfig?.airdropAsset || 'TOKEN'} to Reset Timer</h4>
+                    <p className="text-sm text-gray-600">Purchase 1 token to reset the vault timer</p>
                   </div>
                 </div>
                 
@@ -457,8 +414,8 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                     2
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">Reset Timer</h4>
-                    <p className="text-sm text-gray-600">Each purchase resets the countdown timer</p>
+                    <h4 className="font-semibold text-gray-900">Win Half the Treasury</h4>
+                    <p className="text-sm text-gray-600">If the timer expires before endgame, the last buyer wins half the scratcher winnings</p>
                   </div>
                 </div>
                 
@@ -467,8 +424,8 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                     3
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">Win Treasury</h4>
-                    <p className="text-sm text-gray-600">Last buyer before timer expires wins the entire treasury</p>
+                    <h4 className="font-semibold text-gray-900">Claim Airdrops & Treasury</h4>
+                    <p className="text-sm text-gray-600">Hold {data.vaultConfig?.airdropAsset || 'TOKEN'} for chance to win daily airdrops & have a claim on your portion of the scratcher winnings if endgame is reached</p>
                   </div>
                 </div>
                 
@@ -484,25 +441,96 @@ export default function VaultPage({ params }: { params: { id: string } }) {
               </div>
             </Card>
 
-            {/* Vault Info - Compact version */}
+            {/* Trade Widget */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Trade {data.vaultConfig?.airdropAsset || 'TOKEN'}
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-sm text-green-600">Live</span>
+                </div>
+              </div>
+              <div className="mb-4">
+                <p className="text-gray-600 text-sm mb-2">Buy to reset the timer and win the vault!</p>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                  <p className="text-orange-700 text-sm font-medium">
+                    ⚡ Last buyer wins {data.vault.potentialWinnings.multiplier}x the treasury!
+                  </p>
+                </div>
+              </div>
+              <div className="min-h-[400px]">
+                <JupiterWidget 
+                  tokenAddress={data.vaultConfig?.tokenMint || data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
+                  tokenSymbol={data.vaultConfig?.airdropAsset || "TOKEN"}
+                />
+              </div>
+            </Card>
+
+            {/* Vault Info - Expanded */}
             <Card className="p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Vault Information</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-gray-500">Asset:</span>
-                  <div className="font-medium">{data.vaultConfig?.vaultAsset || 'SOL'}</div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Vault Asset:</span>
+                    <div className="font-medium">{data.vaultConfig?.vaultAsset || 'SOL'}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Airdrop Asset:</span>
+                    <div className="font-medium">{data.vaultConfig?.airdropAsset || 'REVS'}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Min Hold Amount:</span>
+                    <div className="font-medium">{data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Timer Duration:</span>
+                    <div className="font-medium">{data.vaultConfig?.timerDuration ? `${data.vaultConfig.timerDuration / 3600}h` : '1h'}</div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-500">Token:</span>
-                  <div className="font-medium">{data.vaultConfig?.airdropAsset || 'REVS'}</div>
+                
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="text-sm space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Created:</span>
+                      <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.createdAt).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Start Date:</span>
+                      <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.startDate).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Endgame Date:</span>
+                      <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.endgameDate).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Whitelisted Addresses:</span>
+                      <span className="font-medium">{data.vaultConfig?.whitelistedAddresses?.length || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Distribution Interval:</span>
+                      <span className="font-medium">{data.vaultConfig ? `${data.vaultConfig.distributionInterval / 60}min` : '5min'}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-500">Min Hold:</span>
-                  <div className="font-medium">{data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'}</div>
-                </div>
-                <div>
-                  <span className="text-gray-500">Duration:</span>
-                  <div className="font-medium">{data.vaultConfig?.timerDuration || 1}h</div>
+                
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="text-sm">
+                    <span className="text-gray-500">Token Address:</span>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className="font-mono text-xs text-gray-700 break-all">
+                        {data.vaultConfig?.tokenMint || 'N/A'}
+                      </span>
+                      <button 
+                        onClick={() => navigator.clipboard.writeText(data.vaultConfig?.tokenMint || '')}
+                        className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                      >
+                        📋
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </Card>

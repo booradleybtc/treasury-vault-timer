@@ -1,0 +1,71 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.3
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.2.13:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1278ms
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 1391ms (1357 modules)
+ GET /admin 200 in 1764ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1160ms (753 modules)
+ GET /favicon.ico 200 in 1258ms
+ ○ Compiling / ...
+ ✓ Compiled /vaults in 1852ms (1602 modules)
+ GET / 200 in 2147ms
+ GET /admin 200 in 295ms
+ GET /vaults 200 in 1494ms
+ GET /favicon.ico 200 in 33ms
+ ✓ Compiled /vault/[id] in 450ms (1615 modules)
+ GET /vault/revs-vault-001 200 in 1054ms
+ GET /vaults 200 in 60ms
+ GET /admin 200 in 215ms
+ GET /favicon.ico 200 in 36ms
+ GET /?vault=revs-vault-001 200 in 131ms
+ GET /favicon.ico 200 in 24ms
+ GET /vaults 200 in 75ms
+ GET /favicon.ico 200 in 15ms
+ GET /vault/revs-vault-001 200 in 45ms
+ GET /vaults 200 in 120ms
+ GET /favicon.ico 200 in 23ms
+ GET /vault/revs-vault-001 200 in 28ms
+ GET /admin 200 in 95ms
+ GET /favicon.ico 200 in 21ms
+ GET /admin 200 in 65ms
+ GET /favicon.ico 200 in 13ms
+ GET /vaults 200 in 70ms
+ GET /favicon.ico 200 in 8ms
+ GET /vault/revs-vault-001 200 in 37ms
+ GET /vaults 200 in 118ms
+ GET /vault/revs-vault-001 200 in 41ms
+ GET /admin 200 in 63ms
+ GET /favicon.ico 200 in 17ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 874ms (1529 modules)
+ GET /asmin 404 in 1178ms
+ GET /favicon.ico 200 in 34ms
+ GET /admin 200 in 128ms
+ GET /admin 200 in 39ms
+ GET /favicon.ico 200 in 9ms
+ GET /vaults 200 in 152ms
+ GET /favicon.ico 200 in 26ms
+ ✓ Compiled in 1400ms (1521 modules)
+ GET /vaults 200 in 208ms
+ GET /vault/revs-vault-001 200 in 210ms
+ ✓ Compiled in 541ms (1521 modules)
+ GET /vault/revs-vault-001 200 in 346ms
+ GET /vaults 200 in 375ms
+ ✓ Compiled in 580ms (1521 modules)
+ GET /vaults 200 in 88ms
+ GET /vault/revs-vault-001 200 in 88ms
+ ✓ Compiled in 901ms (1520 modules)
+ GET /vaults 200 in 110ms
+ GET /vault/revs-vault-001 200 in 109ms
+ ✓ Compiled in 1264ms (1520 modules)
+ GET /vaults 200 in 149ms
+ GET /vault/revs-vault-001 200 in 153ms
