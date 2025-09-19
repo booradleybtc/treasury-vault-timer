@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, Button } from '@/components/ui';
 import { motion } from 'framer-motion';
+import { StreamHeader } from '@/components/layout/StreamHeader';
+import { Rail } from '@/components/stream/Rail';
+import { PosterCard } from '@/components/stream/PosterCard';
+import { GlassPanel } from '@/components/stream/GlassPanel';
+import { LiveDot, TimerBadge } from '@/components/stream/LiveTimer';
 import { 
   ClockIcon,
   CurrencyDollarIcon,
@@ -83,10 +88,10 @@ export default function VaultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="theme-stream min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading vaults...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground">Loading vaults...</p>
         </div>
       </div>
     );
@@ -94,7 +99,7 @@ export default function VaultsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="theme-stream min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <Button onClick={loadVaults}>Retry</Button>
@@ -104,52 +109,25 @@ export default function VaultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">D</span>
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">Darwin Vaults</h1>
-              </div>
-              
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search Vaults"
-                  className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <select 
-                value={assetFilter}
-                onChange={(e) => setAssetFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">Browse by Asset</option>
-                <option value="SOL">SOL</option>
-                <option value="USDC">USDC</option>
-                <option value="zBTC">zBTC</option>
-              </select>
-              
-              <Button 
-                onClick={() => window.location.href = '/admin'}
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Launch Vault
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="theme-stream min-h-screen">
+      <StreamHeader 
+        onSearch={(q) => console.log('Search:', q)}
+        activeTab="vaults"
+        onTabChange={(v) => {
+          if (v === 'home') window.location.href = '/';
+          if (v === 'admin') window.location.href = '/admin';
+        }}
+        rightAction={
+          <Button 
+            onClick={() => window.location.href = '/admin'}
+            className="bg-primary hover:bg-primary/90"
+          >
+            Launch Vault
+          </Button>
+        }
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto max-w-7xl px-4 pb-24">
         {/* Featured Vaults Section */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
@@ -415,7 +393,19 @@ export default function VaultsPage() {
             See All Job Posts →
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
+}
+
+function Stat({ label, value, copyable=false }:{label:string; value:string; copyable?:boolean}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+      <div className="text-[11px] uppercase tracking-wide text-white/60">{label}</div>
+      <div className="mt-1 font-medium flex items-center gap-2">
+        <span>{value}</span>
+        {copyable ? <span className="text-white/50 text-xs">⧉</span> : null}
+      </div>
+    </div>
+  )
 }

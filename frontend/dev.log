@@ -404,3 +404,31 @@ Import trace for requested module:
  GET /vaults 200 in 86ms
  ✓ Compiled in 357ms (1537 modules)
  GET /vaults 200 in 66ms
+ ✓ Compiled in 515ms (1520 modules)
+ GET /vaults 200 in 619ms
+ GET /vault/revs-vault-001 200 in 263ms
+ ✓ Compiled /favicon.ico in 356ms (832 modules)
+ GET /favicon.ico 200 in 449ms
+ GET /vault/revs-vault-001 200 in 255ms
+ GET /favicon.ico 200 in 25ms
+ GET /vault/revs-vault-001 200 in 153ms
+ GET /favicon.ico 200 in 17ms
+ GET /vaults 200 in 148ms
+ GET /favicon.ico 200 in 14ms
+ ○ Compiling / ...
+ ✓ Compiled / in 757ms (924 modules)
+ GET / 200 in 1066ms
+ GET /favicon.ico 200 in 36ms
+ GET /vaults 200 in 103ms
+ GET /favicon.ico 200 in 24ms
+ GET /admin 200 in 144ms
+ GET /favicon.ico 200 in 14ms
+ GET /vaults 200 in 149ms
+ GET /favicon.ico 200 in 25ms
+ GET /admin 200 in 109ms
+ GET /favicon.ico 200 in 20ms
+ GET /vaults 200 in 126ms
+ GET /vault/revs-vault-001 200 in 192ms
+ GET /favicon.ico 200 in 31ms
+ GET /vaults 200 in 82ms
+[?25h
