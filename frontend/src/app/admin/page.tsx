@@ -180,11 +180,46 @@ export default function AdminDashboard() {
     };
   };
 
-  const handleFieldEdit = (vault: VaultConfig, field: string, value: any) => {
-    setVaults(prev => prev.map(v => 
-      v.id === vault.id ? { ...v, [field]: value, updatedAt: new Date().toISOString() } : v
-    ));
-    setEditingField(null);
+  const handleFieldEdit = async (vault: VaultConfig, field: string, value: any) => {
+    try {
+      console.log(`Editing ${field} for vault ${vault.id} to:`, value);
+      
+      if (field === 'name' || field === 'description') {
+        const response = await fetch(`${BACKEND_URL}/api/admin/vaults/${vault.id}/details`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: field === 'name' ? value : vault.name,
+            description: field === 'description' ? value : vault.description
+          }),
+          mode: 'cors'
+        });
+        
+        if (response.ok) {
+          // Update local state
+          setVaults(prev => prev.map(v => 
+            v.id === vault.id ? { ...v, [field]: value, updatedAt: new Date().toISOString() } : v
+          ));
+          
+          if (selectedVault?.id === vault.id) {
+            setSelectedVault({ ...selectedVault, [field]: value });
+          }
+          
+          console.log(`Successfully updated ${field}!`);
+        } else {
+          console.error(`Failed to update ${field}`);
+        }
+      } else {
+        // For other fields, just update local state for now
+        setVaults(prev => prev.map(v => 
+          v.id === vault.id ? { ...v, [field]: value, updatedAt: new Date().toISOString() } : v
+        ));
+      }
+      
+      setEditingField(null);
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+    }
   };
 
   const addWhitelistedAddress = async (vault: VaultConfig, address: string) => {
@@ -499,71 +534,71 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Configuration <span className="text-xs text-gray-500">(Immutable)</span></h3>
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <span className="text-gray-500">Token Mint:</span>
-                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1 border-l-4 border-red-200">
+                  <div className="space-y-4 text-sm">
+                    <div className="break-all">
+                      <span className="text-gray-500 block mb-1">Token Mint:</span>
+                      <div className="font-mono text-xs bg-gray-100 p-3 rounded border-l-4 border-red-200 break-all">
                         {selectedVault.tokenMint}
                       </div>
                     </div>
-                    <div>
-                      <span className="text-gray-500">Distribution Wallet:</span>
-                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1 border-l-4 border-red-200">
+                    <div className="break-all">
+                      <span className="text-gray-500 block mb-1">Distribution Wallet:</span>
+                      <div className="font-mono text-xs bg-gray-100 p-3 rounded border-l-4 border-red-200 break-all">
                         {selectedVault.distributionWallet}
                       </div>
                     </div>
-                    <div>
-                      <span className="text-gray-500">Treasury Wallet:</span>
-                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1 border-l-4 border-red-200">
+                    <div className="break-all">
+                      <span className="text-gray-500 block mb-1">Treasury Wallet:</span>
+                      <div className="font-mono text-xs bg-gray-100 p-3 rounded border-l-4 border-red-200 break-all">
                         {selectedVault.treasuryWallet}
                       </div>
                     </div>
-                    <div>
-                      <span className="text-gray-500">Dev Wallet:</span>
-                      <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1 border-l-4 border-red-200">
+                    <div className="break-all">
+                      <span className="text-gray-500 block mb-1">Dev Wallet:</span>
+                      <div className="font-mono text-xs bg-gray-100 p-3 rounded border-l-4 border-red-200 break-all">
                         {selectedVault.devWallet}
                       </div>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-between">
                       <span className="text-gray-500">Vault Asset:</span>
-                      <span className="ml-2 font-semibold bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.vaultAsset}</span>
+                      <span className="font-semibold bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.vaultAsset}</span>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-between">
                       <span className="text-gray-500">Airdrop Asset:</span>
-                      <span className="ml-2 font-semibold bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.airdropAsset}</span>
+                      <span className="font-semibold bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.airdropAsset}</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Settings & Status</h3>
-                  <div className="space-y-2 text-sm">
-                    <div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
                       <span className="text-gray-500">Timer Duration:</span>
-                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.timerDuration / 60} minutes</span>
+                      <span className="bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.timerDuration / 60} minutes</span>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-between">
                       <span className="text-gray-500">Distribution Interval:</span>
-                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.distributionInterval / 60} minutes</span>
+                      <span className="bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.distributionInterval / 60} minutes</span>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-between">
                       <span className="text-gray-500">Min Hold Amount:</span>
-                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.minHoldAmount.toLocaleString()}</span>
+                      <span className="bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.minHoldAmount.toLocaleString()}</span>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-between">
                       <span className="text-gray-500">Tax Split:</span>
-                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.taxSplit.dev}% dev, {selectedVault.taxSplit.holders}% holders</span>
+                      <span className="bg-red-50 px-2 py-1 rounded text-red-700">{selectedVault.taxSplit.dev}% dev, {selectedVault.taxSplit.holders}% holders</span>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-between">
                       <span className="text-gray-500">Start Date:</span>
-                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{new Date(selectedVault.startDate).toLocaleString()}</span>
+                      <span className="bg-red-50 px-2 py-1 rounded text-red-700 text-xs">{new Date(selectedVault.startDate).toLocaleString()}</span>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-between">
                       <span className="text-gray-500">Endgame Date:</span>
-                      <span className="ml-2 bg-red-50 px-2 py-1 rounded text-red-700">{new Date(selectedVault.endgameDate).toLocaleString()}</span>
+                      <span className="bg-red-50 px-2 py-1 rounded text-red-700 text-xs">{new Date(selectedVault.endgameDate).toLocaleString()}</span>
                     </div>
                   </div>
                   

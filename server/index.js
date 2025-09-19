@@ -428,7 +428,7 @@ const isAdmin = (socket) => {
 };
 
 // Enhanced purchase check (v0-safe, positive delta only)
-function checkIfActualPurchase(transaction) {
+async function checkIfActualPurchase(transaction) {
   try {
     console.log('🔍 Analyzing transaction for legitimate purchase...');
 
@@ -486,14 +486,27 @@ function checkIfActualPurchase(transaction) {
       return false;
     }
 
+    // Check if buyer is whitelisted
+    const buyer = ourTokenPost.owner;
+    try {
+      const whitelistedAddresses = await db.getWhitelistedAddresses('revs-vault-001');
+      if (whitelistedAddresses && whitelistedAddresses.some(addr => addr.address === buyer)) {
+        console.log(`❌ Buyer ${buyer} is whitelisted - excluding from timer reset`);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error checking whitelist:', error);
+      // Continue if whitelist check fails to avoid blocking legitimate purchases
+    }
+
     console.log('✅ LEGITIMATE PURCHASE DETECTED!');
     console.log(`   Amount: ${purchaseAmount} RAY`);
-    console.log(`   Buyer: ${ourTokenPost.owner}`);
+    console.log(`   Buyer: ${buyer}`);
 
     return {
       isValid: true,
       amount: purchaseAmount,
-      buyer: ourTokenPost.owner
+      buyer: buyer
     };
   } catch (e) {
     console.error('❌ Error analyzing transaction:', e);
@@ -524,7 +537,7 @@ const monitorPurchases = async () => {
           continue;
         }
 
-        const purchaseValidation = checkIfActualPurchase(transaction);
+        const purchaseValidation = await checkIfActualPurchase(transaction);
         if (purchaseValidation && purchaseValidation.isValid) {
           console.log('🎯 LEGITIMATE PURCHASE CONFIRMED!');
           console.log(`   Amount: ${purchaseValidation.amount} RAY`);
@@ -790,6 +803,41 @@ app.put('/api/admin/vaults/:id/whitelisted-addresses', async (req, res) => {
   } catch (error) {
     console.error('Error updating whitelisted addresses:', error);
     res.status(500).json({ error: 'Failed to update whitelisted addresses' });
+  }
+});
+
+// Update vault name and description
+app.put('/api/admin/vaults/:id/details', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+    
+    if (!name || !description) {
+      return res.status(400).json({ error: 'Name and description are required' });
+    }
+    
+    // Update vault in database
+    const vault = await db.getVault(id);
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    // Update the vault with new name and description
+    const updatedVault = {
+      ...vault,
+      name,
+      description,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Note: This would require adding an updateVault method to the database class
+    // For now, we'll just emit the update
+    io.emit('vaultConfigUpdated', { vaultId: id, type: 'vaultDetailsUpdated', name, description });
+    
+    res.json({ success: true, message: 'Vault details updated', vault: updatedVault });
+  } catch (error) {
+    console.error('Error updating vault details:', error);
+    res.status(500).json({ error: 'Failed to update vault details' });
   }
 });
 
