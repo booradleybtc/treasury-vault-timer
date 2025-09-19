@@ -252,34 +252,19 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                         onClick={() => navigator.clipboard.writeText(data.vaultConfig?.tokenMint || '')}
                         className="text-gray-400 hover:text-gray-600"
                       >
-                        📋
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
                       </button>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {data.vaultConfig?.description || 'Dynamic exploding treasury vault'}
-                    </p>
                   </div>
                 </div>
                 
                 {/* Right Side - Timer */}
                 <div className="text-right">
-                  <div className="flex items-center justify-end space-x-2 mb-2">
-                    <ClockIcon className="w-5 h-5 text-gray-500" />
-                    <div className={`w-2 h-2 rounded-full ${data.timer.isActive ? 'bg-green-400' : 'bg-red-400'}`}></div>
-                  </div>
                   <div className="text-4xl font-mono font-bold text-gray-900 mb-1">
                     {formatTime(currentTime)}
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {data.timer.isActive ? 'Timer Active - Buy to Reset!' : 'Timer Inactive'}
-                  </p>
-                  
-                  {data.timer.lastBuyerAddress && (
-                    <div className="text-left">
-                      <p className="text-xs text-gray-500">Last Buyer</p>
-                      <p className="font-mono text-xs text-gray-900">{formatAddress(data.timer.lastBuyerAddress)}</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </Card>
@@ -310,80 +295,99 @@ export default function VaultPage({ params }: { params: { id: string } }) {
               </div>
             </Card>
 
+            {/* Last Buyer Section */}
+            {data.timer.lastBuyerAddress && (
+              <Card className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Last Buyer</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Buyer Address</p>
+                      <p className="font-mono text-sm text-gray-900">{formatAddress(data.timer.lastBuyerAddress)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Amount</p>
+                      <p className="font-semibold text-green-600 text-lg">{data.timer.lastPurchaseAmount.toFixed(2)} SOL</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Vault Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* Treasury Card */}
-              <Card className="p-6">
+              <Card className="p-6 bg-gray-900 text-white">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Treasury</h3>
-                  <CurrencyDollarIcon className="w-6 h-6 text-green-500" />
+                  <h3 className="text-lg font-bold text-white">Treasury</h3>
+                  <CurrencyDollarIcon className="w-6 h-6 text-gray-400" />
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600 mb-2">
+                  <div className="text-3xl font-bold text-white mb-2">
                     {data.vault.treasury.amount.toFixed(2)} {data.vault.treasury.asset}
                   </div>
-                  <div className="text-xl text-gray-900 font-semibold">
+                  <div className="text-xl text-gray-300 font-semibold">
                     ${data.vault.treasury.usdValue.toFixed(2)}
                   </div>
-                  <div className="text-sm text-gray-500 mt-2">
+                  <div className="text-sm text-gray-400 mt-2">
                     Growing with each purchase
                   </div>
                 </div>
               </Card>
 
               {/* Potential Winnings Card */}
-              <Card className="p-6">
+              <Card className="p-6 bg-gray-800 text-white">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Potential Winnings</h3>
-                  <GiftIcon className="w-6 h-6 text-purple-500" />
+                  <h3 className="text-lg font-bold text-white">Potential Winnings</h3>
+                  <GiftIcon className="w-6 h-6 text-gray-400" />
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                  <div className="text-3xl font-bold text-white mb-2">
                     {data.vault.potentialWinnings.multiplier}x
                   </div>
-                  <div className="text-xl text-gray-900 font-semibold">
+                  <div className="text-xl text-gray-300 font-semibold">
                     ${data.vault.potentialWinnings.usdValue.toFixed(2)}
                   </div>
-                  <div className="text-sm text-gray-500 mt-2">
+                  <div className="text-sm text-gray-400 mt-2">
                     Last buyer wins all
                   </div>
                 </div>
               </Card>
 
               {/* Endgame Days Left Card */}
-              <Card className="p-6">
+              <Card className="p-6 bg-gray-900 text-white">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Endgame Days Left</h3>
-                  <ChartBarIcon className="w-6 h-6 text-blue-500" />
+                  <h3 className="text-lg font-bold text-white">Endgame Days Left</h3>
+                  <ChartBarIcon className="w-6 h-6 text-gray-400" />
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                  <div className="text-3xl font-bold text-white mb-2">
                     {data.vault.endgame.daysLeft}
                   </div>
-                  <div className="text-lg text-gray-900 font-semibold">
+                  <div className="text-lg text-gray-300 font-semibold">
                     Days until endgame
                   </div>
-                  <div className="text-sm text-gray-500 mt-2">
+                  <div className="text-sm text-gray-400 mt-2">
                     Distribution period begins
                   </div>
                 </div>
               </Card>
 
               {/* Airdrop Countdown Card */}
-              <Card className="p-6">
+              <Card className="p-6 bg-gray-800 text-white">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Next Airdrop</h3>
-                  <CloudArrowDownIcon className="w-6 h-6 text-indigo-500" />
+                  <h3 className="text-lg font-bold text-white">Next Airdrop</h3>
+                  <CloudArrowDownIcon className="w-6 h-6 text-gray-400" />
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-indigo-600 mb-2 font-mono">
+                  <div className="text-3xl font-bold text-white mb-2 font-mono">
                     {formatTime(airdropTime)}
                   </div>
-                  <div className="text-lg text-gray-900 font-semibold">
+                  <div className="text-lg text-gray-300 font-semibold">
                     Daily at 12 PM ET
                   </div>
-                  <div className="text-sm text-gray-500 mt-2">
+                  <div className="text-sm text-gray-400 mt-2">
                     Hold {data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'} tokens
                   </div>
                 </div>
@@ -460,7 +464,7 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                   </p>
                 </div>
               </div>
-              <div className="min-h-[400px]">
+              <div className="overflow-hidden">
                 <JupiterWidget 
                   tokenAddress={data.vaultConfig?.tokenMint || data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
                   tokenSymbol={data.vaultConfig?.airdropAsset || "TOKEN"}
@@ -494,20 +498,12 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                 <div className="border-t border-gray-200 pt-4">
                   <div className="text-sm space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Created:</span>
-                      <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.createdAt).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-gray-500">Start Date:</span>
                       <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.startDate).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Endgame Date:</span>
                       <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.endgameDate).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Whitelisted Addresses:</span>
-                      <span className="font-medium">{data.vaultConfig?.whitelistedAddresses?.length || 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Distribution Interval:</span>
@@ -527,7 +523,9 @@ export default function VaultPage({ params }: { params: { id: string } }) {
                         onClick={() => navigator.clipboard.writeText(data.vaultConfig?.tokenMint || '')}
                         className="text-gray-400 hover:text-gray-600 flex-shrink-0"
                       >
-                        📋
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
                       </button>
                     </div>
                   </div>

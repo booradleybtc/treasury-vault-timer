@@ -11,7 +11,9 @@ import {
   ChartBarIcon,
   ArrowRightIcon,
   PlusIcon,
-  BoltIcon
+  BoltIcon,
+  DocumentTextIcon,
+  CopyIcon
 } from '@heroicons/react/24/outline';
 
 interface VaultConfig {
@@ -78,7 +80,7 @@ export default function VaultsPage() {
     return statusMatch && assetMatch;
   });
 
-  const featuredVaults = vaults.filter(vault => vault.status === 'active');
+  const featuredVault = vaults.find(vault => vault.status === 'active') || vaults[0];
 
   if (loading) {
     return (
@@ -113,13 +115,13 @@ export default function VaultsPage() {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                   <span className="text-white text-sm font-bold">D</span>
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">Darwin</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Darwin Vaults</h1>
               </div>
               
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Q Search Vaults"
+                  placeholder="Search Vaults"
                   className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -150,67 +152,124 @@ export default function VaultsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Featured Vaults Section */}
-        {featuredVaults.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Featured Vaults</h2>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm text-green-600 font-medium">Live</span>
-              </div>
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Featured Vaults</h2>
+            <Button variant="outline" className="text-gray-600 border-gray-300">
+              View All
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Featured Vault Card */}
+            <div className="lg:col-span-3">
+              <Card className="p-8 h-full">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-orange-500 rounded-xl flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold">
+                        {featuredVault?.name?.charAt(0) || 'R'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-bold text-gray-900">
+                        {featuredVault?.name || 'REVS Vault'}
+                      </h3>
+                      <p className="text-lg text-gray-600">The OG Vault</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <span className="text-sm text-green-600 font-medium">Live</span>
+                    </div>
+                    <div className="text-4xl font-mono font-bold text-gray-900">00:32</div>
+                  </div>
+                </div>
+
+                {/* Vault Image Placeholder */}
+                <div className="bg-gray-100 rounded-xl h-64 mb-6 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-gray-300 rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <span className="text-4xl">🏦</span>
+                    </div>
+                    <p className="text-gray-500">Vault Image</p>
+                  </div>
+                </div>
+
+                {/* Vault Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">APY</p>
+                    <p className="text-xl font-bold text-gray-900">N/A</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Treasury</p>
+                    <p className="text-xl font-bold text-gray-900">$1,234,567</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Last Buyer</p>
+                    <div className="flex items-center space-x-2">
+                      <p className="text-xl font-bold text-gray-900">0x123...abc</p>
+                      <CopyIcon className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Timer</p>
+                    <p className="text-xl font-bold text-gray-900">00:00:00</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Endgame</p>
+                    <p className="text-xl font-bold text-gray-900">Sept 15, 2025</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Airdrop</p>
+                    <p className="text-xl font-bold text-gray-900">00:00:00</p>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <Button className="bg-orange-500 text-white hover:bg-orange-600 px-8 py-3">
+                    Trade REVS
+                  </Button>
+                </div>
+              </Card>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredVaults.slice(0, 3).map((vault) => (
-                <Link href={`/vault/${vault.id}`} key={vault.id}>
-                  <motion.div
-                    className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer"
-                    whileHover={{ y: -5 }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-                          <span className="text-white text-xl font-bold">
-                            {vault.name.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900">{vault.name}</h3>
-                          <p className="text-sm text-gray-600">{vault.airdropAsset}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-mono font-bold text-orange-600">00:32</div>
-                        <p className="text-xs text-gray-500">Timer</p>
-                      </div>
+
+            {/* Game Rules Card */}
+            <div className="lg:col-span-1">
+              <Card className="p-6 h-full">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Trade to Win Vault</h3>
+                <p className="text-gray-600 mb-6">
+                  Every day 10,000+ potential clients visit our website. Hire exclusive talent by posting your job today.
+                </p>
+                
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Game Rules</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-2">
+                      <span className="text-orange-500 font-bold">•</span>
+                      <p className="text-sm text-gray-600">Buy REVS to Reset Timer</p>
                     </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Treasury</span>
-                        <span className="font-semibold text-gray-900">2.52 {vault.vaultAsset}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Trade : Win</span>
-                        <span className="font-semibold text-green-600">1,000x</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Hold : Earn</span>
-                        <span className="font-semibold text-blue-600">164%</span>
-                      </div>
+                    <div className="flex items-start space-x-2">
+                      <span className="text-orange-500 font-bold">•</span>
+                      <p className="text-sm text-gray-600">Win Half the Treasury</p>
                     </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <Button className="w-full bg-orange-500 text-white hover:bg-orange-600">
-                        <BoltIcon className="w-4 h-4 mr-2" />
-                        Trade Now
-                      </Button>
+                    <div className="flex items-start space-x-2">
+                      <span className="text-orange-500 font-bold">•</span>
+                      <p className="text-sm text-gray-600">Claim Airdrops & Treasury</p>
                     </div>
-                  </motion.div>
-                </Link>
-              ))}
+                  </div>
+                </div>
+
+                <Button variant="outline" className="w-full border-gray-300 text-gray-600">
+                  <DocumentTextIcon className="w-4 h-4 mr-2" />
+                  Read Docs
+                </Button>
+              </Card>
             </div>
           </div>
-        )}
+        </div>
 
         {/* All Vaults Section */}
         <div className="bg-white rounded-xl shadow-sm border">
@@ -236,16 +295,13 @@ export default function VaultsPage() {
               ))}
               
               <div className="ml-auto flex items-center space-x-4 py-4">
-                <select 
-                  value={assetFilter}
-                  onChange={(e) => setAssetFilter(e.target.value)}
-                  className="text-sm border border-gray-300 rounded px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                <Button 
+                  onClick={() => window.location.href = '/admin'}
+                  className="bg-blue-600 text-white hover:bg-blue-700"
                 >
-                  <option value="all">Filter by Treasury Asset ▾</option>
-                  <option value="SOL">SOL</option>
-                  <option value="USDC">USDC</option>
-                  <option value="zBTC">zBTC</option>
-                </select>
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Create Vault
+                </Button>
               </div>
             </nav>
           </div>
@@ -256,25 +312,19 @@ export default function VaultsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vault Name & Timer
+                    Vault
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Base Asset
+                    APY
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Treasury
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Trade : Win
+                    Timer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hold : Earn
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Must Hold
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    End Date
+                    Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Action
@@ -293,29 +343,29 @@ export default function VaultsPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">{vault.name}</div>
-                          <div className="text-xs text-gray-500">00:00:32</div>
+                          <div className="text-xs text-gray-500">{vault.airdropAsset}</div>
                         </div>
                       </Link>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      N/A
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      $1.2M
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      00:00:00
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-6 h-6 bg-red-500 rounded"></div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      4.52 {vault.vaultAsset}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      1,000x
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      164%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      164%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      164%
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        vault.status === 'active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : vault.status === 'ended'
+                          ? 'bg-gray-100 text-gray-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {vault.status === 'active' ? 'Live' : vault.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Button 

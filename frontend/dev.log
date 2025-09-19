@@ -86,3 +86,188 @@
  ✓ Compiled in 502ms (1520 modules)
  ✓ Compiled in 2.1s (1520 modules)
  ✓ Compiled in 827ms (1521 modules)
+ ✓ Compiled in 657ms (1521 modules)
+ GET /vaults 200 in 200ms
+ GET /vaults 200 in 240ms
+ ✓ Compiled /favicon.ico in 463ms (833 modules)
+ GET /favicon.ico 200 in 560ms
+ GET /vault/revs-vault-001 200 in 105ms
+ GET /vaults 200 in 58ms
+ GET /vault/revs-vault-001 200 in 52ms
+ GET /vaults 200 in 79ms
+ GET /vaults 200 in 217ms
+ GET /favicon.ico 200 in 23ms
+ GET /admin 200 in 141ms
+ GET /favicon.ico 200 in 20ms
+ GET /admin 200 in 61ms
+ GET /favicon.ico 200 in 10ms
+ GET /vaults 200 in 101ms
+ GET /favicon.ico 200 in 20ms
+ GET /admin 200 in 73ms
+ GET /vaults 200 in 70ms
+ GET /favicon.ico 200 in 10ms
+ ○ Compiling / ...
+ ✓ Compiled / in 744ms (924 modules)
+ GET / 200 in 708ms
+ GET /favicon.ico 200 in 26ms
+ GET /vaults 200 in 99ms
+ GET /favicon.ico 200 in 8ms
+ GET / 200 in 109ms
+ GET / 200 in 37ms
+ GET /favicon.ico 200 in 13ms
+ GET /vaults 200 in 77ms
+ GET /favicon.ico 200 in 16ms
+ GET /vault/revs-vault-001 200 in 175ms
+ GET /favicon.ico 200 in 46ms
+ GET /vaults 200 in 86ms
+ GET /vault/revs-vault-001 200 in 69ms
+ GET /vaults 200 in 37ms
+ GET /vault/revs-vault-001 200 in 39ms
+ GET /vaults 200 in 41ms
+ GET /vault/revs-vault-001 200 in 86ms
+ GET /vaults 200 in 54ms
+ GET /admin 200 in 93ms
+ GET /favicon.ico 200 in 18ms
+ GET /admin 200 in 48ms
+ GET /favicon.ico 200 in 14ms
+ GET /vaults 200 in 96ms
+ GET /favicon.ico 200 in 18ms
+ GET /vaults 200 in 196ms
+ GET /favicon.ico 200 in 24ms
+ GET /vault/revs-vault-001 200 in 87ms
+ GET /vaults 200 in 42ms
+ GET /vault/revs-vault-001 200 in 61ms
+ GET /vault/revs-vault-001 200 in 197ms
+ GET /favicon.ico 200 in 49ms
+ GET /vault/admin 200 in 105ms
+ GET /favicon.ico 200 in 33ms
+ GET /admin 200 in 126ms
+ GET /favicon.ico 200 in 14ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 738ms (1529 modules)
+ GET /admin/new 404 in 950ms
+ GET /favicon.ico 200 in 29ms
+ GET /admin 200 in 122ms
+ GET /vaults 200 in 115ms
+ GET /favicon.ico 200 in 15ms
+ GET /admin 200 in 86ms
+ GET /favicon.ico 200 in 12ms
+ GET /vaults 200 in 142ms
+ GET /favicon.ico 200 in 10ms
+ GET /vault/revs-vault-001 200 in 31ms
+ GET /vault/revs-vault-001 200 in 111ms
+ GET /favicon.ico 200 in 29ms
+ GET /vaults 200 in 55ms
+ GET /admin 200 in 117ms
+ GET /favicon.ico 200 in 18ms
+ GET /vaults 200 in 113ms
+ GET /favicon.ico 200 in 13ms
+ GET /vault/revs-vault-001 200 in 46ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 125ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 137ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 71ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 58ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 52ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 135ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 72ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 53ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+ GET /vault/revs-vault-001 200 in 45ms
