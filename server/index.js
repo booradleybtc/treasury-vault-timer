@@ -670,6 +670,54 @@ app.get('/api/healthz', (req, res) => {
   });
 });
 
+// API health indicators endpoint
+app.get('/api/admin/health', async (req, res) => {
+  try {
+    const healthChecks = {
+      database: { status: 'unknown', message: '' },
+      solana: { status: 'unknown', message: '' },
+      jupiter: { status: 'unknown', message: '' },
+      timestamp: new Date().toISOString()
+    };
+
+    // Check database
+    try {
+      await db.getVault('revs-vault-001');
+      healthChecks.database = { status: 'healthy', message: 'SQLite database connected' };
+    } catch (error) {
+      healthChecks.database = { status: 'error', message: `Database error: ${error.message}` };
+    }
+
+    // Check Solana connection
+    try {
+      const slot = await connection.getSlot();
+      healthChecks.solana = { status: 'healthy', message: `Connected to slot ${slot}` };
+    } catch (error) {
+      healthChecks.solana = { status: 'error', message: `Solana RPC error: ${error.message}` };
+    }
+
+    // Check Jupiter API
+    try {
+      const response = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${REVS_TOKEN_ADDRESS}&amount=1000000`);
+      if (response.ok) {
+        healthChecks.jupiter = { status: 'healthy', message: 'Jupiter API responding' };
+      } else {
+        healthChecks.jupiter = { status: 'warning', message: `Jupiter API returned ${response.status}` };
+      }
+    } catch (error) {
+      healthChecks.jupiter = { status: 'error', message: `Jupiter API error: ${error.message}` };
+    }
+
+    res.json(healthChecks);
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Health check failed', 
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Admin API endpoints
 app.get('/api/admin/vaults', (req, res) => {
   try {

@@ -77,3 +77,11 @@
  ✓ Compiled in 895ms (1520 modules)
  GET /vaults 200 in 99ms
  GET /vault/revs-vault-001 200 in 99ms
+ ✓ Compiled in 588ms (1520 modules)
+ GET /vaults 200 in 175ms
+ GET /vault/revs-vault-001 200 in 169ms
+ ✓ Compiled in 760ms (1520 modules)
+ GET /vault/revs-vault-001 200 in 95ms
+ GET /vaults 200 in 98ms
+ ✓ Compiled in 502ms (1520 modules)
+ ✓ Compiled in 2.1s (1520 modules)

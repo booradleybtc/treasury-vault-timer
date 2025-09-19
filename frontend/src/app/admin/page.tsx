@@ -50,6 +50,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [editingVault, setEditingVault] = useState<VaultConfig | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [healthStatus, setHealthStatus] = useState<any>(null);
 
   // Mock admin wallets (in production, this would be in environment variables)
   const ADMIN_WALLETS = [
@@ -62,6 +63,8 @@ export default function AdminDashboard() {
     checkAuth();
     // Load existing vaults
     loadVaults();
+    // Load health status
+    loadHealthStatus();
   }, []);
 
   const checkAuth = async () => {
@@ -121,6 +124,26 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Failed to load vaults:', error);
+    }
+  };
+
+  const loadHealthStatus = async () => {
+    try {
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const response = await fetch(`${BACKEND_URL}/api/admin/health`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHealthStatus(data);
+      } else {
+        console.error('Failed to fetch health status:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Failed to load health status:', error);
     }
   };
 
@@ -343,6 +366,32 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Health Status Section */}
+        {healthStatus && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">API Health Status</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Object.entries(healthStatus).filter(([key]) => key !== 'timestamp').map(([service, status]: [string, any]) => (
+                <div key={service} className="bg-white rounded-lg border p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 capitalize">{service}</h3>
+                    <div className={`w-3 h-3 rounded-full ${
+                      status.status === 'healthy' ? 'bg-green-500' :
+                      status.status === 'warning' ? 'bg-yellow-500' :
+                      status.status === 'error' ? 'bg-red-500' :
+                      'bg-gray-400'
+                    }`}></div>
+                  </div>
+                  <p className="text-sm text-gray-600">{status.message}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Last checked: {healthStatus.timestamp ? new Date(healthStatus.timestamp).toLocaleString() : 'Never'}
+            </p>
+          </div>
+        )}
+
         {/* Vaults Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {vaults.map((vault) => (
