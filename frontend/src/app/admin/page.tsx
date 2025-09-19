@@ -67,6 +67,36 @@ export default function AdminDashboard() {
     loadHealthStatus();
   }, []);
 
+  // Handle vault type selection
+  useEffect(() => {
+    const handleVaultTypeChange = () => {
+      const vaultTypeRadios = document.querySelectorAll('input[name="vaultType"]');
+      const treasuryConfig = document.getElementById('treasuryConfig');
+      const datTreasury = document.getElementById('datTreasury');
+      const rwaTreasury = document.getElementById('rwaTreasury');
+
+      vaultTypeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          if (e.target.value === 'DAT') {
+            treasuryConfig?.classList.remove('hidden');
+            datTreasury?.classList.remove('hidden');
+            rwaTreasury?.classList.add('hidden');
+          } else if (e.target.value === 'RWA') {
+            treasuryConfig?.classList.remove('hidden');
+            datTreasury?.classList.add('hidden');
+            rwaTreasury?.classList.remove('hidden');
+          } else {
+            treasuryConfig?.classList.add('hidden');
+          }
+        });
+      });
+    };
+
+    if (showCreateForm) {
+      handleVaultTypeChange();
+    }
+  }, [showCreateForm]);
+
   const checkAuth = async () => {
     try {
       // Check if wallet is connected
@@ -783,87 +813,267 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
+                {/* Basic Information */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Vault Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., REVS Vault"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Vault Name *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., REVS Vault"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                      <textarea
+                        placeholder="Describe your vault and its purpose..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Vault Asset *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., SOL, USDC, zBTC"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Airdrop Asset *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., REVS"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Token Mint Address *</label>
+                      <input
+                        type="text"
+                        placeholder="Enter token mint address..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
 
+                {/* Vault Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
-                    placeholder="Describe your vault..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Vault Type</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Vault Type *</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                          <input type="radio" name="vaultType" value="DAT" className="mr-3" />
+                          <div>
+                            <div className="font-medium">DAT (Digital Asset Treasury)</div>
+                            <div className="text-sm text-gray-500">Treasury tracked on-chain via wallet</div>
+                          </div>
+                        </label>
+                        <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                          <input type="radio" name="vaultType" value="RWA" className="mr-3" />
+                          <div>
+                            <div className="font-medium">RWA (Real World Asset)</div>
+                            <div className="text-sm text-gray-500">Treasury value manually input</div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Treasury Configuration - Dynamic based on type */}
+                    <div id="treasuryConfig" className="hidden">
+                      <div id="datTreasury" className="hidden">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Treasury Wallet Address *</label>
+                        <input
+                          type="text"
+                          placeholder="Enter treasury wallet address..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div id="rwaTreasury" className="hidden">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Treasury Value (USD) *</label>
+                        <input
+                          type="number"
+                          placeholder="Enter treasury value in USD..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Vault Asset</label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                      <option value="SOL">SOL</option>
-                      <option value="USDC">USDC</option>
-                      <option value="zBTC">zBTC</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Airdrop Asset</label>
-                    <input
-                      type="text"
-                      placeholder="e.g., REVS"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
+                {/* Wallet Configuration */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Token Mint Address</label>
-                  <input
-                    type="text"
-                    placeholder="Enter token mint address..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Wallet Configuration</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Distribution Wallet *</label>
+                      <input
+                        type="text"
+                        placeholder="Enter distribution wallet address..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Dev Wallet *</label>
+                      <input
+                        type="text"
+                        placeholder="Enter dev wallet address..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Whitelisted Addresses (for timer)</label>
+                      <textarea
+                        placeholder="Enter addresses separated by commas (optional)"
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">Addresses that won't trigger timer resets</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Timer Duration (hours)</label>
-                    <input
-                      type="number"
-                      placeholder="1"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Min Hold Amount</label>
-                    <input
-                      type="number"
-                      placeholder="200000"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Distribution Interval (min)</label>
-                    <input
-                      type="number"
-                      placeholder="5"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                {/* Timer & Game Configuration */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Timer & Game Configuration</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Timer Duration (hours) *</label>
+                      <input
+                        type="number"
+                        placeholder="1"
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Min Hold Amount *</label>
+                      <input
+                        type="number"
+                        placeholder="200000"
+                        min="0"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Distribution Interval (minutes) *</label>
+                      <input
+                        type="number"
+                        placeholder="5"
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Potential Winnings Multiplier *</label>
+                      <input
+                        type="number"
+                        placeholder="100"
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
+                {/* Dates & Timeline */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Dates & Timeline</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Fundraising Start Date *</label>
+                      <input
+                        type="datetime-local"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Vault Launch Date *</label>
+                      <input
+                        type="datetime-local"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Endgame Date *</label>
+                      <input
+                        type="datetime-local"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Tax Split - Dev (%)</label>
+                      <input
+                        type="number"
+                        placeholder="20"
+                        min="0"
+                        max="100"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Images */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Images</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Token Profile Picture</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">Recommended: 64x64px</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Banner Image (Featured Vault)</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">Recommended: 800x400px</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Workflow Information */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 mb-2">Vault Creation Workflow</h3>
                   <div className="text-sm text-blue-800 space-y-1">
-                    <p>1. <strong>24hr ICO Fundraising</strong> - Manual fundraising period</p>
-                    <p>2. <strong>24hr Pre-Launch</strong> - Setup and configuration</p>
-                    <p>3. <strong>Vault Goes Live</strong> - Timer starts, trading begins</p>
-                    <p>4. <strong>Endgame or Claim</strong> - Distribution or last buyer wins</p>
+                    <p>1. <strong>24hr ICO Fundraising</strong> - Manual fundraising period starts on Fundraising Start Date</p>
+                    <p>2. <strong>24hr Pre-Launch</strong> - Setup and configuration period</p>
+                    <p>3. <strong>Vault Goes Live</strong> - Timer starts on Vault Launch Date, trading begins</p>
+                    <p>4. <strong>Endgame or Claim</strong> - Distribution period begins on Endgame Date or last buyer wins</p>
                   </div>
                 </div>
 
@@ -877,8 +1087,8 @@ export default function AdminDashboard() {
                   <Button
                     className="bg-blue-600 text-white hover:bg-blue-700"
                     onClick={() => {
-                      // TODO: Implement vault creation
-                      alert('Vault creation workflow coming soon!');
+                      // TODO: Implement comprehensive vault creation
+                      alert('Comprehensive vault creation workflow coming soon!');
                       setShowCreateForm(false);
                     }}
                   >

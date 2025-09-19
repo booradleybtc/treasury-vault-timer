@@ -12,8 +12,7 @@ import {
   ArrowRightIcon,
   PlusIcon,
   BoltIcon,
-  DocumentTextIcon,
-  CopyIcon
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 interface VaultConfig {
@@ -211,7 +210,9 @@ export default function VaultsPage() {
                     <p className="text-sm text-gray-500 mb-1">Last Buyer</p>
                     <div className="flex items-center space-x-2">
                       <p className="text-xl font-bold text-gray-900">0x123...abc</p>
-                      <CopyIcon className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
+                      <svg className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
                     </div>
                   </div>
                   <div>
