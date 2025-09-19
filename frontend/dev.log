@@ -85,3 +85,4 @@
  GET /vaults 200 in 98ms
  ✓ Compiled in 502ms (1520 modules)
  ✓ Compiled in 2.1s (1520 modules)
+ ✓ Compiled in 827ms (1521 modules)
