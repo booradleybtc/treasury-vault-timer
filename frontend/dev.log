@@ -271,3 +271,14 @@ Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?nam
 Import trace for requested module:
 ./src/app/vaults/page.tsx
  GET /vault/revs-vault-001 200 in 45ms
+ ⚠ ./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
+
+./src/app/vaults/page.tsx
+Attempted import error: 'CopyIcon' is not exported from '__barrel_optimize__?names=ChartBarIcon,CopyIcon,DocumentTextIcon,PlusIcon!=!@heroicons/react/24/outline' (imported as 'CopyIcon').
+
+Import trace for requested module:
+./src/app/vaults/page.tsx
