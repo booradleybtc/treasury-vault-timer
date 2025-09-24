@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { FeaturedVaultCard } from '@/components/darwin/FeaturedVaultCard';
-import { TallVaultCard } from '@/components/darwin/TallVaultCard';
-import { VaultRow } from '@/components/darwin/VaultRow';
+import { StatusAwareVaultCard } from '@/components/darwin/StatusAwareVaultCard';
+import { VaultPagePreview } from '@/components/darwin/VaultPagePreview';
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -21,12 +20,19 @@ export default function PreviewPage() {
         const res = await fetch(`${BACKEND}/api/vault/${vaultId}/config`);
         if (res.ok) {
           const js = await res.json();
-          setVault(js.vault);
+          setVault({ ...js.vault, status: stage });
         }
       } catch {}
     };
     load();
   }, [vaultId, BACKEND]);
+
+  // Update vault status when stage changes
+  useEffect(() => {
+    if (vault) {
+      setVault({ ...vault, status: stage });
+    }
+  }, [stage]);
 
   return (
     <div className="min-h-screen w-full" style={{
@@ -49,74 +55,41 @@ export default function PreviewPage() {
 
         {/* Featured card preview */}
         <div className="mb-6">
-          <FeaturedVaultCard
-            imageUrl="/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png"
-            title={vault?.name || 'Vault'}
-            subtitle={stage.toUpperCase()}
-            tokenTicker={vault?.airdropAsset || 'REVS'}
-            addressShort={vault?.tokenMint ? `${vault.tokenMint.slice(0,6)}...${vault.tokenMint.slice(-4)}` : '—'}
-            tokenPfpUrl="/images/token.png"
-            vaultAssetIconSrc="/images/Solana_logo.png"
-            tokenBadgeText={vault?.airdropAsset || 'REVS'}
-            tokenBadgeClassName="bg-emerald-500 text-black"
-            stats={[
-              { label: 'Price', value: '$0.0000' },
-              { label: 'Vault Asset', value: vault?.vaultAsset || 'SOL' },
-              { label: 'Treasury', value: 'N/A' },
-              { label: 'Potential Win', value: '—' },
-              { label: 'APY*', value: 'N/A' },
-            ]}
-            timer={{ value: stage==='live' ? '00:59' : stage==='countdown' ? '23:59:59' : '—' }}
-            endgameDays={stage==='live' ? 91 : undefined}
-            xUrl="https://x.com"
-            aspect="3/1"
-            onClickTitle={()=>{}}
+          <StatusAwareVaultCard
+            vault={vault || { id: vaultId || '', name: 'Vault' }}
+            variant="featured"
             onTrade={()=>{}}
+            onClickTitle={()=>{}}
           />
         </div>
 
         {/* Tall card + List row previews */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <TallVaultCard
-            name={vault?.name || 'Vault'}
-            timer={stage==='live' ? '59:00' : '—'}
-            imageUrl="/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png"
-            pfp="/images/token.png"
-            price={'N/A'}
-            baseAsset={vault?.vaultAsset || 'SOL'}
-            treasury={'N/A'}
-            potentialWin={'—'}
-            apy={'N/A'}
-            endgame={stage==='live' ? '91d' : '—'}
-            tokenTicker={vault?.airdropAsset || 'REVS'}
-            addressShort={vault?.tokenMint ? `${vault.tokenMint.slice(0,6)}...${vault.tokenMint.slice(-4)}` : undefined}
+          <StatusAwareVaultCard
+            vault={vault || { id: vaultId || '', name: 'Vault' }}
+            variant="tall"
             onTrade={()=>{}}
           />
           <div className="bg-white/5 ring-1 ring-white/10 p-3">
-          <VaultRow
-            name={vault?.name || 'Vault'}
-            timer={stage==='live' ? '59:00' : '—'}
-            pfp="/images/token.png"
-            price={'N/A'}
-            baseAsset={vault?.vaultAsset || 'SOL'}
-            treasury={'N/A'}
-            potentialWin={'—'}
-            apy={'N/A'}
-            endgame={stage==='live' ? '91d' : '—'}
-            onTrade={()=>{}}
-          />
+            <StatusAwareVaultCard
+              vault={vault || { id: vaultId || '', name: 'Vault' }}
+              variant="row"
+              onTrade={()=>{}}
+            />
           </div>
         </div>
 
-        {/* Dedicated page preview placeholder */}
-        <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-white">Dedicated Page Preview</h2>
-            <span className="text-xs text-white/70">Stage: {stage.toUpperCase()}</span>
-          </div>
-          <div className="text-white/80 text-sm mb-4">This will preview the full vault page with stage-specific UI. Placeholder for now.</div>
+        {/* Dedicated page preview */}
+        <VaultPagePreview
+          vault={vault || { id: vaultId || '', name: 'Vault' }}
+          status={stage}
+          className="mb-6"
+        />
+
+        {/* Launch button */}
+        <div className="text-center">
           <button 
-            className="bg-[#58A6FF] hover:bg-[#4a95e6] text-white px-4 py-2 shadow-[0_0_18px_rgba(88,166,255,0.45)] font-semibold" 
+            className="bg-[#58A6FF] hover:bg-[#4a95e6] text-white px-6 py-3 shadow-[0_0_18px_rgba(88,166,255,0.45)] font-semibold" 
             onClick={async () => {
               try {
                 const res = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/status`, {
