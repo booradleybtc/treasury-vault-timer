@@ -298,19 +298,20 @@ export function StatusAwareVaultCard({
         </div>
       );
 
-    case 'tall':
-      return (
-        <div className="relative">
-          <TallVaultCard 
-            {...baseProps}
-            status={status}
-            icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
-            buttonText={config.buttonText || 'Trade'}
-            airdropAsset={vault.airdropAsset || 'REVS'}
-          />
-          {renderICOInfo()}
-        </div>
-      );
+        case 'tall':
+          return (
+            <div className="relative">
+              <TallVaultCard 
+                {...baseProps}
+                status={status}
+                icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
+                buttonText={config.buttonText || 'Trade'}
+                airdropAsset={vault.airdropAsset || 'REVS'}
+                tradeFee={status === 'pre_ico' ? `${(meta.splits?.creator || 0) + (meta.splits?.treasury || 0) + (meta.splits?.airdrops || 0) + (meta.splits?.darwin || 0)}%` : '5%'}
+              />
+              {renderICOInfo()}
+            </div>
+          );
 
     case 'row':
       return (
