@@ -59,7 +59,7 @@ export function VaultRow(props: VaultRowProps) {
   };
 
   return (
-    <div className={cn(GRID, "gap-2 items-center rounded-none ring-1 ring-white/10 bg-white/5 backdrop-blur-[10px] px-5 py-4")}> 
+    <div className={cn(GRID, "gap-1 items-center rounded-none ring-1 ring-white/10 bg-white/5 backdrop-blur-[10px] px-5 py-4")}> 
       {/* Vault + timer */}
       <div className="flex items-center gap-4">
         <img src={pfp} alt={name} className="h-16 w-16 rounded-md object-cover border border-white/10 bg-white" />
@@ -73,10 +73,12 @@ export function VaultRow(props: VaultRowProps) {
             )}
           </div>
           {status === 'pre_ico' && icoDate ? (
-            <div className="mt-1 inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-2 py-0.5 text-sm md:text-base text-white/90">
+            <div className="mt-1 text-sm text-white/90">
               <div className="text-xs text-white/60">ICO Date</div>
-              <div className="text-sm font-semibold">{icoDate.split(' - ')[0]}</div>
-              <div className="text-xs text-white/70">{icoDate.split(' - ')[1]}</div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-semibold">{icoDate.split(' - ')[0]}</span>
+                <span className="text-xs text-white/70">{icoDate.split(' - ')[1]}</span>
+              </div>
             </div>
           ) : (
             <div className="mt-1 inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-2 py-0.5 text-sm md:text-base text-white/90 tabular-nums">{timer}</div>
