@@ -52,7 +52,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
           alt={name} 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         
         {/* Header info over banner */}
         <div className="absolute inset-0 p-4 sm:p-5 flex items-start justify-between text-white">
@@ -96,7 +96,8 @@ export function TallVaultCard(props: TallVaultCardProps) {
 
       {/* Stats grid - 2 rows of 3 columns */}
       <div className="px-4 sm:px-5 py-3 sm:py-4 text-white">
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="bg-white/5 backdrop-blur-[5px] rounded-lg p-3 sm:p-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {status === 'pre_ico' ? (
             <>
               <div className="text-center">
@@ -135,6 +136,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
               <Stat label="Trade Fee" value={tradeFee || "5%"} numeric />
             </>
           )}
+          </div>
         </div>
 
         <button
