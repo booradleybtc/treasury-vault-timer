@@ -64,7 +64,7 @@ export function StatusAwareVaultCard({
     switch (status) {
       case 'pre_ico':
         return {
-          subtitle: 'Vault Stage: Pre-ICO',
+          subtitle: 'Pre-ICO',
           timerValue: meta.icoProposedAt ? formatICOStartTime(meta.icoProposedAt) : '—',
           badgeText: 'PRE-ICO',
           badgeClass: 'bg-blue-500 text-white',
