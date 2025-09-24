@@ -96,7 +96,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
 
       {/* Stats grid - 2 rows of 3 columns */}
       <div className="px-4 sm:px-5 py-2 sm:py-3 text-white">
-        <div className="rounded-none px-2 sm:px-3 py-2 sm:py-3">
+        <div className="rounded-none px-1 sm:px-2 py-2 sm:py-3">
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {status === 'pre_ico' ? (
             <>
