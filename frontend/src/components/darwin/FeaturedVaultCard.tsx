@@ -142,13 +142,9 @@ export function FeaturedVaultCard({
 
           {/* bottom-left: title/subtitle + actions */}
           <div className="absolute bottom-5 left-5">
-            <button
-              type="button"
-              onClick={onClickTitle}
-              className="text-3xl md:text-5xl font-bold tracking-tight text-white drop-shadow-[0_1px_8px_rgba(0,0,0,.4)]"
-            >
+            <div className="text-4xl md:text-6xl font-bold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,.6)] mb-2">
               {title}
-            </button>
+            </div>
             {showVaultStagePill ? (
               <div className="mt-2 inline-flex items-center gap-2 rounded-[8px] bg-blue-500/20 backdrop-blur-[10px] ring-1 ring-blue-400/30 px-3 py-1 text-sm text-blue-300 font-semibold">
                 {subtitle}

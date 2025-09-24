@@ -49,6 +49,29 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
   const [countdown, setCountdown] = useState('');
   const meta = vault.meta || {};
 
+  function formatICODate(icoDate: string): string {
+    const date = new Date(icoDate);
+    const months = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    const time = date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true,
+      timeZoneName: 'short'
+    });
+    
+    // Add ordinal suffix to day
+    const getOrdinal = (n: number) => {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+    
+    return `${month} ${getOrdinal(day)}, ${year} - ${time}`;
+  }
+
   // Update countdown every second
   useEffect(() => {
     const updateCountdown = () => {
@@ -112,7 +135,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
             {meta.icoProposedAt && (
               <div className="bg-white/5 rounded-lg p-6 mb-8 max-w-md mx-auto text-center">
                 <div className="text-sm text-white/60 mb-2">ICO Date & Time</div>
-                <div className="text-2xl font-bold text-blue-400">{new Date(meta.icoProposedAt).toLocaleDateString() + ' ' + new Date(meta.icoProposedAt).toLocaleTimeString()}</div>
+                <div className="text-2xl font-bold text-blue-400">{formatICODate(meta.icoProposedAt)}</div>
               </div>
             )}
 
@@ -160,7 +183,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/70">Airdrop Asset:</span>
-                    <span className="text-white font-semibold">{meta.ticker || vault.airdropAsset || 'REVS'}</span>
+                    <span className="text-white font-semibold">{vault.airdropAsset || 'REVS'}</span>
                   </div>
                 </div>
                 <div className="border-t border-white/10 pt-4">

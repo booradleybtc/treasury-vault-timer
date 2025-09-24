@@ -247,7 +247,7 @@ export function StatusAwareVaultCard({
     tokenTicker: meta.ticker || vault.airdropAsset || 'REVS',
     addressShort: vault.tokenMint ? `${vault.tokenMint.slice(0,6)}...${vault.tokenMint.slice(-4)}` : '—',
     imageUrl,
-    pfp: meta.logoUrl || logoUrl,
+    pfp: meta.logoUrl || '/images/token.png',
     price: status === 'live' ? '$0.0000' : 'N/A',
     baseAsset: vault.vaultAsset || 'SOL',
     treasury: status === 'live' ? '$12.2M' : 'N/A',
