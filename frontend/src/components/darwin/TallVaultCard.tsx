@@ -141,7 +141,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
 
         <button
           onClick={onTrade}
-          className="mt-3 sm:mt-4 w-full inline-flex items-center justify-center whitespace-nowrap rounded-none bg-white text-black px-3 py-2 text-xs sm:text-sm font-semibold hover:bg-white/90"
+          className="mt-2 sm:mt-3 w-full inline-flex items-center justify-center whitespace-nowrap rounded-none bg-white text-black px-3 py-2 text-xs sm:text-sm font-semibold hover:bg-white/90"
         >
           {buttonText || "Trade"}
         </button>
