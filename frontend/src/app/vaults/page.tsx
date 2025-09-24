@@ -8,6 +8,7 @@ import { VaultRow } from "@/components/darwin/VaultRow";
 import { VaultFilters } from "@/components/darwin/VaultFilters";
 import { SiteFooter } from "@/components/darwin/SiteFooter";
 import { TallVaultCard } from "@/components/darwin/TallVaultCard";
+import { StatusAwareVaultCard } from "@/components/darwin/StatusAwareVaultCard";
 
 interface VaultConfig {
   id: string;
@@ -25,7 +26,31 @@ interface VaultConfig {
   taxSplit: { dev: number; holders: number };
   vaultAsset: string;
   airdropAsset: string;
-  status: 'draft' | 'active' | 'paused' | 'ended';
+  status: 'draft' | 'active' | 'paused' | 'ended' | 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'extinct';
+  meta?: {
+    ticker?: string;
+    logoUrl?: string;
+    bannerUrl?: string;
+    icoProposedAt?: string;
+    icoEndsAt?: string;
+    supplyIntended?: string;
+    bidMultiplier?: number;
+    vaultLifespanDays?: number;
+    minBuyToReset?: number;
+    airdropInterval?: number;
+    airdropMode?: string;
+    splits?: {
+      creator?: number;
+      treasury?: number;
+      airdrops?: number;
+      darwin?: number;
+    };
+    links?: {
+      x?: string;
+      website?: string;
+    };
+    icoThresholdUsd?: number;
+  };
   whitelistedAddresses: string[];
   createdAt: string;
   updatedAt: string;
@@ -260,28 +285,9 @@ export default function Page() {
       {/* Desktop Featured Card - Original */}
       <section className="mx-auto max-w-7xl px-4 pt-6 hidden lg:block">
         {featuredVault && (
-          <FeaturedVaultCard
-            imageUrl="/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png"
-            title={featuredVault.name}
-            subtitle="The OG Vault — precision chaos in every scratch"
-            tokenTicker={featuredVault.airdropAsset || "REVS"}
-            addressShort={featuredVault.tokenMint ? `${featuredVault.tokenMint.slice(0, 6)}...${featuredVault.tokenMint.slice(-4)}` : "07xbv8..."}
-            tokenPfpUrl="/images/token.png"
-            vaultAssetIconSrc="/images/Solana_logo.png"
-            tokenBadgeText="REVS"
-            tokenBadgeClassName="bg-emerald-500 text-black"
-            stats={[
-              { label: "Price", value: formatPrice(dashboardData?.token?.price || dashboardData?.vault?.tokenPrice) },
-              { label: "Vault Asset", value: featuredVault.vaultAsset || "REVS" },
-              { label: "Treasury", value: formatTreasury(dashboardData?.vault?.treasury) },
-              { label: "Potential Win", value: dashboardData?.vault?.potentialWinnings?.multiplier ? `${dashboardData.vault.potentialWinnings.multiplier}×` : "100×" },
-              { label: "APY*", value: "N/A" },
-            ]}
-            timer={{ value: formatTimer(dashboardData?.timer?.timeLeft) }}
-            winnerAddressShort={dashboardData?.timer?.lastBuyerAddress ? `${dashboardData.timer.lastBuyerAddress.slice(0, 6)}...${dashboardData.timer.lastBuyerAddress.slice(-4)}` : undefined}
-            endgameDays={dashboardData?.vault?.endgame?.daysLeft}
-            xUrl="https://x.com/elonmusk"
-            aspect="3/1"
+          <StatusAwareVaultCard
+            vault={featuredVault}
+            variant="featured"
             onClickTitle={() => router.push(`/vault/${featuredVault.id}`)}
             onTrade={() => router.push(`/vault/${featuredVault.id}`)}
           />
@@ -338,101 +344,12 @@ export default function Page() {
       {/* Mobile/Tablet Featured Card - New Style */}
       <section className="px-4 mb-6 lg:hidden">
         {featuredVault && (
-          <div className="relative w-full h-[75vh] sm:h-[70vh] md:h-[65vh] max-w-[1100px] mx-auto rounded-lg ring-1 ring-white/10 overflow-hidden">
-            {/* Top: PFP, title, address, ticker, and timer */}
-            <div className="relative p-3 sm:p-4 bg-white/5 backdrop-blur-[10px] border-b border-white/10">
-              {/* Banner image behind top section */}
-              <div className="absolute inset-0">
-                <img 
-                  src="/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png" 
-                  alt={featuredVault.name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
-              </div>
-              
-              {/* Content overlay */}
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <img 
-                    src="/images/token.png" 
-                    alt={featuredVault.name} 
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-md object-cover border border-white/10 bg-white flex-shrink-0" 
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h1 className="text-base sm:text-lg font-bold text-white truncate">{featuredVault.name}</h1>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-white/70 truncate">
-                        {featuredVault.tokenMint ? `${featuredVault.tokenMint.slice(0, 6)}...${featuredVault.tokenMint.slice(-4)}` : "07xbv8..."}
-                      </p>
-                      <span className="px-2 py-0.5 bg-emerald-500 text-black text-xs font-semibold rounded flex-shrink-0">
-                        {featuredVault.airdropAsset || "REVS"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Timer in top right */}
-                <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/15 backdrop-blur-[15px] ring-1 ring-white/20 px-2 sm:px-3 py-1.5 sm:py-2 text-white/95 font-bold tabular-nums flex-shrink-0">
-                  <span className="text-sm sm:text-lg">{formatTimer(dashboardData?.timer?.timeLeft)}</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Middle: Swipe indicator */}
-            <div className="flex justify-center py-2 bg-white/5 backdrop-blur-[10px] border-b border-white/10">
-              <div className="flex items-center gap-2 text-white/60 text-xs">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1L3 6h3v4h4V6h3L8 1z"/>
-                </svg>
-                <span>Swipe to see more vaults</span>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1L13 6h-3v4H6V6H3L8 1z"/>
-                </svg>
-              </div>
-            </div>
-            
-            {/* Bottom: Stats grid - 2 columns, 3 rows */}
-            <div className="p-3 sm:p-4 bg-white/5 backdrop-blur-[10px] flex-1">
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 h-full">
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Price</div>
-                  <div className="text-lg sm:text-xl text-white font-semibold">{formatPrice(dashboardData?.token?.price || dashboardData?.vault?.tokenPrice)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Treasury</div>
-                  <div className="text-lg sm:text-xl text-white font-semibold">{formatTreasury(dashboardData?.vault?.treasury)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Potential Win</div>
-                  <div className="text-lg sm:text-xl text-white font-semibold">{dashboardData?.vault?.potentialWinnings?.multiplier ? `${dashboardData.vault.potentialWinnings.multiplier}×` : "100×"}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Vault Asset</div>
-                  <div className="text-base sm:text-lg text-white font-semibold inline-flex items-center justify-center gap-1">
-                    <img src="/images/Solana_logo.png" alt="Solana" className="h-3 w-3 sm:h-4 sm:w-4 object-contain" />
-                    {featuredVault.vaultAsset || "REVS"}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">APY</div>
-                  <div className="text-lg sm:text-xl text-white font-semibold">N/A</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Endgame</div>
-                  <div className="text-lg sm:text-xl text-white font-semibold">{dashboardData?.vault?.endgame?.daysLeft ? `${dashboardData.vault.endgame.daysLeft}d` : "92d"}</div>
-                </div>
-              </div>
-
-              {/* Trade button */}
-              <button 
-                onClick={() => router.push(`/vault/${featuredVault.id}`)}
-                className="w-full inline-flex items-center justify-center rounded-none bg-white text-black px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base font-semibold hover:bg-white/90"
-              >
-                Trade
-              </button>
-            </div>
-          </div>
+          <StatusAwareVaultCard
+            vault={featuredVault}
+            variant="featured"
+            onClickTitle={() => router.push(`/vault/${featuredVault.id}`)}
+            onTrade={() => router.push(`/vault/${featuredVault.id}`)}
+          />
         )}
       </section>
 
@@ -451,38 +368,13 @@ export default function Page() {
             return true;
           })
           .map((vault) => (
-          viewMode === 'list' ? (
-          <VaultRow
+          <StatusAwareVaultCard
             key={vault.id}
-            name={vault.name}
-            timer={formatTimer(dashboardData?.timer?.timeLeft)}
-              pfp="/images/token.png"
-              price={formatPrice(dashboardData?.token?.price || dashboardData?.vault?.tokenPrice)}
-            baseAsset={vault.vaultAsset || "REVS"}
-            treasury={formatTreasury(dashboardData?.vault?.treasury)}
-              potentialWin={dashboardData?.vault?.potentialWinnings?.multiplier ? `${dashboardData.vault.potentialWinnings.multiplier}×` : "100×"}
-            apy="N/A"
-            endgame={dashboardData?.vault?.endgame?.daysLeft ? `${dashboardData.vault.endgame.daysLeft}d` : "95d"}
+            vault={vault}
+            variant={viewMode === 'list' ? 'row' : 'tall'}
             onTrade={() => router.push(`/vault/${vault.id}`)}
+            onClickTitle={() => router.push(`/vault/${vault.id}`)}
           />
-          ) : (
-            <TallVaultCard
-              key={vault.id}
-              name={vault.name}
-              timer={formatTimer(dashboardData?.timer?.timeLeft)}
-              imageUrl="/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png"
-              pfp="/images/token.png"
-              price={formatPrice(dashboardData?.token?.price || dashboardData?.vault?.tokenPrice)}
-              baseAsset={vault.vaultAsset || "REVS"}
-              treasury={formatTreasury(dashboardData?.vault?.treasury)}
-              potentialWin={dashboardData?.vault?.potentialWinnings?.multiplier ? `${dashboardData.vault.potentialWinnings.multiplier}×` : "100×"}
-              apy="N/A"
-              endgame={dashboardData?.vault?.endgame?.daysLeft ? `${dashboardData.vault.endgame.daysLeft}d` : "95d"}
-              tokenTicker={featuredVault?.airdropAsset || "REVS"}
-              addressShort={featuredVault?.tokenMint ? `${featuredVault.tokenMint.slice(0, 6)}...${featuredVault.tokenMint.slice(-4)}` : undefined}
-              onTrade={() => router.push(`/vault/${vault.id}`)}
-            />
-          )
         ))}
       </div>
 
