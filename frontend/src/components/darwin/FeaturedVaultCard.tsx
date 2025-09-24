@@ -199,8 +199,9 @@ export function FeaturedVaultCard({
                   <div className="text-xs text-white/60 mt-1">
                     {(() => {
                       const now = new Date();
-                      const icoDate = new Date(icoDate.split(' - ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[1]);
-                      const diff = icoDate.getTime() - now.getTime();
+                      const icoDateStr = icoDate.split(' - ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[1];
+                      const icoDateObj = new Date(icoDateStr);
+                      const diff = icoDateObj.getTime() - now.getTime();
                       if (diff <= 0) return 'Started';
                       const hours = Math.floor(diff / (1000 * 60 * 60));
                       return `${hours}h to go`;
