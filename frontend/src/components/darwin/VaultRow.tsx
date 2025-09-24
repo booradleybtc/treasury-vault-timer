@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "./cn";
 
-const GRID = "grid grid-cols-[1.7fr_.65fr_.75fr_.75fr_.75fr_.75fr_.6fr_minmax(92px,max-content)]";
+const GRID = "grid grid-cols-[1.7fr_.6fr_.6fr_.6fr_.6fr_.6fr_.6fr_minmax(92px,max-content)]";
 
 function TradeButton({ onClick, label = "Trade" }: { onClick?: () => void; label?: string }) {
   return (
@@ -75,10 +75,8 @@ export function VaultRow(props: VaultRowProps) {
           {status === 'pre_ico' && icoDate ? (
             <div className="mt-1 inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-2 py-0.5 text-sm md:text-base text-white/90">
               <div className="text-xs text-white/60">ICO Date</div>
-              <div className="flex flex-col">
-                <div className="text-sm font-semibold">{icoDate.split(' - ')[0]}</div>
-                <div className="text-xs text-white/70">{icoDate.split(' - ')[1]}</div>
-              </div>
+              <div className="text-sm font-semibold">{icoDate.split(' - ')[0]}</div>
+              <div className="text-xs text-white/70">{icoDate.split(' - ')[1]}</div>
             </div>
           ) : (
             <div className="mt-1 inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-2 py-0.5 text-sm md:text-base text-white/90 tabular-nums">{timer}</div>
@@ -124,7 +122,7 @@ export function VaultRow(props: VaultRowProps) {
         </>
       )}
       <div className="justify-self-end self-center whitespace-nowrap">
-        <TradeButton onClick={onTrade} label={buttonText || "View Vault"} />
+        <TradeButton onClick={onTrade} label="View Vault" />
       </div>
     </div>
   );
