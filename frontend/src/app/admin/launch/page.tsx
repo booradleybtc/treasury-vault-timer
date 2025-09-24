@@ -34,6 +34,9 @@ export default function LaunchWizardPage() {
     // Images (uploaded URLs)
     logoUrl: '',
     bannerUrl: '',
+    // File uploads
+    logoFile: null as File | null,
+    bannerFile: null as File | null,
   });
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -44,6 +47,17 @@ export default function LaunchWizardPage() {
     setSubmitting(true);
     
     try {
+      // Upload logo and banner files if provided
+      let logoUrl = formData.logoUrl;
+      let bannerUrl = formData.bannerUrl;
+      
+      if (formData.logoFile) {
+        logoUrl = await uploadFile(formData.logoFile);
+      }
+      if (formData.bannerFile) {
+        bannerUrl = await uploadFile(formData.bannerFile);
+      }
+
       const id = `${formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
       const now = new Date();
       const startDate = formData.icoProposedAt ? new Date(formData.icoProposedAt).toISOString() : now.toISOString();
@@ -65,8 +79,8 @@ export default function LaunchWizardPage() {
         meta: {
           stage: 'stage1',
           ticker: formData.ticker?.slice(0, 10),
-          logoUrl: formData.logoUrl,
-          bannerUrl: formData.bannerUrl,
+          logoUrl: logoUrl,
+          bannerUrl: bannerUrl,
           icoAsset: formData.icoAsset,
           icoProposedAt: startDate,
           supplyIntended: formData.supplyIntended,
@@ -174,6 +188,36 @@ export default function LaunchWizardPage() {
                   value={(formData as any).ticker || ''}
                   onChange={handleChange}
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                />
+              </div>
+            </div>
+
+            {/* Image Uploads */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-white/80 mb-2">Vault Logo (Square)</label>
+                <input
+                  type="file"
+                  name="logoFile"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setFormData(prev => ({ ...prev, logoFile: file }));
+                  }}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10 file:mr-4 file:py-2 file:px-4 file:rounded-none file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-white/90"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-white/80 mb-2">Banner Image</label>
+                <input
+                  type="file"
+                  name="bannerFile"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setFormData(prev => ({ ...prev, bannerFile: file }));
+                  }}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10 file:mr-4 file:py-2 file:px-4 file:rounded-none file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-white/90"
                 />
               </div>
               <div className="md:col-span-2">

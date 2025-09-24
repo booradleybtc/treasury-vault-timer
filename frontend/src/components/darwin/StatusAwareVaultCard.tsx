@@ -71,7 +71,7 @@ export function StatusAwareVaultCard({
           showTimer: true,
           showICOInfo: false,
           disabledTrade: true,
-          buttonText: 'View Proposed Vault Details',
+          buttonText: 'View Vault',
           showVaultStagePill: true
         };
       case 'ico':
