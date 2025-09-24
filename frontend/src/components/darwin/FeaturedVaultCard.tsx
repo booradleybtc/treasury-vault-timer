@@ -26,6 +26,8 @@ export type FeaturedVaultCardProps = {
   onClickTitle?: () => void;
   onTrade?: () => void;
   buttonText?: string;
+  showVaultStagePill?: boolean;
+  icoDate?: string;
   className?: string;
   aspect?: "21/9" | "16/9" | "3/1";
 };
@@ -51,6 +53,8 @@ export function FeaturedVaultCard({
   onClickTitle,
   onTrade,
   buttonText = "Trade",
+  showVaultStagePill = false,
+  icoDate,
   className,
   aspect = "21/9",
 }: FeaturedVaultCardProps) {
@@ -146,6 +150,11 @@ export function FeaturedVaultCard({
               {title}
             </button>
             {subtitle ? <div className="mt-1 text-sm text-white/85">{subtitle}</div> : null}
+            {showVaultStagePill ? (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-[8px] bg-blue-500/20 backdrop-blur-[10px] ring-1 ring-blue-400/30 px-3 py-1 text-sm text-blue-300 font-semibold">
+                {subtitle}
+              </div>
+            ) : null}
             <div className="mt-3 flex items-center gap-3">
               <button 
                 onClick={onTrade}
@@ -164,9 +173,18 @@ export function FeaturedVaultCard({
 
           {/* bottom-right: big timer + endgame pill */}
           <div className="absolute bottom-5 right-5 text-right text-white">
-            <div className="tabular-nums text-5xl md:text-7xl font-extrabold leading-none tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
-              {timer.value}
-            </div>
+            {icoDate ? (
+              <>
+                <div className="text-xs text-white/60 mb-1">ICO Date</div>
+                <div className="tabular-nums text-3xl md:text-4xl font-extrabold leading-none tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
+                  {icoDate}
+                </div>
+              </>
+            ) : (
+              <div className="tabular-nums text-5xl md:text-7xl font-extrabold leading-none tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
+                {timer.value}
+              </div>
+            )}
             {typeof endgameDays === "number" ? (
               <div className="mt-2 inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-xs text-white/90">
                 <span className="uppercase tracking-widest text-white/60">Endgame</span>

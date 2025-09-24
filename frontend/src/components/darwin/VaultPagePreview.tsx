@@ -111,8 +111,8 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
             
             {meta.icoProposedAt && (
               <div className="bg-white/5 rounded-lg p-6 mb-8 max-w-md mx-auto text-center">
-                <div className="text-sm text-white/60 mb-2">ICO Begins</div>
-                <div className="text-3xl font-bold text-blue-400">{countdown}</div>
+                <div className="text-sm text-white/60 mb-2">ICO Date & Time</div>
+                <div className="text-2xl font-bold text-blue-400">{new Date(meta.icoProposedAt).toLocaleDateString() + ' ' + new Date(meta.icoProposedAt).toLocaleTimeString()}</div>
               </div>
             )}
 
@@ -144,6 +144,10 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                     <span className="text-white/70">Timer Length:</span>
                     <span className="text-white">{Math.floor(vault.timerDuration / 3600)} hours</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Min Buy to Reset:</span>
+                    <span className="text-white">{meta.minBuyToReset || 1}</span>
+                  </div>
                 </div>
               </div>
               
@@ -160,6 +164,21 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                   </div>
                 </div>
                 <div className="border-t border-white/10 pt-4">
+                  <h4 className="font-medium text-white mb-3">Airdrop Settings</h4>
+                  <div className="space-y-2 text-sm mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Airdrop Mode:</span>
+                      <span className="text-white">{meta.airdropMode || 'rewards'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Airdrop Interval:</span>
+                      <span className="text-white">{meta.airdropInterval ? `${Math.floor(meta.airdropInterval / 60)} mins` : '1 hour'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Min Hold for Airdrop:</span>
+                      <span className="text-white">{vault.minHoldAmount || 0}</span>
+                    </div>
+                  </div>
                   <h4 className="font-medium text-white mb-3">Tax Splits</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">

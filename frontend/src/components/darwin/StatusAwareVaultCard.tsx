@@ -64,14 +64,15 @@ export function StatusAwareVaultCard({
     switch (status) {
       case 'pre_ico':
         return {
-          subtitle: 'Vault Stage: Pre-ICO • ICO Begins',
+          subtitle: 'Vault Stage: Pre-ICO',
           timerValue: meta.icoProposedAt ? formatICOStartTime(meta.icoProposedAt) : '—',
           badgeText: 'PRE-ICO',
           badgeClass: 'bg-blue-500 text-white',
           showTimer: true,
           showICOInfo: false,
           disabledTrade: true,
-          buttonText: 'View Vault'
+          buttonText: 'View Vault',
+          showVaultStagePill: true
         };
       case 'ico':
         return {
@@ -244,13 +245,15 @@ export function StatusAwareVaultCard({
         <div className="relative">
           <FeaturedVaultCard
             {...baseProps}
-            subtitle={config.subtitle}
+            subtitle={status === 'pre_ico' ? undefined : config.subtitle}
             tokenBadgeText={config.badgeText}
             tokenBadgeClassName={config.badgeClass}
             buttonText={config.buttonText || 'Trade'}
+            showVaultStagePill={config.showVaultStagePill}
+            icoDate={status === 'pre_ico' && meta.icoProposedAt ? new Date(meta.icoProposedAt).toLocaleDateString() + ' ' + new Date(meta.icoProposedAt).toLocaleTimeString() : undefined}
             stats={status === 'pre_ico' ? [
               { label: 'Vault Asset', value: baseProps.baseAsset },
-              { label: 'Airdrop Asset', value: meta.ticker || vault.airdropAsset || 'REVS' },
+              { label: 'Airdrop Asset', value: vault.airdropAsset || 'REVS' },
               { label: 'Potential Win', value: `${meta.bidMultiplier || 100}×` },
               { label: 'Timer Length', value: `${Math.floor(vault.timerDuration / 3600)}h` },
               { label: 'Lifespan', value: `${meta.vaultLifespanDays || 100}d` },
@@ -273,7 +276,12 @@ export function StatusAwareVaultCard({
     case 'tall':
       return (
         <div className="relative">
-          <TallVaultCard {...baseProps} />
+          <TallVaultCard 
+            {...baseProps}
+            status={status}
+            icoDate={status === 'pre_ico' && meta.icoProposedAt ? new Date(meta.icoProposedAt).toLocaleDateString() + ' ' + new Date(meta.icoProposedAt).toLocaleTimeString() : undefined}
+            buttonText={config.buttonText || 'Trade'}
+          />
           {renderICOInfo()}
         </div>
       );
@@ -281,7 +289,12 @@ export function StatusAwareVaultCard({
     case 'row':
       return (
         <div className="relative">
-          <VaultRow {...baseProps} />
+          <VaultRow 
+            {...baseProps}
+            status={status}
+            icoDate={status === 'pre_ico' && meta.icoProposedAt ? new Date(meta.icoProposedAt).toLocaleDateString() + ' ' + new Date(meta.icoProposedAt).toLocaleTimeString() : undefined}
+            buttonText={config.buttonText || 'Trade'}
+          />
           {renderICOInfo()}
         </div>
       );

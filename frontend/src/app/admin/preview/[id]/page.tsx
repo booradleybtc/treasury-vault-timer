@@ -70,13 +70,12 @@ export default function PreviewPage() {
             variant="tall"
             onTrade={()=>{}}
           />
-          <div className="bg-white/5 ring-1 ring-white/10 p-3">
-            <StatusAwareVaultCard
-              vault={vault || { id: vaultId || '', name: 'Vault' }}
-              variant="row"
-              onTrade={()=>{}}
-            />
-          </div>
+          <StatusAwareVaultCard
+            vault={vault || { id: vaultId || '', name: 'Vault' }}
+            variant="row"
+            onTrade={()=>{}}
+            className="w-full"
+          />
         </div>
 
         {/* Dedicated page preview */}
