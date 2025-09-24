@@ -54,20 +54,20 @@ export function TallVaultCard(props: TallVaultCardProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
         
-        {/* Header info over banner - centered */}
-        <div className="absolute inset-0 p-4 sm:p-5 flex flex-col items-center justify-center text-white text-center">
-          <div className="flex flex-col items-center gap-2">
+        {/* Header info over banner */}
+        <div className="absolute inset-0 p-4 sm:p-5 flex items-center justify-between text-white">
+          <div className="flex items-center gap-3 sm:gap-4">
             <img src={pfp || "/images/token.png"} alt={name} className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="text-sm sm:text-base font-semibold leading-tight" title={name}>{name}</div>
-              <div className="text-xs sm:text-sm text-white/80 mt-1">{tokenTicker || ""}</div>
+              <div className="text-sm sm:text-base font-semibold leading-tight truncate" title={name}>{name}</div>
+              <div className="text-xs sm:text-sm text-white/80 mt-1 truncate">{tokenTicker || ""}</div>
             </div>
-            {status === 'pre_ico' && (
-              <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1.5 text-xs sm:text-sm text-cyan-300 font-semibold">
-                Stage: PRE-ICO
-              </div>
-            )}
           </div>
+          {status === 'pre_ico' && (
+            <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1.5 text-xs sm:text-sm text-cyan-300 font-semibold">
+              Stage: PRE-ICO
+            </div>
+          )}
         </div>
       </div>
 

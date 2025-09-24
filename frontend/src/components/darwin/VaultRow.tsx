@@ -75,7 +75,7 @@ export function VaultRow(props: VaultRowProps) {
           {status === 'pre_ico' && icoDate ? (
             <div className="mt-2 flex items-center gap-2 text-sm text-white/90">
               <span className="text-sm font-medium">{icoDate.split(' - ')[0].replace(/, 2025/, '')}</span>
-              <span className="text-xs text-white/70">{icoDate.split(' - ')[1]}</span>
+              <span className="text-sm text-white/70">{icoDate.split(' - ')[1]}</span>
               <a 
                 href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
                 target="_blank"
