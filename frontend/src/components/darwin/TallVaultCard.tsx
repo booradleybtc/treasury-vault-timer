@@ -73,7 +73,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
 
       {/* ICO Date full width card - square edges, below banner */}
       {status === 'pre_ico' && icoDate && (
-        <div className="px-4 sm:px-5 py-3 sm:py-4">
+        <div className="px-4 sm:px-5 py-2 sm:py-3">
           <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
@@ -96,19 +96,19 @@ export function TallVaultCard(props: TallVaultCardProps) {
 
       {/* Stats grid - 2 rows of 3 columns */}
       <div className="px-4 sm:px-5 py-3 sm:py-4 text-white">
-        <div className="bg-white/5 backdrop-blur-[5px] rounded-lg p-3 sm:p-4">
+        <div className="bg-white/5 backdrop-blur-[5px] rounded-none p-3 sm:p-4">
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {status === 'pre_ico' ? (
             <>
               <div className="text-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
+                <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
                 <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
                   <img src={getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{baseAsset}</span>
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-[.16em] text-white/60">Airdrop Asset</div>
+                <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Airdrop Asset</div>
                 <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
                   <img src={getTokenImage(airdropAsset || "REVS")} alt={airdropAsset || "REVS"} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{airdropAsset || "REVS"}</span>
@@ -123,7 +123,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
             <>
               <Stat label="Price" value={price ?? "N/A"} numeric />
               <div className="text-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
+                <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
                 <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
                   <img src={getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{baseAsset}</span>
@@ -153,7 +153,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
 function Stat({ label, value, numeric }: { label: string; value: string; numeric?: boolean }) {
   return (
     <div className="text-center">
-      <div className="text-[9px] sm:text-[10px] uppercase tracking-[.16em] text-white/60">{label}</div>
+      <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">{label}</div>
       <div className={cn("mt-1 text-sm sm:text-base text-white/90", numeric && "tabular-nums")}>{value}</div>
     </div>
   );
