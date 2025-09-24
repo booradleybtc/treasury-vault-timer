@@ -28,10 +28,10 @@ export function TallVaultCard(props: TallVaultCardProps) {
   return (
     <div className={cn(
       "relative rounded-none ring-1 ring-white/10 bg-white/5 backdrop-blur-[10px] shadow-[0_10px_30px_rgba(0,0,0,.25)] overflow-hidden",
-      "w-full max-w-none sm:max-w-[340px] h-[280px] sm:h-auto"
+      "w-full max-w-none sm:max-w-[380px] h-[320px] sm:h-auto"
     )}>
-      {/* Banner image on top */}
-      <div className="w-full h-16 sm:h-20 relative">
+      {/* Banner image on top - bigger */}
+      <div className="w-full h-24 sm:h-28 relative">
         <img 
           src={imageUrl} 
           alt={name} 
@@ -39,42 +39,52 @@ export function TallVaultCard(props: TallVaultCardProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         
-        {/* Header info over banner */}
-        <div className="absolute inset-0 p-3 sm:p-4 flex items-start justify-between text-white">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <img src={pfp || "/images/token.png"} alt={name} className="h-6 w-6 sm:h-8 sm:w-8 rounded-md object-cover border border-white/20 bg-white flex-shrink-0" />
+        {/* Header info over banner - bigger elements */}
+        <div className="absolute inset-0 p-4 sm:p-5 flex items-start justify-between text-white">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <img src={pfp || "/images/token.png"} alt={name} className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="text-xs sm:text-sm font-semibold leading-tight truncate" title={name}>{name}</div>
-              <div className="text-[10px] sm:text-xs text-white/80 mt-0.5 truncate">{tokenTicker || ""}</div>
+              <div className="text-sm sm:text-base font-semibold leading-tight truncate" title={name}>{name}</div>
+              <div className="text-xs sm:text-sm text-white/80 mt-1 truncate">{tokenTicker || ""}</div>
             </div>
           </div>
           {status === 'pre_ico' && (
-            <div className="inline-flex items-center gap-2 rounded-[6px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-2 py-0.5 text-[10px] text-cyan-300 font-semibold">
+            <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1.5 text-xs sm:text-sm text-cyan-300 font-semibold">
               Stage: PRE-ICO
             </div>
           )}
         </div>
       </div>
 
-      {/* ICO Date centered in middle */}
+      {/* ICO Date centered in middle - glowing card */}
       {status === 'pre_ico' && icoDate && (
-        <div className="py-3 sm:py-4 text-center">
-          <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-2">
-            <div className="text-xs text-white/60">ICO Date</div>
-            <div className="text-sm font-semibold text-white">{icoDate}</div>
+        <div className="py-4 sm:py-5 text-center">
+          <div className="relative inline-block">
+            <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 rounded-lg px-4 py-3 shadow-[0_0_20px_rgba(34,211,238,0.3)]">
+              <div className="text-xs text-cyan-300 mb-1">ICO Date</div>
+              <div className="text-sm font-semibold text-white mb-2">{icoDate}</div>
+              <a 
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-cyan-300 hover:text-cyan-200 transition-colors underline"
+              >
+                📅 Add to Calendar
+              </a>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Stats grid */}
-      <div className="p-3 sm:p-4 text-white">
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      {/* Stats grid - 3 rows of 2 columns */}
+      <div className="p-4 sm:p-5 text-white">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {status === 'pre_ico' ? (
             <>
               <div className="text-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
-                <div className="mt-0.5 text-xs sm:text-sm text-white/90 inline-flex items-center justify-center gap-1 sm:gap-2">
-                  {baseAsset === 'SOL' && <img src="/images/Solana_logo.png" alt="Solana" className="h-3 w-3 sm:h-4 sm:w-4 object-contain" />}
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
+                <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
+                  {baseAsset === 'SOL' && <img src="/images/Solana_logo.png" alt="Solana" className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />}
                   <span>{baseAsset}</span>
                 </div>
               </div>
@@ -88,9 +98,9 @@ export function TallVaultCard(props: TallVaultCardProps) {
             <>
               <Stat label="Price" value={price ?? "N/A"} numeric />
               <div className="text-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
-                <div className="mt-0.5 text-xs sm:text-sm text-white/90 inline-flex items-center justify-center gap-1 sm:gap-2">
-                  {baseAsset === 'SOL' && <img src="/images/Solana_logo.png" alt="Solana" className="h-3 w-3 sm:h-4 sm:w-4 object-contain" />}
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
+                <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
+                  {baseAsset === 'SOL' && <img src="/images/Solana_logo.png" alt="Solana" className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />}
                   <span>{baseAsset}</span>
                 </div>
               </div>
@@ -117,8 +127,8 @@ export function TallVaultCard(props: TallVaultCardProps) {
 function Stat({ label, value, numeric }: { label: string; value: string; numeric?: boolean }) {
   return (
     <div className="text-center">
-      <div className="text-[9px] sm:text-[10px] uppercase tracking-[.16em] text-white/60">{label}</div>
-      <div className={cn("mt-0.5 text-xs sm:text-sm text-white/90", numeric && "tabular-nums")}>{value}</div>
+      <div className="text-[10px] sm:text-[11px] uppercase tracking-[.16em] text-white/60">{label}</div>
+      <div className={cn("mt-1 text-sm sm:text-base text-white/90", numeric && "tabular-nums")}>{value}</div>
     </div>
   );
 }
