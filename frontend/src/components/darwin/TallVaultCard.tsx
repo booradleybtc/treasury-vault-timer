@@ -56,29 +56,32 @@ export function TallVaultCard(props: TallVaultCardProps) {
         </div>
       </div>
 
-      {/* ICO Date centered in middle - glowing card */}
+      {/* ICO Date full width card - square edges */}
       {status === 'pre_ico' && icoDate && (
-        <div className="py-4 sm:py-5 text-center">
-          <div className="relative inline-block">
-            <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 rounded-lg px-4 py-3 shadow-[0_0_20px_rgba(34,211,238,0.3)]">
-              <div className="text-xs text-cyan-300 mb-1">ICO Date</div>
-              <div className="text-sm font-semibold text-white mb-2">{icoDate}</div>
+        <div className="px-4 sm:px-5 py-4 sm:py-5">
+          <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-cyan-300 mb-1">ICO Date</div>
+                <div className="text-sm font-semibold text-white">{icoDate}</div>
+              </div>
               <a 
                 href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-cyan-300 hover:text-cyan-200 transition-colors underline"
+                className="text-cyan-300 hover:text-cyan-200 transition-colors"
+                title="Add to Calendar"
               >
-                📅 Add to Calendar
+                📅
               </a>
             </div>
           </div>
         </div>
       )}
 
-      {/* Stats grid - 3 rows of 2 columns */}
+      {/* Stats grid - 2 rows of 3 columns */}
       <div className="p-4 sm:p-5 text-white">
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {status === 'pre_ico' ? (
             <>
               <div className="text-center">
