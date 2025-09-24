@@ -52,28 +52,28 @@ export function TallVaultCard(props: TallVaultCardProps) {
           alt={name} 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
         
-        {/* Header info over banner */}
-        <div className="absolute inset-0 p-4 sm:p-5 flex items-start justify-between text-white">
-          <div className="flex items-center gap-3 sm:gap-4">
+        {/* Header info over banner - centered */}
+        <div className="absolute inset-0 p-4 sm:p-5 flex flex-col items-center justify-center text-white text-center">
+          <div className="flex flex-col items-center gap-2">
             <img src={pfp || "/images/token.png"} alt={name} className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="text-sm sm:text-base font-semibold leading-tight truncate" title={name}>{name}</div>
-              <div className="text-xs sm:text-sm text-white/80 mt-1 truncate">{tokenTicker || ""}</div>
+              <div className="text-sm sm:text-base font-semibold leading-tight" title={name}>{name}</div>
+              <div className="text-xs sm:text-sm text-white/80 mt-1">{tokenTicker || ""}</div>
             </div>
+            {status === 'pre_ico' && (
+              <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1.5 text-xs sm:text-sm text-cyan-300 font-semibold">
+                Stage: PRE-ICO
+              </div>
+            )}
           </div>
-          {status === 'pre_ico' && (
-            <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1.5 text-xs sm:text-sm text-cyan-300 font-semibold">
-              Stage: PRE-ICO
-            </div>
-          )}
         </div>
       </div>
 
       {/* ICO Date full width card - square edges, below banner */}
       {status === 'pre_ico' && icoDate && (
-        <div className="px-4 sm:px-5 py-2 sm:py-3">
+        <div className="px-4 sm:px-5 py-3 sm:py-4">
           <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
@@ -95,7 +95,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
       )}
 
       {/* Stats grid - 2 rows of 3 columns */}
-      <div className="px-4 sm:px-5 py-2 sm:py-3 text-white">
+      <div className="px-4 sm:px-5 py-3 sm:py-4 text-white">
         <div className="rounded-none px-1 sm:px-2 py-2 sm:py-3">
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {status === 'pre_ico' ? (

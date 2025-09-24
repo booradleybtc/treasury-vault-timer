@@ -64,7 +64,7 @@ export function VaultRow(props: VaultRowProps) {
       <div className="flex items-center gap-4">
         <img src={pfp} alt={name} className="h-16 w-16 rounded-md object-cover border border-white/10 bg-white" />
         <div>
-          <div className="flex items-center gap-2 font-medium text-white leading-tight">
+          <div className="flex items-center gap-2 font-bold text-white leading-tight">
             {name}
             {status === 'pre_ico' && (
               <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-2 py-0.5 text-xs text-cyan-300 font-semibold">
@@ -74,7 +74,7 @@ export function VaultRow(props: VaultRowProps) {
           </div>
           {status === 'pre_ico' && icoDate ? (
             <div className="mt-2 flex items-center gap-2 text-sm text-white/90">
-              <span className="text-sm font-semibold">{icoDate.split(' - ')[0].replace(/, 2025/, '')}</span>
+              <span className="text-sm font-medium">{icoDate.split(' - ')[0].replace(/, 2025/, '')}</span>
               <span className="text-xs text-white/70">{icoDate.split(' - ')[1]}</span>
               <a 
                 href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
