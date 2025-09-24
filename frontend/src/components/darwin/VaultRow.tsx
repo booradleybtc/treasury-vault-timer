@@ -64,7 +64,7 @@ export function VaultRow(props: VaultRowProps) {
       <div className="flex items-center gap-4">
         <img src={pfp} alt={name} className="h-16 w-16 rounded-md object-cover border border-white/10 bg-white" />
         <div>
-          <div className="flex items-center gap-2 font-bold text-white leading-tight">
+          <div className="flex items-center gap-2 font-bold text-white leading-tight text-base sm:text-lg">
             {name}
             {status === 'pre_ico' && (
               <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-2 py-0.5 text-xs text-cyan-300 font-semibold">
