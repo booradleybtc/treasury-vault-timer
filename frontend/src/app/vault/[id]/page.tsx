@@ -693,8 +693,7 @@ export default function VaultPage() {
             </div>
 
             {/* Trade REVS and Vault Information removed per request */}
-                    </div>
-                  </div>
+            </div>
           </div>
         )}
       </div>
