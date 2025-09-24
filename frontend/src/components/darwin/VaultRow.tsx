@@ -17,7 +17,7 @@ function TradeButton({ onClick, label = "Trade" }: { onClick?: () => void; label
 function DataCell({ label, children, numeric = false }: { label: string; children: React.ReactNode; numeric?: boolean }) {
   return (
     <div className="text-center">
-      <div className="text-[10px] uppercase tracking-[.16em] text-white/60">{label}</div>
+      <div className="text-[10px] uppercase tracking-[.16em] text-white/60 leading-tight">{label}</div>
       <div className={cn("mt-0.5 text-sm text-white/90", numeric && "tabular-nums")}>{children}</div>
     </div>
   );
@@ -73,12 +73,19 @@ export function VaultRow(props: VaultRowProps) {
             )}
           </div>
           {status === 'pre_ico' && icoDate ? (
-            <div className="mt-1 text-sm text-white/90">
-              <div className="text-xs text-white/60">ICO Date</div>
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-semibold">{icoDate.split(' - ')[0]}</span>
-                <span className="text-xs text-white/70">{icoDate.split(' - ')[1]}</span>
-              </div>
+            <div className="mt-1 flex items-center gap-2 text-sm text-white/90">
+              <span className="text-xs text-white/60">ICO Date</span>
+              <span className="text-sm font-semibold">{icoDate.split(' - ')[0].replace(/, 2025/, '')}</span>
+              <span className="text-xs text-white/70">{icoDate.split(' - ')[1]}</span>
+              <a 
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/60 hover:text-white/80 transition-colors"
+                title="Add to Calendar"
+              >
+                📅
+              </a>
             </div>
           ) : (
             <div className="mt-1 inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-2 py-0.5 text-sm md:text-base text-white/90 tabular-nums">{timer}</div>
