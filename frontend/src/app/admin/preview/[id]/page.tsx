@@ -63,13 +63,17 @@ export default function PreviewPage() {
           />
         </div>
 
-        {/* Tall card + List row previews */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        {/* Tall card preview */}
+        <div className="mb-8">
           <StatusAwareVaultCard
             vault={vault || { id: vaultId || '', name: 'Vault' }}
             variant="tall"
             onTrade={()=>{}}
           />
+        </div>
+
+        {/* List row preview - full width */}
+        <div className="mb-8">
           <StatusAwareVaultCard
             vault={vault || { id: vaultId || '', name: 'Vault' }}
             variant="row"

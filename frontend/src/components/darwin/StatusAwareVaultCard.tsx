@@ -71,7 +71,7 @@ export function StatusAwareVaultCard({
           showTimer: true,
           showICOInfo: false,
           disabledTrade: true,
-          buttonText: 'View Vault',
+          buttonText: 'View Proposed Vault Details',
           showVaultStagePill: true
         };
       case 'ico':
@@ -170,6 +170,29 @@ export function StatusAwareVaultCard({
     return `${hours}h`;
   }
 
+  function formatICODate(icoDate: string): string {
+    const date = new Date(icoDate);
+    const months = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    const time = date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true,
+      timeZoneName: 'short'
+    });
+    
+    // Add ordinal suffix to day
+    const getOrdinal = (n: number) => {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+    
+    return `${month} ${getOrdinal(day)}, ${year} - ${time}`;
+  }
+
   function formatCountdown(endDate: string): string {
     const now = new Date();
     const end = new Date(endDate);
@@ -224,14 +247,14 @@ export function StatusAwareVaultCard({
     tokenTicker: meta.ticker || vault.airdropAsset || 'REVS',
     addressShort: vault.tokenMint ? `${vault.tokenMint.slice(0,6)}...${vault.tokenMint.slice(-4)}` : '—',
     imageUrl,
-    pfp: logoUrl,
+    pfp: meta.logoUrl || logoUrl,
     price: status === 'live' ? '$0.0000' : 'N/A',
     baseAsset: vault.vaultAsset || 'SOL',
     treasury: status === 'live' ? '$12.2M' : 'N/A',
     potentialWin: status === 'live' ? '100×' : (status === 'pre_ico' ? `${meta.bidMultiplier || 100}×` : '—'),
     apy: status === 'live' ? 'N/A' : 'N/A',
     endgame: status === 'live' ? '91d' : (status === 'pre_ico' ? `${meta.vaultLifespanDays || 100}d` : '—'),
-    timer: config.timerValue,
+    timer: status === 'pre_ico' ? `${Math.floor(vault.timerDuration / 3600)}h` : config.timerValue,
     onTrade: config.disabledTrade ? undefined : onTrade,
     onClickTitle,
     className,
@@ -250,7 +273,7 @@ export function StatusAwareVaultCard({
             tokenBadgeClassName={config.badgeClass}
             buttonText={config.buttonText || 'Trade'}
             showVaultStagePill={config.showVaultStagePill}
-            icoDate={status === 'pre_ico' && meta.icoProposedAt ? new Date(meta.icoProposedAt).toLocaleDateString() + ' ' + new Date(meta.icoProposedAt).toLocaleTimeString() : undefined}
+            icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
             stats={status === 'pre_ico' ? [
               { label: 'Vault Asset', value: baseProps.baseAsset },
               { label: 'Airdrop Asset', value: vault.airdropAsset || 'REVS' },
@@ -279,8 +302,9 @@ export function StatusAwareVaultCard({
           <TallVaultCard 
             {...baseProps}
             status={status}
-            icoDate={status === 'pre_ico' && meta.icoProposedAt ? new Date(meta.icoProposedAt).toLocaleDateString() + ' ' + new Date(meta.icoProposedAt).toLocaleTimeString() : undefined}
+            icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
             buttonText={config.buttonText || 'Trade'}
+            airdropAsset={vault.airdropAsset || 'REVS'}
           />
           {renderICOInfo()}
         </div>
@@ -292,8 +316,9 @@ export function StatusAwareVaultCard({
           <VaultRow 
             {...baseProps}
             status={status}
-            icoDate={status === 'pre_ico' && meta.icoProposedAt ? new Date(meta.icoProposedAt).toLocaleDateString() + ' ' + new Date(meta.icoProposedAt).toLocaleTimeString() : undefined}
+            icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
             buttonText={config.buttonText || 'Trade'}
+            airdropAsset={vault.airdropAsset || 'REVS'}
           />
           {renderICOInfo()}
         </div>

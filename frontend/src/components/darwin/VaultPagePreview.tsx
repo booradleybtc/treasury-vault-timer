@@ -408,6 +408,13 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
         </div>
       </div>
 
+      {/* Banner */}
+      {meta.bannerUrl && (
+        <div className="w-full h-48 overflow-hidden">
+          <img src={meta.bannerUrl} alt="Vault Banner" className="w-full h-full object-cover" />
+        </div>
+      )}
+
       {/* Content */}
       <div className="p-6">
         {renderStatusContent()}

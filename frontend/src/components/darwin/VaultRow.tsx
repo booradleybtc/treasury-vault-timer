@@ -37,10 +37,11 @@ export type VaultRowProps = {
   status?: string;
   icoDate?: string;
   buttonText?: string;
+  airdropAsset?: string;
 };
 
 export function VaultRow(props: VaultRowProps) {
-  const { name, timer, pfp, price, baseAsset, treasury, potentialWin, apy, endgame, onTrade, status, icoDate, buttonText } = props;
+  const { name, timer, pfp, price, baseAsset, treasury, potentialWin, apy, endgame, onTrade, status, icoDate, buttonText, airdropAsset } = props;
   return (
     <div className={cn(GRID, "gap-2 items-center rounded-none ring-1 ring-white/10 bg-white/5 backdrop-blur-[10px] px-5 py-4")}> 
       {/* Vault + timer */}
@@ -69,7 +70,7 @@ export function VaultRow(props: VaultRowProps) {
               <span>{baseAsset}</span>
             </div>
           </DataCell>
-          <DataCell label="Airdrop Asset">{baseAsset}</DataCell>
+          <DataCell label="Airdrop Asset">{airdropAsset || "REVS"}</DataCell>
           <DataCell label="Potential Win" numeric>{potentialWin}</DataCell>
           <DataCell label="Timer Length">{timer.includes('h') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`}</DataCell>
           <DataCell label="Lifespan">{endgame}</DataCell>

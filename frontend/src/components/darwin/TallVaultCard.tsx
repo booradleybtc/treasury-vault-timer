@@ -18,10 +18,11 @@ export type TallVaultCardProps = {
   status?: string;
   icoDate?: string;
   buttonText?: string;
+  airdropAsset?: string;
 };
 
 export function TallVaultCard(props: TallVaultCardProps) {
-  const { name, timer, imageUrl, price, baseAsset, treasury, potentialWin, apy, endgame, pfp, tokenTicker, addressShort, onTrade, status, icoDate, buttonText } = props;
+  const { name, timer, imageUrl, price, baseAsset, treasury, potentialWin, apy, endgame, pfp, tokenTicker, addressShort, onTrade, status, icoDate, buttonText, airdropAsset } = props;
 
   return (
     <div className={cn(
@@ -36,15 +37,22 @@ export function TallVaultCard(props: TallVaultCardProps) {
             <div className="text-xs sm:text-sm font-semibold leading-tight truncate" title={name}>{name}</div>
             <div className="text-[10px] sm:text-xs text-white/60 mt-0.5 truncate" title={`${addressShort || ''} ${tokenTicker ? `• ${tokenTicker}` : ''}`}>{addressShort || ""}{tokenTicker ? ` • ${tokenTicker}` : ""}</div>
           </div>
-          <div className="tabular-nums inline-flex items-center gap-1 sm:gap-2 rounded-[6px] sm:rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white/90 font-semibold flex-shrink-0">
-            {status === 'pre_ico' && icoDate ? (
-              <div className="text-center">
-                <div className="text-[10px] text-white/60">ICO Date</div>
-                <div className="text-xs">{icoDate}</div>
+          <div className="flex flex-col items-end gap-1">
+            {status === 'pre_ico' && (
+              <div className="inline-flex items-center gap-2 rounded-[6px] bg-blue-500/20 backdrop-blur-[10px] ring-1 ring-blue-400/30 px-2 py-0.5 text-[10px] text-blue-300 font-semibold">
+                Stage: PRE-ICO
               </div>
-            ) : (
-              timer
             )}
+            <div className="tabular-nums inline-flex items-center gap-1 sm:gap-2 rounded-[6px] sm:rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white/90 font-semibold flex-shrink-0">
+              {status === 'pre_ico' && icoDate ? (
+                <div className="text-center">
+                  <div className="text-[10px] text-white/60">ICO Date</div>
+                  <div className="text-xs">{icoDate}</div>
+                </div>
+              ) : (
+                timer
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -61,14 +69,10 @@ export function TallVaultCard(props: TallVaultCardProps) {
                   <span>{baseAsset}</span>
                 </div>
               </div>
-              <Stat label="Airdrop Asset" value={tokenTicker || "REVS"} />
+              <Stat label="Airdrop Asset" value={airdropAsset || "REVS"} />
               <Stat label="Potential Win" value={potentialWin} numeric />
               <Stat label="Timer Length" value={timer.includes('h') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`} />
               <Stat label="Lifespan" value={endgame} />
-              <div className="text-center">
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-[.16em] text-white/60">Stage</div>
-                <div className="mt-0.5 text-xs sm:text-sm text-blue-300 font-semibold">PRE-ICO</div>
-              </div>
             </>
           ) : (
             <>
