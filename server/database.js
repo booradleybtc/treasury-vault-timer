@@ -18,7 +18,15 @@ class Database {
         console.error('Error opening database:', err);
       } else {
         console.log('✅ Connected to SQLite database');
-        this.createTables();
+        // Run lightweight migration before ensuring tables
+        this.migrateIfNeeded()
+          .then(() => {
+            this.createTables();
+          })
+          .catch((e) => {
+            console.error('⚠️ Migration check failed:', e);
+            this.createTables();
+          });
       }
     });
   }
@@ -73,6 +81,82 @@ class Database {
         console.error('Error creating whitelisted_addresses table:', err);
       } else {
         console.log('✅ Whitelisted addresses table created/verified');
+      }
+    });
+  }
+
+  // One-time migration to add meta column and relax NOT NULLs
+  async migrateIfNeeded() {
+    return new Promise((resolve, reject) => {
+      try {
+        this.db.all("PRAGMA table_info(vaults)", [], (err, rows) => {
+          if (err) {
+            // If table doesn't exist yet, nothing to migrate
+            return resolve();
+          }
+          const hasMeta = Array.isArray(rows) && rows.some((r) => r.name === 'meta');
+          if (hasMeta) {
+            return resolve();
+          }
+
+          console.log('🛠️ Running SQLite migration: adding meta column and relaxing constraints...');
+
+          const createVaultsNew = `
+            CREATE TABLE IF NOT EXISTS vaults_new (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              description TEXT,
+              token_mint TEXT,
+              distribution_wallet TEXT,
+              treasury_wallet TEXT,
+              dev_wallet TEXT,
+              start_date TEXT,
+              endgame_date TEXT,
+              timer_duration INTEGER,
+              distribution_interval INTEGER,
+              min_hold_amount INTEGER,
+              tax_split_dev INTEGER,
+              tax_split_holders INTEGER,
+              vault_asset TEXT,
+              airdrop_asset TEXT,
+              meta TEXT,
+              status TEXT NOT NULL DEFAULT 'draft',
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            )
+          `;
+
+          this.db.serialize(() => {
+            this.db.run('BEGIN');
+            this.db.run(createVaultsNew);
+            this.db.run(
+              `INSERT INTO vaults_new (
+                 id, name, description, token_mint, distribution_wallet, treasury_wallet,
+                 dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
+                 min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
+                 meta, status, created_at, updated_at
+               )
+               SELECT 
+                 id, name, description, token_mint, distribution_wallet, treasury_wallet,
+                 dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
+                 min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
+                 '{}' as meta, status, created_at, updated_at
+               FROM vaults`,
+            );
+            this.db.run('DROP TABLE vaults');
+            this.db.run('ALTER TABLE vaults_new RENAME TO vaults');
+            this.db.run('COMMIT', (commitErr) => {
+              if (commitErr) {
+                console.error('❌ Migration commit failed:', commitErr);
+                return reject(commitErr);
+              }
+              console.log('✅ SQLite migration complete');
+              resolve();
+            });
+          });
+        });
+      } catch (e) {
+        reject(e);
       }
     });
   }
