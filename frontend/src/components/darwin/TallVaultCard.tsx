@@ -73,7 +73,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
 
       {/* ICO Date full width card - square edges, below banner */}
       {status === 'pre_ico' && icoDate && (
-        <div className="px-4 sm:px-5 py-4 sm:py-5">
+        <div className="px-4 sm:px-5 py-3 sm:py-4">
           <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
@@ -95,7 +95,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
       )}
 
       {/* Stats grid - 2 rows of 3 columns */}
-      <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-6 sm:pb-8 text-white">
+      <div className="px-4 sm:px-5 py-3 sm:py-4 text-white">
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {status === 'pre_ico' ? (
             <>
