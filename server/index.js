@@ -6,6 +6,8 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import dotenv from 'dotenv';
 import web3 from '@solana/web3.js';
 import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
 import { fileURLToPath } from 'url';
 import Database from './database.js';
 
@@ -51,6 +53,24 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+
+// File uploads (images)
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const base = path
+      .basename(file.originalname, ext)
+      .replace(/[^a-z0-9-_]/gi, '_');
+    cb(null, `${Date.now()}_${base}${ext}`);
+  },
+});
+const upload = multer({ storage });
+app.use('/uploads', express.static(uploadsDir, { maxAge: '1y', immutable: true }));
 
 // Solana RPC (Helius)
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '';
@@ -719,6 +739,17 @@ app.get('/api/admin/health', async (req, res) => {
 });
 
 // Admin API endpoints
+// Upload a single file (logo/banner)
+app.post('/api/admin/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    res.json({ success: true, url, filename: req.file.filename });
+  } catch (e) {
+    console.error('Upload error:', e);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
 app.get('/api/admin/vaults', (req, res) => {
   try {
     // Mock vault data - in production, this would come from a database
@@ -790,7 +821,13 @@ app.post('/api/admin/vaults', async (req, res) => {
   try {
     const vaultConfig = req.body;
     console.log('📝 Creating new vault:', vaultConfig);
-    
+    // Derive ICO end if proposed provided
+    if (vaultConfig?.icoProposedAt && !vaultConfig.icoEndsAt) {
+      const start = new Date(vaultConfig.icoProposedAt).getTime();
+      if (!Number.isNaN(start)) {
+        vaultConfig.icoEndsAt = new Date(start + 24 * 60 * 60 * 1000).toISOString();
+      }
+    }
     const vault = await db.createVault(vaultConfig);
     res.json({ 
       success: true, 

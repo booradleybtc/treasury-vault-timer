@@ -29,19 +29,20 @@ class Database {
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         description TEXT,
-        token_mint TEXT NOT NULL,
-        distribution_wallet TEXT NOT NULL,
-        treasury_wallet TEXT NOT NULL,
-        dev_wallet TEXT NOT NULL,
-        start_date TEXT NOT NULL,
-        endgame_date TEXT NOT NULL,
-        timer_duration INTEGER NOT NULL,
-        distribution_interval INTEGER NOT NULL,
-        min_hold_amount INTEGER NOT NULL,
-        tax_split_dev INTEGER NOT NULL,
-        tax_split_holders INTEGER NOT NULL,
-        vault_asset TEXT NOT NULL,
-        airdrop_asset TEXT NOT NULL,
+        token_mint TEXT,
+        distribution_wallet TEXT,
+        treasury_wallet TEXT,
+        dev_wallet TEXT,
+        start_date TEXT,
+        endgame_date TEXT,
+        timer_duration INTEGER,
+        distribution_interval INTEGER,
+        min_hold_amount INTEGER,
+        tax_split_dev INTEGER,
+        tax_split_holders INTEGER,
+        vault_asset TEXT,
+        airdrop_asset TEXT,
+        meta TEXT,
         status TEXT NOT NULL DEFAULT 'draft',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
@@ -82,7 +83,7 @@ class Database {
       const {
         id, name, description, tokenMint, distributionWallet, treasuryWallet,
         devWallet, startDate, endgameDate, timerDuration, distributionInterval,
-        minHoldAmount, taxSplit, vaultAsset, airdropAsset, status = 'draft'
+        minHoldAmount, taxSplit = { dev: null, holders: null }, vaultAsset, airdropAsset, meta = {}, status = 'draft'
       } = vaultData;
 
       const now = new Date().toISOString();
@@ -90,15 +91,15 @@ class Database {
         INSERT INTO vaults (
           id, name, description, token_mint, distribution_wallet, treasury_wallet,
           dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
-          min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
+          min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset, meta,
           status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       this.db.run(sql, [
         id, name, description, tokenMint, distributionWallet, treasuryWallet,
         devWallet, startDate, endgameDate, timerDuration, distributionInterval,
-        minHoldAmount, taxSplit.dev, taxSplit.holders, vaultAsset, airdropAsset,
+        minHoldAmount, taxSplit.dev, taxSplit.holders, vaultAsset, airdropAsset, JSON.stringify(meta || {}),
         status, now, now
       ], function(err) {
         if (err) {
@@ -142,13 +143,43 @@ class Database {
 
   async updateVault(id, updates) {
     return new Promise((resolve, reject) => {
-      const allowedFields = ['name', 'description', 'status'];
+      const allowedFields = ['name', 'description', 'status', 'token_mint', 'distribution_wallet', 'treasury_wallet', 'dev_wallet', 'start_date', 'endgame_date', 'timer_duration', 'distribution_interval', 'min_hold_amount', 'tax_split_dev', 'tax_split_holders', 'vault_asset', 'airdrop_asset', 'meta'];
       const updateFields = [];
       const values = [];
 
       Object.keys(updates).forEach(key => {
-        if (allowedFields.includes(key)) {
-          updateFields.push(`${key} = ?`);
+        let column = key;
+        if (key === 'tokenMint') column = 'token_mint';
+        if (key === 'distributionWallet') column = 'distribution_wallet';
+        if (key === 'treasuryWallet') column = 'treasury_wallet';
+        if (key === 'devWallet') column = 'dev_wallet';
+        if (key === 'startDate') column = 'start_date';
+        if (key === 'endgameDate') column = 'endgame_date';
+        if (key === 'timerDuration') column = 'timer_duration';
+        if (key === 'distributionInterval') column = 'distribution_interval';
+        if (key === 'minHoldAmount') column = 'min_hold_amount';
+        if (key === 'vaultAsset') column = 'vault_asset';
+        if (key === 'airdropAsset') column = 'airdrop_asset';
+        if (key === 'taxSplit') {
+          if (typeof updates.taxSplit?.dev !== 'undefined') {
+            updateFields.push('tax_split_dev = ?');
+            values.push(updates.taxSplit.dev);
+          }
+          if (typeof updates.taxSplit?.holders !== 'undefined') {
+            updateFields.push('tax_split_holders = ?');
+            values.push(updates.taxSplit.holders);
+          }
+          return;
+        }
+        if (key === 'meta') {
+          if (allowedFields.includes('meta')) {
+            updateFields.push('meta = ?');
+            values.push(JSON.stringify(updates.meta || {}));
+          }
+          return;
+        }
+        if (allowedFields.includes(column)) {
+          updateFields.push(`${column} = ?`);
           values.push(updates[key]);
         }
       });
@@ -281,6 +312,7 @@ class Database {
       id: row.id,
       name: row.name,
       description: row.description,
+      meta: row.meta ? JSON.parse(row.meta) : {},
       tokenMint: row.token_mint,
       distributionWallet: row.distribution_wallet,
       treasuryWallet: row.treasury_wallet,

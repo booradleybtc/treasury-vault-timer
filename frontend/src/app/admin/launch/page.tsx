@@ -6,23 +6,37 @@ import { useRouter } from 'next/navigation';
 export default function LaunchWizardPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    // Stage 1 core
     name: '',
     description: '',
-    tokenMint: '',
-    distributionWallet: '',
+    ticker: '',
     treasuryWallet: '',
-    devWallet: '',
-    startDate: '',
-    endgameDate: '',
+    icoAsset: 'SOL', // SOL or USDC
+    icoProposedAt: '',
+    supplyIntended: '',
+    bidMultiplier: 100,
     timerDuration: 3600,
-    distributionInterval: 3600,
+    vaultLifespanDays: 100,
+    minBuyToReset: 0,
     minHoldAmount: 0,
-    taxSplitDev: 0,
-    taxSplitHolders: 0,
+    airdropInterval: 3600,
+    airdropMode: 'rewards', // rewards | jackpot | lottery | powerball | none
     vaultAsset: 'SOL',
-    airdropAsset: 'REVS'
+    airdropAsset: 'REVS',
+    // Splits
+    splitCreator: 0,
+    splitTreasury: 0,
+    splitAirdrops: 0,
+    splitDarwin: 0,
+    // Links
+    xUrl: '',
+    websiteUrl: '',
+    // Images (uploaded URLs)
+    logoUrl: '',
+    bannerUrl: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,26 +44,49 @@ export default function LaunchWizardPage() {
     setSubmitting(true);
     
     try {
+      const id = `${formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+      const now = new Date();
+      const startDate = formData.icoProposedAt ? new Date(formData.icoProposedAt).toISOString() : now.toISOString();
+      const endgameDate = new Date(new Date(startDate).getTime() + Number(formData.vaultLifespanDays || 100) * 24 * 60 * 60 * 1000).toISOString();
+
       const payload = {
-        id: `${formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
+        id,
         name: formData.name,
         description: formData.description,
-        tokenMint: formData.tokenMint,
-        distributionWallet: formData.distributionWallet,
         treasuryWallet: formData.treasuryWallet,
-        devWallet: formData.devWallet,
-        startDate: new Date(formData.startDate).toISOString(),
-        endgameDate: new Date(formData.endgameDate).toISOString(),
+        startDate,
+        endgameDate,
         timerDuration: Number(formData.timerDuration),
-        distributionInterval: Number(formData.distributionInterval),
+        distributionInterval: Number(formData.airdropInterval),
         minHoldAmount: Number(formData.minHoldAmount),
-        taxSplit: {
-          dev: Number(formData.taxSplitDev),
-          holders: Number(formData.taxSplitHolders)
-        },
         vaultAsset: formData.vaultAsset,
         airdropAsset: formData.airdropAsset,
-        status: 'draft'
+        status: 'pre_ico_scheduled',
+        meta: {
+          stage: 'stage1',
+          ticker: formData.ticker?.slice(0, 10),
+          logoUrl: formData.logoUrl,
+          bannerUrl: formData.bannerUrl,
+          icoAsset: formData.icoAsset,
+          icoProposedAt: startDate,
+          supplyIntended: formData.supplyIntended,
+          bidMultiplier: Number(formData.bidMultiplier),
+          vaultLifespanDays: Number(formData.vaultLifespanDays),
+          minBuyToReset: Number(formData.minBuyToReset),
+          airdropInterval: Number(formData.airdropInterval),
+          airdropMode: formData.airdropMode,
+          splits: {
+            creator: Number(formData.splitCreator),
+            treasury: Number(formData.splitTreasury),
+            airdrops: Number(formData.splitAirdrops),
+            darwin: Number(formData.splitDarwin),
+          },
+          links: {
+            x: formData.xUrl,
+            website: formData.websiteUrl,
+          },
+          icoThresholdUsd: 1000,
+        }
       };
 
       const res = await fetch(`${BACKEND_URL}/api/admin/vaults`, {
@@ -83,6 +120,23 @@ export default function LaunchWizardPage() {
     }));
   };
 
+  const uploadFile = async (file: File): Promise<string> => {
+    const data = new FormData();
+    data.append('file', file);
+    setUploading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/upload`, {
+        method: 'POST',
+        body: data,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const json = await res.json();
+      return json.url as string;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full" style={{ background: "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/upscaled_lofi_rainforest.png') center 70% / cover fixed" }}>
       <div className="mx-auto max-w-4xl px-4 py-8">
@@ -112,13 +166,13 @@ export default function LaunchWizardPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">Token Mint Address *</label>
+                <label className="block text-sm text-white/80 mb-2">Ticker (max 10)</label>
                 <input
                   type="text"
-                  name="tokenMint"
-                  value={formData.tokenMint}
+                  name="ticker"
+                  maxLength={10}
+                  value={(formData as any).ticker || ''}
                   onChange={handleChange}
-                  required
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
               </div>
@@ -136,10 +190,10 @@ export default function LaunchWizardPage() {
           </div>
 
           <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
-            <h2 className="text-lg font-bold text-white mb-4">Wallets</h2>
+            <h2 className="text-lg font-bold text-white mb-4">ICO Settings</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm text-white/80 mb-2">Treasury Wallet *</label>
+                <label className="block text-sm text-white/80 mb-2">Treasury Wallet (ICO Address) *</label>
                 <input
                   type="text"
                   name="treasuryWallet"
@@ -150,22 +204,23 @@ export default function LaunchWizardPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">Distribution Wallet *</label>
-                <input
-                  type="text"
-                  name="distributionWallet"
-                  value={formData.distributionWallet}
+                <label className="block text-sm text-white/80 mb-2">ICO Raise Asset</label>
+                <select
+                  name="icoAsset"
+                  value={(formData as any).icoAsset || 'SOL'}
                   onChange={handleChange}
-                  required
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
-                />
+                >
+                  <option value="SOL">SOL</option>
+                  <option value="USDC">USDC</option>
+                </select>
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">Dev Wallet *</label>
+                <label className="block text-sm text-white/80 mb-2">Proposed ICO Date *</label>
                 <input
-                  type="text"
-                  name="devWallet"
-                  value={formData.devWallet}
+                  type="datetime-local"
+                  name="icoProposedAt"
+                  value={(formData as any).icoProposedAt || ''}
                   onChange={handleChange}
                   required
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
@@ -175,29 +230,34 @@ export default function LaunchWizardPage() {
           </div>
 
           <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
-            <h2 className="text-lg font-bold text-white mb-4">Timing & Configuration</h2>
+            <h2 className="text-lg font-bold text-white mb-4">Timer & Airdrops</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-white/80 mb-2">Start Date *</label>
+                <label className="block text-sm text-white/80 mb-2">Vault Lifespan (days)</label>
                 <input
-                  type="datetime-local"
-                  name="startDate"
-                  value={formData.startDate}
+                  type="number"
+                  name="vaultLifespanDays"
+                  value={(formData as any).vaultLifespanDays || 100}
                   onChange={handleChange}
-                  required
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">Endgame Date *</label>
-                <input
-                  type="datetime-local"
-                  name="endgameDate"
-                  value={formData.endgameDate}
+                <label className="block text-sm text-white/80 mb-2">Airdrop Interval</label>
+                <select
+                  name="airdropInterval"
+                  value={(formData as any).airdropInterval || 3600}
                   onChange={handleChange}
-                  required
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
-                />
+                >
+                  <option value={300}>5 mins</option>
+                  <option value={900}>15 mins</option>
+                  <option value={1800}>30 mins</option>
+                  <option value={3600}>1 hour</option>
+                  <option value={21600}>6 hours</option>
+                  <option value={43200}>12 hours</option>
+                  <option value={86400}>24 hours</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm text-white/80 mb-2">Timer Duration (seconds)</label>
@@ -210,14 +270,39 @@ export default function LaunchWizardPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">Distribution Interval (seconds)</label>
+                <label className="block text-sm text-white/80 mb-2">Minimum Hold for Airdrop</label>
                 <input
                   type="number"
-                  name="distributionInterval"
-                  value={formData.distributionInterval}
+                  name="minHoldAmount"
+                  value={formData.minHoldAmount}
                   onChange={handleChange}
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
+              </div>
+              <div>
+                <label className="block text-sm text-white/80 mb-2">Minimum Buy to Reset Timer</label>
+                <input
+                  type="number"
+                  name="minBuyToReset"
+                  value={(formData as any).minBuyToReset || 0}
+                  onChange={handleChange}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-white/80 mb-2">Airdrop Mode</label>
+                <select
+                  name="airdropMode"
+                  value={(formData as any).airdropMode || 'rewards'}
+                  onChange={handleChange}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                >
+                  <option value="rewards">Rewards</option>
+                  <option value="jackpot">Jackpot</option>
+                  <option value="lottery">Lottery</option>
+                  <option value="powerball">Powerball</option>
+                  <option value="none">No Airdrops</option>
+                </select>
               </div>
             </div>
           </div>
@@ -249,21 +334,67 @@ export default function LaunchWizardPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">Dev Tax Split (%)</label>
+                <label className="block text-sm text-white/80 mb-2">Creator Split (%)</label>
                 <input
                   type="number"
-                  name="taxSplitDev"
-                  value={formData.taxSplitDev}
+                  name="splitCreator"
+                  value={(formData as any).splitCreator || 0}
                   onChange={handleChange}
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">Holders Tax Split (%)</label>
+                <label className="block text-sm text-white/80 mb-2">Treasury Split (%)</label>
                 <input
                   type="number"
-                  name="taxSplitHolders"
-                  value={formData.taxSplitHolders}
+                  name="splitTreasury"
+                  value={(formData as any).splitTreasury || 0}
+                  onChange={handleChange}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-white/80 mb-2">Airdrops Split (%)</label>
+                <input
+                  type="number"
+                  name="splitAirdrops"
+                  value={(formData as any).splitAirdrops || 0}
+                  onChange={handleChange}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-white/80 mb-2">Darwin Builders Fund (%)</label>
+                <input
+                  type="number"
+                  name="splitDarwin"
+                  value={(formData as any).splitDarwin || 0}
+                  onChange={handleChange}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+            <h2 className="text-lg font-bold text-white mb-4">Links</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-white/80 mb-2">X (Twitter) URL</label>
+                <input
+                  type="url"
+                  name="xUrl"
+                  value={(formData as any).xUrl || ''}
+                  onChange={handleChange}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-white/80 mb-2">Website URL</label>
+                <input
+                  type="url"
+                  name="websiteUrl"
+                  value={(formData as any).websiteUrl || ''}
                   onChange={handleChange}
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
@@ -284,7 +415,7 @@ export default function LaunchWizardPage() {
               disabled={submitting}
               className="bg-[#58A6FF] hover:bg-[#4a95e6] text-white px-6 py-3 shadow-[0_0_18px_rgba(88,166,255,0.45)] font-semibold disabled:opacity-50"
             >
-              {submitting ? 'Creating...' : 'Create Vault'}
+              {submitting ? 'Creating...' : (uploading ? 'Uploading...' : 'Create Vault')}
             </button>
           </div>
         </form>
