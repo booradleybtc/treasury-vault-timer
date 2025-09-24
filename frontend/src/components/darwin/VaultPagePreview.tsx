@@ -102,40 +102,83 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
     switch (status) {
       case 'pre_ico':
         return (
-          <div className="text-center py-12">
-            <Clock className="w-16 h-16 text-blue-400 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-4">Pre-ICO Stage</h2>
-            <p className="text-white/70 mb-6 max-w-md mx-auto">
+          <div className="py-12">
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">Pre-ICO Stage</h2>
+            <p className="text-white/70 mb-8 max-w-md mx-auto text-center">
               This vault is scheduled to begin its ICO fundraise. 
               The ICO will run for 24 hours and must raise at least ${meta.icoThresholdUsd || 1000} to proceed to launch.
             </p>
             
             {meta.icoProposedAt && (
-              <div className="bg-white/5 rounded-lg p-4 mb-6 max-w-sm mx-auto">
-                <div className="text-sm text-white/60 mb-2">ICO Starts In</div>
-                <div className="text-2xl font-bold text-blue-400">{countdown}</div>
+              <div className="bg-white/5 rounded-lg p-6 mb-8 max-w-md mx-auto text-center">
+                <div className="text-sm text-white/60 mb-2">ICO Begins</div>
+                <div className="text-3xl font-bold text-blue-400">{countdown}</div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-              <div className="bg-white/5 rounded-lg p-4">
-                <h3 className="font-semibold text-white mb-2">Vault Details</h3>
-                <div className="space-y-2 text-sm text-white/70">
-                  <div>Name: {vault.name}</div>
-                  <div>Ticker: {meta.ticker || '—'}</div>
-                  <div>Supply: {meta.supplyIntended || '—'}</div>
-                  <div>Bid:Win: {meta.bidMultiplier || 100}×</div>
-                  <div>Lifespan: {meta.vaultLifespanDays || 100} days</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <div className="bg-white/5 rounded-lg p-6">
+                <h3 className="font-semibold text-white mb-4 text-lg">Vault Details</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Name:</span>
+                    <span className="text-white">{vault.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Ticker:</span>
+                    <span className="text-white">{meta.ticker || '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Supply:</span>
+                    <span className="text-white">{meta.supplyIntended || '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Bid:Win:</span>
+                    <span className="text-white font-semibold">{meta.bidMultiplier || 100}×</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Lifespan:</span>
+                    <span className="text-white">{meta.vaultLifespanDays || 100} days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Timer Length:</span>
+                    <span className="text-white">{Math.floor(vault.timerDuration / 3600)} hours</span>
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-white/5 rounded-lg p-4">
-                <h3 className="font-semibold text-white mb-2">Tax Splits</h3>
-                <div className="space-y-2 text-sm text-white/70">
-                  <div>Creator: {meta.splits?.creator || 0}%</div>
-                  <div>Treasury: {meta.splits?.treasury || 0}%</div>
-                  <div>Airdrops: {meta.splits?.airdrops || 0}%</div>
-                  <div>Darwin: {meta.splits?.darwin || 0}%</div>
+              <div className="bg-white/5 rounded-lg p-6">
+                <h3 className="font-semibold text-white mb-4 text-lg">Assets & Splits</h3>
+                <div className="space-y-3 text-sm mb-4">
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Vault Asset:</span>
+                    <span className="text-white font-semibold">{vault.vaultAsset || 'SOL'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70">Airdrop Asset:</span>
+                    <span className="text-white font-semibold">{meta.ticker || vault.airdropAsset || 'REVS'}</span>
+                  </div>
+                </div>
+                <div className="border-t border-white/10 pt-4">
+                  <h4 className="font-medium text-white mb-3">Tax Splits</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Creator:</span>
+                      <span className="text-white">{meta.splits?.creator || 0}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Treasury:</span>
+                      <span className="text-white">{meta.splits?.treasury || 0}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Airdrops:</span>
+                      <span className="text-white">{meta.splits?.airdrops || 0}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Darwin:</span>
+                      <span className="text-white">{meta.splits?.darwin || 0}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

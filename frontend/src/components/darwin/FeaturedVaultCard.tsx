@@ -25,6 +25,7 @@ export type FeaturedVaultCardProps = {
   onNext?: () => void;
   onClickTitle?: () => void;
   onTrade?: () => void;
+  buttonText?: string;
   className?: string;
   aspect?: "21/9" | "16/9" | "3/1";
 };
@@ -49,6 +50,7 @@ export function FeaturedVaultCard({
   onNext,
   onClickTitle,
   onTrade,
+  buttonText = "Trade",
   className,
   aspect = "21/9",
 }: FeaturedVaultCardProps) {
@@ -149,7 +151,7 @@ export function FeaturedVaultCard({
                 onClick={onTrade}
                 className="inline-flex items-center justify-center rounded-none bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90"
               >
-                Trade
+                {buttonText}
               </button>
               {winnerAddressShort ? (
                 <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-xs text-white/90">

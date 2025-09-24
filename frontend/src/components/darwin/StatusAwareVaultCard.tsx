@@ -64,13 +64,14 @@ export function StatusAwareVaultCard({
     switch (status) {
       case 'pre_ico':
         return {
-          subtitle: 'Pre-ICO • Fundraise Coming Soon',
-          timerValue: meta.icoProposedAt ? formatTimeToICO(meta.icoProposedAt) : '—',
+          subtitle: 'Vault Stage: Pre-ICO • ICO Begins',
+          timerValue: meta.icoProposedAt ? formatICOStartTime(meta.icoProposedAt) : '—',
           badgeText: 'PRE-ICO',
           badgeClass: 'bg-blue-500 text-white',
           showTimer: true,
-          showICOInfo: true,
-          disabledTrade: true
+          showICOInfo: false,
+          disabledTrade: true,
+          buttonText: 'View Vault'
         };
       case 'ico':
         return {
@@ -154,6 +155,20 @@ export function StatusAwareVaultCard({
     return `${hours}h`;
   }
 
+  function formatICOStartTime(icoDate: string): string {
+    const ico = new Date(icoDate);
+    const now = new Date();
+    const diff = ico.getTime() - now.getTime();
+    
+    if (diff <= 0) return 'ICO Started';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) return `${days}d ${hours}h`;
+    return `${hours}h`;
+  }
+
   function formatCountdown(endDate: string): string {
     const now = new Date();
     const end = new Date(endDate);
@@ -212,13 +227,14 @@ export function StatusAwareVaultCard({
     price: status === 'live' ? '$0.0000' : 'N/A',
     baseAsset: vault.vaultAsset || 'SOL',
     treasury: status === 'live' ? '$12.2M' : 'N/A',
-    potentialWin: status === 'live' ? '100×' : '—',
+    potentialWin: status === 'live' ? '100×' : (status === 'pre_ico' ? `${meta.bidMultiplier || 100}×` : '—'),
     apy: status === 'live' ? 'N/A' : 'N/A',
-    endgame: status === 'live' ? '91d' : '—',
+    endgame: status === 'live' ? '91d' : (status === 'pre_ico' ? `${meta.vaultLifespanDays || 100}d` : '—'),
     timer: config.timerValue,
     onTrade: config.disabledTrade ? undefined : onTrade,
     onClickTitle,
-    className
+    className,
+    buttonText: config.buttonText || 'Trade'
   };
 
   // Render based on variant
@@ -231,7 +247,14 @@ export function StatusAwareVaultCard({
             subtitle={config.subtitle}
             tokenBadgeText={config.badgeText}
             tokenBadgeClassName={config.badgeClass}
-            stats={[
+            buttonText={config.buttonText || 'Trade'}
+            stats={status === 'pre_ico' ? [
+              { label: 'Vault Asset', value: baseProps.baseAsset },
+              { label: 'Airdrop Asset', value: meta.ticker || vault.airdropAsset || 'REVS' },
+              { label: 'Potential Win', value: `${meta.bidMultiplier || 100}×` },
+              { label: 'Timer Length', value: `${Math.floor(vault.timerDuration / 3600)}h` },
+              { label: 'Lifespan', value: `${meta.vaultLifespanDays || 100}d` },
+            ] : [
               { label: 'Price', value: baseProps.price },
               { label: 'Vault Asset', value: baseProps.baseAsset },
               { label: 'Treasury', value: baseProps.treasury },
