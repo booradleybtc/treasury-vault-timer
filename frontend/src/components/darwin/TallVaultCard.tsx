@@ -65,7 +65,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
           </div>
           {status === 'pre_ico' && (
             <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1.5 text-xs sm:text-sm text-cyan-300 font-semibold">
-              Stage: PRE-ICO
+              Pre-ICO
             </div>
           )}
         </div>
