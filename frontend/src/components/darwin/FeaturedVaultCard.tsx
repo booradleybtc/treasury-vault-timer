@@ -122,7 +122,7 @@ export function FeaturedVaultCard({
                 <span className="tracking-tight">{tokenTicker}</span>
                 {xUrl ? (
                   <a href={xUrl} target="_blank" rel="noreferrer noopener" aria-label="View on X" title="View on X">
-                    <img src="/images/78.png" alt="X" className="h-5 w-5 object-contain" />
+                    <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-5 w-5 object-contain" />
                   </a>
                 ) : null}
                 {/* Removed checkmark per design */}
