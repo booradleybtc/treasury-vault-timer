@@ -269,7 +269,7 @@ export function StatusAwareVaultCard({
         <div className="relative">
           <FeaturedVaultCard
             {...baseProps}
-            subtitle={status === 'pre_ico' ? undefined : config.subtitle}
+            subtitle={config.subtitle}
             tokenBadgeText={config.badgeText}
             tokenBadgeClassName={config.badgeClass}
             buttonText={config.buttonText || 'Trade'}

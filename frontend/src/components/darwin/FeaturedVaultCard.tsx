@@ -197,15 +197,14 @@ export function FeaturedVaultCard({
                   <div>{icoDate.split(' - ')[0]}</div>
                   <div className="text-sm font-medium text-white/80">{icoDate.split(' - ')[1]}</div>
                   <div className="text-xs text-white/60 mt-1">
-                    {(() => {
-                      const now = new Date();
-                      const icoDateStr = icoDate.split(' - ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[1];
-                      const icoDateObj = new Date(icoDateStr);
-                      const diff = icoDateObj.getTime() - now.getTime();
-                      if (diff <= 0) return 'Started';
-                      const hours = Math.floor(diff / (1000 * 60 * 60));
-                      return `${hours}h to go`;
-                    })()}
+                    <a 
+                      href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&dates=${new Date(icoDate.split(' - ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[1]).toISOString().replace(/[-:]/g, '').split('.')[0]}/${new Date(icoDate.split(' - ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[1]).toISOString().replace(/[-:]/g, '').split('.')[0]}&ctz=America/New_York`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-white transition-colors underline"
+                    >
+                      📅 Set Reminder
+                    </a>
                   </div>
                 </div>
               </>
