@@ -244,6 +244,7 @@ export function StatusAwareVaultCard({
   // Base props for all card variants
   const baseProps = {
     name: vault.name,
+    title: vault.name,
     tokenTicker: meta.ticker || vault.airdropAsset || 'REVS',
     addressShort: vault.tokenMint ? `${vault.tokenMint.slice(0,6)}...${vault.tokenMint.slice(-4)}` : '—',
     imageUrl,
@@ -274,12 +275,13 @@ export function StatusAwareVaultCard({
             buttonText={config.buttonText || 'Trade'}
             showVaultStagePill={config.showVaultStagePill}
             icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
+            tokenPfpUrl={meta.logoUrl || '/images/token.png'}
             stats={status === 'pre_ico' ? [
               { label: 'Vault Asset', value: baseProps.baseAsset },
               { label: 'Airdrop Asset', value: vault.airdropAsset || 'REVS' },
               { label: 'Potential Win', value: `${meta.bidMultiplier || 100}×` },
               { label: 'Timer Length', value: `${Math.floor(vault.timerDuration / 3600)}h` },
-              { label: 'Lifespan', value: `${meta.vaultLifespanDays || 100}d` },
+              { label: 'Lifespan', value: `${meta.vaultLifespanDays || 100} Days` },
             ] : [
               { label: 'Price', value: baseProps.price },
               { label: 'Vault Asset', value: baseProps.baseAsset },

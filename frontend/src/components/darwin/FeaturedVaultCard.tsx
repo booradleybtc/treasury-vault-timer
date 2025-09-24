@@ -104,7 +104,7 @@ export function FeaturedVaultCard({
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3 text-[18px] md:text-[20px] font-semibold leading-none">
-                <span className="tracking-tight">{title}</span>
+                <span className="tracking-tight">{tokenTicker}</span>
                 {xUrl ? (
                   <a href={xUrl} target="_blank" rel="noreferrer noopener" aria-label="View on X" title="View on X">
                     <img src="/images/78.png" alt="X" className="h-5 w-5 object-contain" />
