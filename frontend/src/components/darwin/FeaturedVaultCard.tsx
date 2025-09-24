@@ -121,8 +121,8 @@ export function FeaturedVaultCard({
               <div className="flex items-center gap-3 text-[18px] md:text-[20px] font-semibold leading-none">
                 <span className="tracking-tight">{tokenTicker}</span>
                 {xUrl ? (
-                  <a href={xUrl} target="_blank" rel="noreferrer noopener" aria-label="View on X" title="View on X">
-                    <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-5 w-5 object-contain" />
+                  <a href={xUrl} target="_blank" rel="noreferrer noopener" aria-label="View on X" title="View on X" className="opacity-70 hover:opacity-100 transition-opacity">
+                    <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-4 w-4 object-contain" />
                   </a>
                 ) : null}
                 {/* Removed checkmark per design */}
@@ -171,6 +171,16 @@ export function FeaturedVaultCard({
               ) : null}
             </div>
             <div className="mt-3 flex items-center gap-3">
+              {icoDate && (
+                <a 
+                  href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-white/60 hover:text-white transition-colors"
+                >
+                  📅 Set Reminder
+                </a>
+              )}
               <button 
                 onClick={onTrade}
                 className="inline-flex items-center justify-center rounded-none bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90"
@@ -196,16 +206,6 @@ export function FeaturedVaultCard({
                 <div className="tabular-nums text-2xl md:text-3xl font-bold leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
                   <div>{icoDate.split(' - ')[0]}</div>
                   <div className="text-lg font-medium text-white/80">{icoDate.split(' - ')[1]}</div>
-                  <div className="text-xs text-white/60 mt-1">
-                    <a 
-                      href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-white transition-colors"
-                    >
-                      📅 Set Reminder
-                    </a>
-                  </div>
                 </div>
               </>
             ) : (
