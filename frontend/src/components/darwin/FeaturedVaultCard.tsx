@@ -58,6 +58,21 @@ export function FeaturedVaultCard({
   className,
   aspect = "21/9",
 }: FeaturedVaultCardProps) {
+  
+  const getTokenImage = (tokenSymbol: string) => {
+    // Common SPL tokens with their image URLs
+    const tokenImages: { [key: string]: string } = {
+      'SOL': '/images/Solana_logo.png',
+      'REVS': '/images/token.png', // Default token image
+      'USDC': '/images/USDC.png',
+      'USDT': '/images/USDT.png',
+      'BTC': '/images/BTC.png',
+      'ETH': '/images/ETH.png',
+      'zBTC': '/images/zBTC.png',
+    };
+    
+    return tokenImages[tokenSymbol] || '/images/token.png';
+  };
   const handleCopy = () => {
     if (addressShort && navigator?.clipboard) {
       navigator.clipboard.writeText(addressShort).catch(() => {});
@@ -131,6 +146,9 @@ export function FeaturedVaultCard({
               <div key={i} className="text-center text-white">
                 <div className="text-[12px] uppercase tracking-[.18em] text-white/70">{s.label}</div>
                 <div className="mt-1 text-[20px] md:text-[26px] font-bold leading-none drop-shadow-[0_1px_6px_rgba(0,0,0,.35)] flex items-center justify-center gap-2">
+                  {(s.label === 'Vault Asset' || s.label === 'Airdrop Asset') && (
+                    <img src={getTokenImage(s.value)} alt={s.value} className="h-5 w-5 rounded-sm" />
+                  )}
                   {s.label === 'Vault Asset' && vaultAssetIconSrc ? (
                     <img src={vaultAssetIconSrc} alt={s.value} className="h-5 w-5 rounded-sm" />
                   ) : null}
@@ -142,16 +160,16 @@ export function FeaturedVaultCard({
 
           {/* bottom-left: title/subtitle + actions */}
           <div className="absolute bottom-5 left-5">
-            <div className="text-4xl md:text-6xl font-bold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,.6)] mb-2">
-              {title}
-            </div>
-            {showVaultStagePill ? (
-              <div className="mt-2 inline-flex items-center gap-2 rounded-[8px] bg-blue-500/20 backdrop-blur-[10px] ring-1 ring-blue-400/30 px-3 py-1 text-sm text-blue-300 font-semibold">
-                {subtitle}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="text-4xl md:text-6xl font-bold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,.6)]">
+                {title}
               </div>
-            ) : subtitle ? (
-              <div className="mt-1 text-sm text-white/85">{subtitle}</div>
-            ) : null}
+              {showVaultStagePill ? (
+                <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-sm text-white/90 font-semibold">
+                  {subtitle}
+                </div>
+              ) : null}
+            </div>
             <div className="mt-3 flex items-center gap-3">
               <button 
                 onClick={onTrade}
@@ -172,11 +190,22 @@ export function FeaturedVaultCard({
           <div className="absolute bottom-5 right-5 text-right text-white">
             {icoDate ? (
               <>
-                <div className="inline-flex items-center gap-2 rounded-[8px] bg-blue-500/20 backdrop-blur-[10px] ring-1 ring-blue-400/30 px-3 py-1 text-sm text-blue-300 font-semibold mb-2">
+                <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-sm text-white/90 font-semibold mb-2">
                   ICO Date
                 </div>
-                <div className="tabular-nums text-2xl md:text-3xl font-extrabold leading-none tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
-                  {icoDate}
+                <div className="tabular-nums text-xl md:text-2xl font-bold leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
+                  <div>{icoDate.split(' - ')[0]}</div>
+                  <div className="text-sm font-medium text-white/80">{icoDate.split(' - ')[1]}</div>
+                  <div className="text-xs text-white/60 mt-1">
+                    {(() => {
+                      const now = new Date();
+                      const icoDate = new Date(icoDate.split(' - ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[0] + ' ' + icoDate.split(' - ')[1].split(' ')[1]);
+                      const diff = icoDate.getTime() - now.getTime();
+                      if (diff <= 0) return 'Started';
+                      const hours = Math.floor(diff / (1000 * 60 * 60));
+                      return `${hours}h to go`;
+                    })()}
+                  </div>
                 </div>
               </>
             ) : (

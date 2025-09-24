@@ -280,7 +280,7 @@ export function StatusAwareVaultCard({
               { label: 'Vault Asset', value: baseProps.baseAsset },
               { label: 'Airdrop Asset', value: vault.airdropAsset || 'REVS' },
               { label: 'Potential Win', value: `${meta.bidMultiplier || 100}×` },
-              { label: 'Timer Length', value: `${Math.floor(vault.timerDuration / 3600)}h` },
+              { label: 'Timer Length', value: `${Math.floor(vault.timerDuration / 3600)} Hour${Math.floor(vault.timerDuration / 3600) !== 1 ? 's' : ''}` },
               { label: 'Lifespan', value: `${meta.vaultLifespanDays || 100} Days` },
             ] : [
               { label: 'Price', value: baseProps.price },
