@@ -67,11 +67,11 @@ export function StatusAwareVaultCard({
           subtitle: 'Pre-ICO',
           timerValue: meta.icoProposedAt ? formatICOStartTime(meta.icoProposedAt) : '—',
           badgeText: 'PRE-ICO',
-          badgeClass: 'bg-blue-500 text-white',
+          badgeClass: 'bg-cyan-500 text-white',
           showTimer: true,
           showICOInfo: false,
           disabledTrade: true,
-          buttonText: 'View Vault',
+          buttonText: 'View Vault Details',
           showVaultStagePill: true
         };
       case 'ico':

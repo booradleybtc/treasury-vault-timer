@@ -165,7 +165,7 @@ export function FeaturedVaultCard({
                 {title}
               </div>
               {showVaultStagePill ? (
-                <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-sm text-white/90 font-semibold">
+                <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1 text-sm text-cyan-300 font-semibold">
                   {subtitle}
                 </div>
               ) : null}
@@ -193,15 +193,15 @@ export function FeaturedVaultCard({
                 <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-sm text-white/90 font-semibold mb-2">
                   ICO Date
                 </div>
-                <div className="tabular-nums text-xl md:text-2xl font-bold leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
+                <div className="tabular-nums text-2xl md:text-3xl font-bold leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
                   <div>{icoDate.split(' - ')[0]}</div>
-                  <div className="text-sm font-medium text-white/80">{icoDate.split(' - ')[1]}</div>
+                  <div className="text-lg font-medium text-white/80">{icoDate.split(' - ')[1]}</div>
                   <div className="text-xs text-white/60 mt-1">
                     <a 
                       href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-white transition-colors underline"
+                      className="hover:text-white transition-colors"
                     >
                       📅 Set Reminder
                     </a>
