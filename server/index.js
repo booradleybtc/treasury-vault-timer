@@ -803,6 +803,32 @@ app.post('/api/admin/vaults', async (req, res) => {
   }
 });
 
+// Update vault status (e.g., launch as pre_ico)
+app.patch('/api/admin/vaults/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    console.log(`📝 Updating vault ${id} status to:`, status);
+    
+    // Update vault status in database
+    await db.updateVaultStatus(id, status);
+    
+    // Emit real-time update
+    io.emit('vaultStatusUpdated', { vaultId: id, status });
+    
+    res.json({ 
+      success: true, 
+      message: `Vault status updated to ${status}`,
+      vaultId: id,
+      status
+    });
+  } catch (error) {
+    console.error('Error updating vault status:', error);
+    res.status(500).json({ error: 'Failed to update vault status' });
+  }
+});
+
 // Whitelisted addresses management
 app.post('/api/admin/vaults/:id/whitelisted-addresses', async (req, res) => {
   try {

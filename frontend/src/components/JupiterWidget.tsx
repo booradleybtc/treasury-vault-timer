@@ -22,10 +22,9 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return (
       <div className="w-full">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade {tokenSymbol}</h3>
-          <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
-            <p className="text-gray-600">Loading trading widget...</p>
+        <div className="bg-transparent p-6">
+          <div className="flex items-center justify-center h-96 bg-transparent">
+            <p className="text-white/70">Loading trading widget...</p>
           </div>
         </div>
       </div>
@@ -36,10 +35,9 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
   if (!useRef || !useState || !useEffect) {
     return (
       <div className="w-full">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade {tokenSymbol}</h3>
-          <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
-            <p className="text-gray-600">Widget temporarily unavailable</p>
+        <div className="bg-transparent p-6">
+          <div className="flex items-center justify-center h-96 bg-transparent">
+            <p className="text-white/70">Widget temporarily unavailable</p>
           </div>
         </div>
       </div>
@@ -91,21 +89,16 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
             w.Jupiter.init({
               displayMode: "integrated",
               integratedTargetId: "jupiter-widget-container",
-              endpoint: "https://api.mainnet-beta.solana.com",
-              platformFeeAndAccounts: {
-                feeBps: 0,
-                accounts: []
+              formProps: {
+                initialInputMint: "So11111111111111111111111111111111111111112",
+                initialOutputMint: "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p",
+                swapMode: "ExactInOrOut",
+                fixedMint: "",
               },
-              defaultExplorer: "Solscan",
-              containerStyles: {
-                background: "transparent"
+              branding: {
+                logoUri: "/images/78.png",
+                name: "Darwin",
               },
-              onSuccess: ({ txid }) => {
-                console.log('Swap successful:', txid);
-              },
-              onSwapError: ({ error }) => {
-                console.error('Swap error:', error);
-              }
             });
             w.__JUP_INITED = true;
             setIsLoaded(true);
@@ -126,15 +119,13 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
 
   return (
     <div className="w-full">
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade {tokenSymbol}</h3>
-        
+      <div className="bg-transparent p-6">
         {/* Jupiter Widget Container */}
         {!isLoaded && (
-          <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-center h-96 bg-transparent">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading Jupiter widget...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+              <p className="text-white/70">Loading Jupiter widget...</p>
             </div>
           </div>
         )}
@@ -142,47 +133,24 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
           id="jupiter-widget-container"
           ref={containerRef}
           style={{ 
-            width: '100%', 
-            height: '400px',
-            minHeight: '400px',
+            width: '100%',
+            height: '640px',
+            minHeight: '640px',
             display: isLoaded ? 'block' : 'none'
           }}
         />
         
-        {/* Custom CSS for Jupiter widget colors */}
+        {/* Jupiter plugin theme - light blue / white preset */}
         <style jsx>{`
           :global(:root) {
-            --jupiter-plugin-primary: 34, 197, 94;
+            --jupiter-plugin-primary: 105, 192, 255;
             --jupiter-plugin-background: 255, 255, 255;
             --jupiter-plugin-primary-text: 0, 0, 0;
             --jupiter-plugin-warning: 251, 191, 36;
             --jupiter-plugin-interactive: 255, 255, 255;
-            --jupiter-plugin-module: 248, 250, 252;
-            --jupiter-plugin-text: 0, 0, 0;
-            --jupiter-plugin-text-secondary: 107, 114, 128;
-            --jupiter-plugin-border: 229, 231, 235;
+            --jupiter-plugin-module: 255, 255, 255;
           }
-          
-          :global(#jupiter-widget-container) {
-            background: white !important;
-            color: black !important;
-          }
-          
-          :global(#jupiter-widget-container *) {
-            color: black !important;
-          }
-          
-          :global(#jupiter-widget-container button) {
-            background: white !important;
-            color: black !important;
-            border: 1px solid #e5e7eb !important;
-          }
-          
-          :global(#jupiter-widget-container input) {
-            background: white !important;
-            color: black !important;
-            border: 1px solid #e5e7eb !important;
-          }
+          /* Let Jupiter render its own UI using the variables above */
         `}</style>
       </div>
     </div>

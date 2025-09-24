@@ -6,33 +6,50 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* THEME SCOPE */
-.theme-stream {
-  /* Warm cocoa/dark with ember highlights */
-  --background: 16 12 12;       /* #100C0C */
-  --foreground: 245 242 238;    /* near-ivory */
+/* Darwin Indigo / Jungle */
+.theme-darwin {
+  --background: 8 10 22;              /* deep indigo */
+  --foreground: 236 240 247;          /* brighter text for contrast */
 
-  --card: 24 20 20;             /* panel surfaces */
-  --card-foreground: 245 242 238;
+  --card: 13 16 30;
+  --card-foreground: 236 240 247;
 
-  --muted: 30 26 26;            /* secondary panels */
-  --muted-foreground: 180 172 168;
+  --muted: 16 19 36;
+  --muted-foreground: 172 181 198;
 
-  --primary: 255 90 40;         /* ember/orange for focus/cta */
-  --primary-foreground: 255 255 255;
+  --primary: 92 120 255;              /* indigo */
+  --primary-foreground: 250 252 255;
 
-  --accent: 180 70 255;         /* subtle purple for focus rings */
-  --accent-foreground: 255 255 255;
+  --accent: 28 189 136;               /* jungle */
+  --accent-foreground: 4 14 12;
 
-  --border: 44 38 38;
-  --ring: 255 90 40;
+  --border: 30 34 56;
+  --ring: 92 120 255;
 
-  /* Subtle vignette background */
-  background: radial-gradient(1200px 600px at 50% -10%, rgba(255,90,40,.18), transparent 60%),
-              radial-gradient(900px 400px at 90% 10%, rgba(120,60,255,.12), transparent 50%),
-              rgb(var(--background));
+  /* Softer, cleaner vignette */
+  background:
+    radial-gradient(1100px 520px at 50% -8%, rgba(92,120,255,.14), transparent 60%),
+    radial-gradient(900px 420px at 90% 6%, rgba(28,189,136,.10), transparent 55%),
+    rgb(var(--background));
   color: rgb(var(--foreground));
+  color-scheme: dark;
 }
+
+/* Make default type legible on dark even if legacy classes are present */
+.theme-darwin :where(h1,h2,h3,h4,h5,h6,strong,b) { color: rgb(var(--foreground)); }
+.theme-darwin :where(p,li,small,span,div,th,td,label) { color: rgb(var(--foreground)); }
+.theme-darwin a { color: rgb(var(--foreground)); text-decoration: none; }
+.theme-darwin a:hover { text-decoration: underline; }
+
+/* Inputs in dark */
+.theme-darwin input, 
+.theme-darwin .input, 
+.theme-darwin .search {
+  background: rgba(255,255,255,.06);
+  color: rgb(var(--foreground));
+  border-color: rgba(255,255,255,.12);
+}
+.theme-darwin ::placeholder { color: rgba(236,240,247,.55); }
 
 html { font-feature-settings: "rlig" 1, "calt" 1; }
 * { border-color: rgb(var(--border)); }

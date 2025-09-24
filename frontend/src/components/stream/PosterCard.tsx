@@ -19,7 +19,7 @@ export function PosterCard({
 }: Props) {
   return (
     <motion.div whileHover={{ y: -2, scale: 1.01 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
-      <Card onClick={onClick} className={cn("relative overflow-hidden rounded-3xl shadow-card bg-card", className)}>
+      <Card onClick={onClick} className={cn("relative overflow-hidden rounded-3xl shadow-glow bg-card", className)}>
         <div className="aspect-[16/9]">
           <img src={imageUrl} alt={title} className="h-full w-full object-cover" loading="lazy" />
         </div>
@@ -37,7 +37,7 @@ export function PosterCard({
         {/* Bottom gradient & titles */}
         <div className="absolute inset-x-0 bottom-0 p-5">
           <div className="rounded-2xl bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 py-3">
-            <h3 className="text-lg md:text-xl font-semibold tracking-tight">{title}</h3>
+            <h3 className="text-lg md:text-xl font-semibold tracking-tight text-white">{title}</h3>
             {subtitle ? <p className="mt-1 text-sm text-white/85 line-clamp-2">{subtitle}</p> : null}
           </div>
         </div>

@@ -17,12 +17,12 @@ export function StreamHeader({ onSearch, activeTab="home", onTabChange, rightAct
     <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-black/20">
       <div className="mx-auto max-w-7xl px-4 pt-4 pb-3">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-primary/90 shadow-glow grid place-items-center text-primary-foreground font-bold">D</div>
+          <div className="h-9 w-9 rounded-xl bg-primary shadow-glow grid place-items-center text-primary-foreground font-bold">D</div>
           <div className="font-semibold tracking-tight">Darwin Vaults</div>
 
           <div className="ml-4 hidden md:block">
             <Tabs value={activeTab} onValueChange={onTabChange} className="rounded-full">
-              <TabsList className="rounded-full bg-black/25 backdrop-blur px-1 py-1 shadow-glass">
+              <TabsList className="rounded-full bg-white/10 border border-white/10 backdrop-blur px-1 py-1 shadow-glass">
                 {["home","vaults","admin","docs","about"].map(t => (
                   <TabsTrigger
                     key={t}
@@ -37,7 +37,7 @@ export function StreamHeader({ onSearch, activeTab="home", onTabChange, rightAct
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 rounded-full bg-black/25 backdrop-blur px-3 py-1.5 shadow-glass">
+            <div className="hidden md:flex items-center gap-2 rounded-full bg-white/10 backdrop-blur px-3 py-1.5 shadow-glass border border-white/10">
               <Search className="h-4 w-4 opacity-80" />
               <Input
                 placeholder="Search Vaults"
@@ -45,7 +45,11 @@ export function StreamHeader({ onSearch, activeTab="home", onTabChange, rightAct
                 className="h-7 w-48 border-0 bg-transparent focus-visible:ring-0 text-sm placeholder:text-white/60"
               />
             </div>
-            {rightAction ?? <Button className="rounded-full">Launch Vault</Button>}
+            {rightAction ?? (
+              <Button className="rounded-full bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))] hover:opacity-90">
+                Launch Vault
+              </Button>
+            )}
           </div>
         </div>
       </div>

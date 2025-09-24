@@ -1,24 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Card, Button } from '@/components/ui';
-import { motion } from 'framer-motion';
-import { StreamHeader } from '@/components/layout/StreamHeader';
-import { Rail } from '@/components/stream/Rail';
-import { PosterCard } from '@/components/stream/PosterCard';
-import { GlassPanel } from '@/components/stream/GlassPanel';
-import { LiveDot, TimerBadge } from '@/components/stream/LiveTimer';
-import { 
-  ClockIcon,
-  CurrencyDollarIcon,
-  GiftIcon,
-  ChartBarIcon,
-  ArrowRightIcon,
-  PlusIcon,
-  BoltIcon,
-  DocumentTextIcon
-} from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { StreamHeader } from "@/components/darwin/StreamHeader";
+import { FeaturedVaultCard } from "@/components/darwin/FeaturedVaultCard";
+import { VaultRow } from "@/components/darwin/VaultRow";
+import { VaultFilters } from "@/components/darwin/VaultFilters";
+import { SiteFooter } from "@/components/darwin/SiteFooter";
+import { TallVaultCard } from "@/components/darwin/TallVaultCard";
 
 interface VaultConfig {
   id: string;
@@ -42,22 +31,83 @@ interface VaultConfig {
   updatedAt: string;
 }
 
-export default function VaultsPage() {
+export default function Page() {
+  const router = useRouter();
   const [vaults, setVaults] = useState<VaultConfig[]>([]);
+  const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'active' | 'draft' | 'ended'>('all');
-  const [assetFilter, setAssetFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>("All");
+  const [sort, setSort] = useState<string>("Time Remaining");
+  const [showToast, setShowToast] = useState(false);
+  const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com';
 
   useEffect(() => {
     loadVaults();
+    loadDashboardData();
+    
+    // Listen for mobile menu How it Works trigger
+    const handleShowHowItWorks = () => setShowHowItWorksModal(true);
+    window.addEventListener('showHowItWorks', handleShowHowItWorks);
+    
+    return () => {
+      window.removeEventListener('showHowItWorks', handleShowHowItWorks);
+    };
   }, []);
+
+  // Real-time timer updates
+  useEffect(() => {
+    if (!dashboardData?.timer?.timeLeft && !dashboardData?.vault?.airdrop?.nextAirdropIn) return;
+    
+    const interval = setInterval(() => {
+      setDashboardData((prevData: any) => {
+        if (!prevData) return prevData;
+        
+        let updates = {};
+        
+        // Update main timer
+        if (prevData.timer?.timeLeft) {
+          const newTimeLeft = Math.max(0, prevData.timer.timeLeft - 1);
+          updates = {
+            ...updates,
+            timer: {
+              ...prevData.timer,
+              timeLeft: newTimeLeft
+            }
+          };
+        }
+        
+        // Update airdrop countdown
+        if (prevData.vault?.airdrop?.nextAirdropIn) {
+          const newAirdropTime = Math.max(0, prevData.vault.airdrop.nextAirdropIn - 1);
+          updates = {
+            ...updates,
+            vault: {
+              ...prevData.vault,
+              airdrop: {
+                ...prevData.vault.airdrop,
+                nextAirdropIn: newAirdropTime
+              }
+            }
+          };
+        }
+        
+        return {
+          ...prevData,
+          ...updates
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [dashboardData?.timer?.timeLeft, dashboardData?.vault?.airdrop?.nextAirdropIn]);
 
   const loadVaults = async () => {
     try {
-      setLoading(true);
       const response = await fetch(`${BACKEND_URL}/api/admin/vaults`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -73,25 +123,83 @@ export default function VaultsPage() {
     } catch (error) {
       console.error('Failed to load vaults:', error);
       setError('Failed to load vaults');
+    }
+  };
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching dashboard data from:', `${BACKEND_URL}/api/dashboard`);
+      
+      const response = await fetch(`${BACKEND_URL}/api/dashboard`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Dashboard data loaded:', data);
+        console.log('Timer data:', data.timer);
+        console.log('Vault data:', data.vault);
+        console.log('Token data:', data.token);
+        console.log('Full data structure:', JSON.stringify(data, null, 2));
+        setDashboardData(data);
+        setError(null);
+      } else {
+        console.error('Failed to load dashboard data:', response.status, response.statusText);
+        setError(`Failed to load dashboard data: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      setError(`Failed to load dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredVaults = vaults.filter(vault => {
-    const statusMatch = filter === 'all' || vault.status === filter;
-    const assetMatch = assetFilter === 'all' || vault.vaultAsset === assetFilter;
-    return statusMatch && assetMatch;
-  });
+  const featuredVault = vaults.find(vault => (vault.status as any) === 'active' || (vault.status as any) === 'pre_ico') || vaults[0];
 
-  const featuredVault = vaults.find(vault => vault.status === 'active') || vaults[0];
+  // Format timer for display
+  const formatTimer = (timeLeft: number) => {
+    if (!timeLeft || isNaN(timeLeft)) return "00:00";
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Format treasury for display
+  const formatTreasury = (treasury: number) => {
+    if (!treasury || isNaN(treasury) || treasury <= 0) return "N/A";
+    return `$${(treasury / 1000000).toFixed(1)}M`;
+  };
+
+  // Format price for display
+  const formatPrice = (price: number) => {
+    if (!price || isNaN(price) || price <= 0) return "N/A";
+    return `$${price.toFixed(4)}`;
+  };
+
+  // Format airdrop time
+  const formatAirdropTime = (timeLeft: number) => {
+    if (!timeLeft || isNaN(timeLeft)) return "00:00";
+    const hours = Math.floor(timeLeft / 3600);
+    const minutes = Math.floor((timeLeft % 3600) / 60);
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
 
   if (loading) {
     return (
-      <div className="theme-stream min-h-screen flex items-center justify-center">
+      <div 
+        className="min-h-screen w-full flex items-center justify-center"
+        style={{
+          background: "radial-gradient(1100px 520px at 50% -8%, rgba(92,120,255,.14), transparent 60%), radial-gradient(900px 420px at 90% 6%, rgba(28,189,136,.10), transparent 55%), rgb(8,10,22)",
+        }}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground">Loading vaults...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">Loading vaults...</p>
         </div>
       </div>
     );
@@ -99,313 +207,298 @@ export default function VaultsPage() {
 
   if (error) {
     return (
-      <div className="theme-stream min-h-screen flex items-center justify-center">
+      <div 
+        className="min-h-screen w-full flex items-center justify-center"
+        style={{
+          background: "radial-gradient(1100px 520px at 50% -8%, rgba(92,120,255,.14), transparent 60%), radial-gradient(900px 420px at 90% 6%, rgba(28,189,136,.10), transparent 55%), rgb(8,10,22)",
+        }}
+      >
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={loadVaults}>Retry</Button>
+          <p className="text-red-400 mb-4">{error}</p>
+          <button onClick={loadVaults} className="text-white border border-white/20 px-4 py-2 rounded">Retry</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="theme-stream min-h-screen">
-      <StreamHeader 
-        onSearch={(q) => console.log('Search:', q)}
-        activeTab="vaults"
-        onTabChange={(v) => {
-          if (v === 'home') window.location.href = '/';
-          if (v === 'admin') window.location.href = '/admin';
-        }}
-        rightAction={
-          <Button 
-            onClick={() => window.location.href = '/admin'}
-            className="bg-primary hover:bg-primary/90"
-          >
-            Launch Vault
-          </Button>
-        }
-      />
+    <div
+      className="min-h-screen w-full relative"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(6,24,18,.55) 0%, rgba(4,20,16,.65) 45%, rgba(3,15,12,.85) 100%), url('/images/upscaled_lofi_rainforest.png') center 70% / cover fixed",
+      }}
+    >
+      <StreamHeader />
 
-      <main className="mx-auto max-w-7xl px-4 pb-24">
-        {/* Featured Vaults Section */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Featured Vaults</h2>
-            <Button variant="outline" className="text-gray-600 border-gray-300">
-              View All
-            </Button>
+      {/* Mobile: Darwin Vaults Section with Pill Filters */}
+      <div className="mx-auto max-w-7xl px-4 pt-6 mb-6 lg:hidden">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight text-white">Darwin Vaults</h2>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Featured Vault Card */}
-            <div className="lg:col-span-3">
-              <Card className="p-8 h-full">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-orange-500 rounded-xl flex items-center justify-center">
-                      <span className="text-white text-2xl font-bold">
-                        {featuredVault?.name?.charAt(0) || 'R'}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-3xl font-bold text-gray-900">
-                        {featuredVault?.name || 'REVS Vault'}
-                      </h3>
-                      <p className="text-lg text-gray-600">The OG Vault</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <span className="text-sm text-green-600 font-medium">Live</span>
-                    </div>
-                    <div className="text-4xl font-mono font-bold text-gray-900">00:32</div>
-                  </div>
-                </div>
-
-                {/* Vault Image Placeholder */}
-                <div className="bg-gray-100 rounded-xl h-64 mb-6 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-gray-300 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <span className="text-4xl">🏦</span>
-                    </div>
-                    <p className="text-gray-500">Vault Image</p>
-                  </div>
-                </div>
-
-                {/* Vault Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">APY</p>
-                    <p className="text-xl font-bold text-gray-900">N/A</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Treasury</p>
-                    <p className="text-xl font-bold text-gray-900">$1,234,567</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Last Buyer</p>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-xl font-bold text-gray-900">0x123...abc</p>
-                      <svg className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Timer</p>
-                    <p className="text-xl font-bold text-gray-900">00:00:00</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Endgame</p>
-                    <p className="text-xl font-bold text-gray-900">Sept 15, 2025</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Airdrop</p>
-                    <p className="text-xl font-bold text-gray-900">00:00:00</p>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <Button className="bg-orange-500 text-white hover:bg-orange-600 px-8 py-3">
-                    Trade REVS
-                  </Button>
-                </div>
-              </Card>
-            </div>
-
-            {/* Game Rules Card */}
-            <div className="lg:col-span-1">
-              <Card className="p-6 h-full">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Trade to Win Vault</h3>
-                <p className="text-gray-600 mb-6">
-                  Every day 10,000+ potential clients visit our website. Hire exclusive talent by posting your job today.
-                </p>
-                
-                <div className="mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Game Rules</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-start space-x-2">
-                      <span className="text-orange-500 font-bold">•</span>
-                      <p className="text-sm text-gray-600">Buy REVS to Reset Timer</p>
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <span className="text-orange-500 font-bold">•</span>
-                      <p className="text-sm text-gray-600">Win Half the Treasury</p>
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <span className="text-orange-500 font-bold">•</span>
-                      <p className="text-sm text-gray-600">Claim Airdrops & Treasury</p>
-                    </div>
-                  </div>
-                </div>
-
-                <Button variant="outline" className="w-full border-gray-300 text-gray-600">
-                  <DocumentTextIcon className="w-4 h-4 mr-2" />
-                  Read Docs
-                </Button>
-              </Card>
-            </div>
-          </div>
-        </div>
-
-        {/* All Vaults Section */}
-        <div className="bg-white rounded-xl shadow-sm border">
-          {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              {[
-                { key: 'all', label: 'Top Vaults' },
-                { key: 'active', label: 'Time Remaining' },
-                { key: 'draft', label: 'Trade : Win' }
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setFilter(tab.key as any)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    filter === tab.key
-                      ? 'border-orange-500 text-orange-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-              
-              <div className="ml-auto flex items-center space-x-4 py-4">
-                <Button 
-                  onClick={() => window.location.href = '/admin'}
-                  className="bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  <PlusIcon className="w-4 h-4 mr-2" />
-                  Create Vault
-                </Button>
-              </div>
-            </nav>
-          </div>
-
-          {/* Vaults Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vault
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    APY
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Treasury
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredVaults.map((vault) => (
-                  <tr key={vault.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Link href={`/vault/${vault.id}`} className="flex items-center space-x-3 hover:opacity-80">
-                        <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">
-                            {vault.name.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{vault.name}</div>
-                          <div className="text-xs text-gray-500">{vault.airdropAsset}</div>
-                        </div>
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      N/A
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      $1.2M
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      00:00:00
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        vault.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : vault.status === 'ended'
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {vault.status === 'active' ? 'Live' : vault.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Button 
-                        size="sm"
-                        className="bg-orange-500 text-white hover:bg-orange-600"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          window.location.href = `/vault/${vault.id}`;
-                        }}
-                      >
-                        Trade
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredVaults.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <ChartBarIcon className="w-12 h-12 mx-auto" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No vaults found</h3>
-              <p className="text-gray-500 mb-4">
-                {filter === 'all' 
-                  ? 'No vaults have been created yet.' 
-                  : `No ${filter} vaults found.`
-                }
-              </p>
-              <Button 
-                onClick={() => window.location.href = '/admin'}
-                className="bg-blue-600 text-white hover:bg-blue-700"
+          {/* Mobile: Pill-shaped filter buttons */}
+          <div className="flex flex-wrap gap-2">
+            {["All", "Live Vaults", "ICO in Progress", "ICO Now", "Countdown", "Extinct Vaults"].map((option) => (
+              <button
+                key={option}
+                onClick={() => setFilter(option)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                  filter === option
+                    ? 'bg-emerald-500 text-black'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                }`}
               >
-                <PlusIcon className="w-4 h-4 mr-2" />
-                Create Vault
-              </Button>
-            </div>
-          )}
+                {option}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="mt-12 text-center">
-          <p className="text-sm text-gray-500">
-            See All Job Posts →
-          </p>
+      {/* Desktop Featured Card - Original */}
+      <section className="mx-auto max-w-7xl px-4 pt-6 hidden lg:block">
+        {featuredVault && (
+          <FeaturedVaultCard
+            imageUrl="/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png"
+            title={featuredVault.name}
+            subtitle="The OG Vault — precision chaos in every scratch"
+            tokenTicker={featuredVault.airdropAsset || "REVS"}
+            addressShort={featuredVault.tokenMint ? `${featuredVault.tokenMint.slice(0, 6)}...${featuredVault.tokenMint.slice(-4)}` : "07xbv8..."}
+            tokenPfpUrl="/images/token.png"
+            vaultAssetIconSrc="/images/Solana_logo.png"
+            tokenBadgeText="REVS"
+            tokenBadgeClassName="bg-emerald-500 text-black"
+            stats={[
+              { label: "Price", value: formatPrice(dashboardData?.token?.price || dashboardData?.vault?.tokenPrice) },
+              { label: "Vault Asset", value: featuredVault.vaultAsset || "REVS" },
+              { label: "Treasury", value: formatTreasury(dashboardData?.vault?.treasury) },
+              { label: "Potential Win", value: dashboardData?.vault?.potentialWinnings?.multiplier ? `${dashboardData.vault.potentialWinnings.multiplier}×` : "100×" },
+              { label: "APY*", value: "N/A" },
+            ]}
+            timer={{ value: formatTimer(dashboardData?.timer?.timeLeft) }}
+            winnerAddressShort={dashboardData?.timer?.lastBuyerAddress ? `${dashboardData.timer.lastBuyerAddress.slice(0, 6)}...${dashboardData.timer.lastBuyerAddress.slice(-4)}` : undefined}
+            endgameDays={dashboardData?.vault?.endgame?.daysLeft}
+            xUrl="https://x.com/elonmusk"
+            aspect="3/1"
+            onClickTitle={() => router.push(`/vault/${featuredVault.id}`)}
+            onTrade={() => router.push(`/vault/${featuredVault.id}`)}
+          />
+        )}
+      </section>
+
+      {/* Desktop: Darwin Vaults controls (below featured only on desktop) */}
+      <div className="mx-auto max-w-7xl px-4 mt-12 mb-6 hidden lg:block">
+        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-6">
+            <h2 className="text-lg font-semibold tracking-tight text-white">Darwin Vaults</h2>
+          <VaultFilters active={filter} onChange={setFilter} />
+          <div className="text-white/70 text-sm">{filter === 'ICO in Progress' ? 'Pre‑ICO' : ''}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <select
+                className="rounded-none bg-white/10 text-white/90 text-sm pl-3 pr-8 py-2 ring-1 ring-white/10 appearance-none h-[36px]"
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+              >
+                {(["Time Remaining","Largest Treasury","Highest APY","Highest BID:WIN","Highest Volume","Nearest Endgame","Trade Fee"]
+                  .filter(opt => !["ICO in Progress","Extinct Vaults"].includes(filter) || ["Largest Treasury","Trade Fee"].includes(opt))
+                  .map(opt => (<option key={opt}>{opt}</option>)))}
+              </select>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-white/60">
+                  <path d="M6 8L2 4h8L6 8z"/>
+                </svg>
+              </div>
+            </div>
+            <div className="flex rounded-none bg-white/10 p-1 ring-1 ring-white/10 h-[36px]">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  viewMode === 'list' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                }`}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="2"/><rect x="2" y="7" width="12" height="2"/><rect x="2" y="11" width="12" height="2"/></svg>
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  viewMode === 'grid' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                }`}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="4" height="4"/><rect x="10" y="2" width="4" height="4"/><rect x="2" y="10" width="4" height="4"/><rect x="10" y="10" width="4" height="4"/></svg>
+              </button>
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Mobile/Tablet Featured Card - New Style */}
+      <section className="px-4 mb-6 lg:hidden">
+        {featuredVault && (
+          <div className="relative w-full h-[75vh] sm:h-[70vh] md:h-[65vh] max-w-[1100px] mx-auto rounded-lg ring-1 ring-white/10 overflow-hidden">
+            {/* Top: PFP, title, address, ticker, and timer */}
+            <div className="relative p-3 sm:p-4 bg-white/5 backdrop-blur-[10px] border-b border-white/10">
+              {/* Banner image behind top section */}
+              <div className="absolute inset-0">
+                <img 
+                  src="/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png" 
+                  alt={featuredVault.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+              </div>
+              
+              {/* Content overlay */}
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <img 
+                    src="/images/token.png" 
+                    alt={featuredVault.name} 
+                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-md object-cover border border-white/10 bg-white flex-shrink-0" 
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-base sm:text-lg font-bold text-white truncate">{featuredVault.name}</h1>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-white/70 truncate">
+                        {featuredVault.tokenMint ? `${featuredVault.tokenMint.slice(0, 6)}...${featuredVault.tokenMint.slice(-4)}` : "07xbv8..."}
+                      </p>
+                      <span className="px-2 py-0.5 bg-emerald-500 text-black text-xs font-semibold rounded flex-shrink-0">
+                        {featuredVault.airdropAsset || "REVS"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Timer in top right */}
+                <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/15 backdrop-blur-[15px] ring-1 ring-white/20 px-2 sm:px-3 py-1.5 sm:py-2 text-white/95 font-bold tabular-nums flex-shrink-0">
+                  <span className="text-sm sm:text-lg">{formatTimer(dashboardData?.timer?.timeLeft)}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Middle: Swipe indicator */}
+            <div className="flex justify-center py-2 bg-white/5 backdrop-blur-[10px] border-b border-white/10">
+              <div className="flex items-center gap-2 text-white/60 text-xs">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 1L3 6h3v4h4V6h3L8 1z"/>
+                </svg>
+                <span>Swipe to see more vaults</span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 1L13 6h-3v4H6V6H3L8 1z"/>
+                </svg>
+              </div>
+            </div>
+            
+            {/* Bottom: Stats grid - 2 columns, 3 rows */}
+            <div className="p-3 sm:p-4 bg-white/5 backdrop-blur-[10px] flex-1">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 h-full">
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Price</div>
+                  <div className="text-lg sm:text-xl text-white font-semibold">{formatPrice(dashboardData?.token?.price || dashboardData?.vault?.tokenPrice)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Treasury</div>
+                  <div className="text-lg sm:text-xl text-white font-semibold">{formatTreasury(dashboardData?.vault?.treasury)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Potential Win</div>
+                  <div className="text-lg sm:text-xl text-white font-semibold">{dashboardData?.vault?.potentialWinnings?.multiplier ? `${dashboardData.vault.potentialWinnings.multiplier}×` : "100×"}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Vault Asset</div>
+                  <div className="text-base sm:text-lg text-white font-semibold inline-flex items-center justify-center gap-1">
+                    <img src="/images/Solana_logo.png" alt="Solana" className="h-3 w-3 sm:h-4 sm:w-4 object-contain" />
+                    {featuredVault.vaultAsset || "REVS"}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">APY</div>
+                  <div className="text-lg sm:text-xl text-white font-semibold">N/A</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-white/60">Endgame</div>
+                  <div className="text-lg sm:text-xl text-white font-semibold">{dashboardData?.vault?.endgame?.daysLeft ? `${dashboardData.vault.endgame.daysLeft}d` : "92d"}</div>
+                </div>
+              </div>
+
+              {/* Trade button */}
+              <button 
+                onClick={() => router.push(`/vault/${featuredVault.id}`)}
+                className="w-full inline-flex items-center justify-center rounded-none bg-white text-black px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base font-semibold hover:bg-white/90"
+              >
+                Trade
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
+
+      {/* Desktop Vault List - Hidden on Mobile */}
+      <div className={`mx-auto max-w-7xl px-4 hidden lg:block ${viewMode==='grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4' : 'space-y-3 sm:space-y-4'}`}>
+        {vaults
+          .filter(v => {
+            if (filter === 'All') return true;
+            if (filter === 'Live Vaults') return (v.status as any) === 'active';
+            if (filter === 'ICO in Progress') return (v.status as any) === 'ico';
+            if (filter === 'ICO Now') return (v.status as any) === 'ico';
+            if (filter === 'Countdown') return (v.status as any) === 'countdown';
+            if (filter === 'Pre-ICO') return (v.status as any) === 'pre_ico' || (v.status as any) === 'draft';
+            if (filter === 'Extinct Vaults') return (v.status as any) === 'extinct' || (v.status as any) === 'ended';
+            return true;
+          })
+          .map((vault) => (
+          viewMode === 'list' ? (
+          <VaultRow
+            key={vault.id}
+            name={vault.name}
+            timer={formatTimer(dashboardData?.timer?.timeLeft)}
+              pfp="/images/token.png"
+              price={formatPrice(dashboardData?.token?.price || dashboardData?.vault?.tokenPrice)}
+            baseAsset={vault.vaultAsset || "REVS"}
+            treasury={formatTreasury(dashboardData?.vault?.treasury)}
+              potentialWin={dashboardData?.vault?.potentialWinnings?.multiplier ? `${dashboardData.vault.potentialWinnings.multiplier}×` : "100×"}
+            apy="N/A"
+            endgame={dashboardData?.vault?.endgame?.daysLeft ? `${dashboardData.vault.endgame.daysLeft}d` : "95d"}
+            onTrade={() => router.push(`/vault/${vault.id}`)}
+          />
+          ) : (
+            <TallVaultCard
+              key={vault.id}
+              name={vault.name}
+              timer={formatTimer(dashboardData?.timer?.timeLeft)}
+              imageUrl="/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png"
+              pfp="/images/token.png"
+              price={formatPrice(dashboardData?.token?.price || dashboardData?.vault?.tokenPrice)}
+              baseAsset={vault.vaultAsset || "REVS"}
+              treasury={formatTreasury(dashboardData?.vault?.treasury)}
+              potentialWin={dashboardData?.vault?.potentialWinnings?.multiplier ? `${dashboardData.vault.potentialWinnings.multiplier}×` : "100×"}
+              apy="N/A"
+              endgame={dashboardData?.vault?.endgame?.daysLeft ? `${dashboardData.vault.endgame.daysLeft}d` : "95d"}
+              tokenTicker={featuredVault?.airdropAsset || "REVS"}
+              addressShort={featuredVault?.tokenMint ? `${featuredVault.tokenMint.slice(0, 6)}...${featuredVault.tokenMint.slice(-4)}` : undefined}
+              onTrade={() => router.push(`/vault/${vault.id}`)}
+            />
+          )
+        ))}
+      </div>
+
+      <SiteFooter />
+
+
+      {/* Modal overlay */}
+      {showHowItWorksModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70" onClick={() => setShowHowItWorksModal(false)}>
+          <div className="relative w-[90vw] max-w-2xl rounded-none ring-1 ring-white/10 bg-white/5 backdrop-blur-[12px] p-6 text-white" onClick={(e) => e.stopPropagation()}>
+            <button className="absolute right-3 top-3 rounded-none bg-white/10 px-2 py-1 text-sm hover:bg-white/15" onClick={() => setShowHowItWorksModal(false)}>✕</button>
+            <div className="text-2xl font-bold">How it Works</div>
+            <p className="mt-3 text-white/85">Each vault runs a countdown. Any valid buy resets the timer and grows the treasury. When the timer hits zero, the last buyer wins the endgame. Holders share airdrops along the way.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
-
-function Stat({ label, value, copyable=false }:{label:string; value:string; copyable?:boolean}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <div className="text-[11px] uppercase tracking-wide text-white/60">{label}</div>
-      <div className="mt-1 font-medium flex items-center gap-2">
-        <span>{value}</span>
-        {copyable ? <span className="text-white/50 text-xs">⧉</span> : null}
-      </div>
-    </div>
-  )
 }

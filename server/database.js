@@ -173,6 +173,21 @@ class Database {
     });
   }
 
+  async updateVaultStatus(id, status) {
+    return new Promise((resolve, reject) => {
+      const sql = 'UPDATE vaults SET status = ?, updated_at = ? WHERE id = ?';
+      const values = [status, new Date().toISOString(), id];
+      
+      this.db.run(sql, values, function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ id, status });
+        }
+      });
+    });
+  }
+
   async deleteVault(id) {
     return new Promise((resolve, reject) => {
       const sql = 'DELETE FROM vaults WHERE id = ?';

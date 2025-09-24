@@ -1,9 +1,13 @@
-'use client';
+ 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Card, Button } from '@/components/ui';
-import { ArrowLeftIcon, ClockIcon, CurrencyDollarIcon, GiftIcon, ChartBarIcon, CloudArrowDownIcon, BoltIcon } from '@heroicons/react/24/outline';
+import { SiteFooter } from '@/components/darwin/SiteFooter';
+import { VaultRow } from '@/components/darwin/VaultRow';
+import { GlassPanel } from '@/components/darwin/GlassPanel';
+import { FeaturedVaultCard } from '@/components/darwin/FeaturedVaultCard';
+import { ArrowLeft, Clock, CurrencyDollar, Gift, ChartBar, CloudArrowDown } from '@phosphor-icons/react';
 import dynamic from 'next/dynamic';
 
 // Dynamically import JupiterWidget to avoid SSR issues
@@ -66,12 +70,16 @@ interface VaultData {
   } | null;
 }
 
-export default function VaultPage({ params }: { params: { id: string } }) {
+export default function VaultPage() {
   const router = useRouter();
+  const routeParams = useParams();
+  const idParam = Array.isArray(routeParams?.id) ? routeParams.id[0] : (routeParams?.id as string);
   const [data, setData] = useState<VaultData | null>(null);
+  const [vaultConfig, setVaultConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [airdropTime, setAirdropTime] = useState(0);
+  const [showHuntModal, setShowHuntModal] = useState(false);
 
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
@@ -97,11 +105,25 @@ export default function VaultPage({ params }: { params: { id: string } }) {
     }
   };
 
+  const fetchVaultConfig = async () => {
+    try {
+      if (!idParam) return;
+      const res = await fetch(`${BACKEND}/api/vault/${idParam}/config`);
+      if (res.ok) {
+        const js = await res.json();
+        setVaultConfig(js.vault);
+      }
+    } catch (e) {
+      console.error('Failed to load vault config', e);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchVaultConfig();
     const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [idParam]);
 
   useEffect(() => {
     if (data?.timer.isActive) {
@@ -119,28 +141,16 @@ export default function VaultPage({ params }: { params: { id: string } }) {
   }, [data?.timer.isActive]);
 
   useEffect(() => {
-    // Calculate next airdrop time (daily at 12 PM ET)
-    const now = new Date();
-    const et = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-    const nextAirdrop = new Date(et);
-    nextAirdrop.setHours(12, 0, 0, 0);
-    
-    if (et.getHours() >= 12) {
-      nextAirdrop.setDate(nextAirdrop.getDate() + 1);
-    }
-    
-    const timeUntilAirdrop = Math.floor((nextAirdrop.getTime() - et.getTime()) / 1000);
-    setAirdropTime(timeUntilAirdrop);
-    
+    // Hourly airdrop countdown
+    setAirdropTime(60 * 60);
     const airdropTimer = setInterval(() => {
       setAirdropTime(prev => {
         if (prev <= 0) {
-          return 24 * 60 * 60; // Reset to 24 hours
+          return 60 * 60; // Reset to 1 hour
         }
         return prev - 1;
       });
     }, 1000);
-    
     return () => clearInterval(airdropTimer);
   }, []);
 
@@ -180,361 +190,392 @@ export default function VaultPage({ params }: { params: { id: string } }) {
   const recentBuys = data.buyLog.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                onClick={() => router.push('/vaults')}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeftIcon className="w-4 h-4" />
-                <span>Back to Vaults</span>
-              </Button>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">D</span>
-                </div>
-                <h1 className="text-xl font-bold text-gray-900">Darwin</h1>
-              </div>
-            </div>
-            
-            <div className="text-right">
-              <div className="text-sm text-gray-500 mb-1">Status</div>
-              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                data.vaultConfig?.status === 'active' 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
-                {data.vaultConfig?.status || 'unknown'}
-              </div>
-            </div>
-          </div>
+    <div
+      className="min-h-screen w-full relative"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png') center 70% / cover fixed",
+      }}
+    >
+      {/* Keep custom header below; no global StreamHeader here */}
+      {/* Custom Header for Vault Page */}
+      <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-black/20 border-b border-white/10 ring-0">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6 flex items-center justify-between">
+          {/* Left: Back Button */}
+          <button 
+          onClick={() => router.push('/vaults')}
+            className="inline-flex items-center gap-2 rounded-none bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 text-white px-4 py-2 text-sm font-semibold hover:bg-white/20"
+        >
+            <ArrowLeft className="w-4 h-4" />
+          <span>Back to Vaults</span>
+          </button>
+
+          {/* Center spacer (no dropdown) */}
+          <div className="hidden sm:block" />
+
+          {/* Right: Buy CTA */}
+          <button 
+            onClick={() => setShowHuntModal(true)}
+            className="inline-flex items-center gap-2 justify-center px-4 sm:px-5 py-2.5 text-sm sm:text-base font-semibold rounded-none text-white bg-[#58A6FF] hover:bg-[#6fb3ff] shadow-[0_0_28px_rgba(88,166,255,0.45)] focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          >
+            <img src="/images/78.png" alt="Darwin" className="h-5 w-5 object-contain" />
+            Buy Vault
+          </button>
         </div>
-      </div>
+      </header>
+      
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Left Column - Timer, Livestream, and Data Cards */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Vault Info & Timer Card */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
+      <div className="mx-auto max-w-7xl px-4 py-6">
+        {/* Hero Section */}
+        <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6 mb-6">
+          <div className="relative bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 overflow-hidden">
+            {/* Banner Background */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage: "url('/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png')"
+              }}
+            />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black/50" />
+            <div className="relative p-8 lg:p-12">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+                
                 {/* Left Side - Vault Info */}
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-orange-500 rounded-xl flex items-center justify-center">
-                    <span className="text-white text-2xl font-bold">
-                      {data.vaultConfig?.name?.charAt(0) || 'V'}
-                    </span>
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
-                      {data.vaultConfig?.name || 'Vault'}
-                      <span className="ml-3 text-sm font-medium text-orange-600 bg-orange-100 px-2 py-1 rounded">
-                        {data.vaultConfig?.airdropAsset || 'TOKEN'}
-                      </span>
-                    </h1>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className="font-mono text-sm text-gray-600">
-                        {data.vaultConfig?.tokenMint ? 
-                          `${data.vaultConfig.tokenMint.slice(0, 4)}...${data.vaultConfig.tokenMint.slice(-4)}` : 
-                          'N/A'
-                        }
-                      </span>
-                      <button 
-                        onClick={() => navigator.clipboard.writeText(data.vaultConfig?.tokenMint || '')}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </button>
+                <div className="flex-1 text-center lg:text-left">
+                  <div className="flex flex-col lg:flex-row items-center gap-6 mb-0">
+                    <img 
+                      src="/images/token.png" 
+                      alt="REVS" 
+                      className="h-20 w-20 rounded-[8px] object-cover ring-2 ring-white/20 bg-white p-1" 
+                    />
+                    <div className="flex flex-col items-center lg:items-start">
+                      <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">{vaultConfig?.name || 'Vault'}</h1>
+                      <div className="flex items-center gap-2">
+                        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-3 py-1 text-sm text-white/90 rounded-[8px]">
+                          <button 
+                            onClick={() => navigator.clipboard.writeText(vaultConfig?.tokenMint || '')}
+                            className="text-white/50 hover:text-white transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                          <span className="font-mono text-sm text-white/70">
+                            {vaultConfig?.tokenMint ? 
+                              `${vaultConfig.tokenMint.slice(0, 6)}...${vaultConfig.tokenMint.slice(-4)}` : 
+                              'N/A'
+                            }
+                          </span>
+                        </div>
+                        <a 
+                          href="https://x.com/darwinvaults" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-white/60 hover:text-white transition-colors inline-flex items-center"
+                          aria-label="View on X"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                          </svg>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
-                {/* Right Side - Timer */}
-                <div className="text-right">
-                  <div className="text-4xl font-mono font-bold text-gray-900 mb-1">
+                {/* Center - Timer */}
+                <div className="text-center flex flex-col items-center justify-center">
+                  <div className="tabular-nums text-5xl lg:text-6xl font-extrabold leading-none tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,.6)] text-white mb-4">
                     {formatTime(currentTime)}
                   </div>
+                  <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-3 py-1 text-sm text-white/90 rounded-[8px]">
+                    Endgame {data.vault.endgame.daysLeft} Days
+                  </div>
                 </div>
               </div>
-            </Card>
-
-            {/* Livestream Section */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Live Stream</h2>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-red-600 font-medium">Live</span>
+            </div>
                 </div>
               </div>
               
-              <div className="bg-gray-100 rounded-lg p-8 text-center">
-                <div className="w-16 h-16 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white text-2xl font-bold">📺</span>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Stream Coming Soon</h3>
-                <p className="text-gray-600 mb-4">
-                  Watch live trading activity, vault updates, and community discussions
-                </p>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                  <p className="text-orange-700 text-sm">
-                    🎥 Stream will show real-time vault activity and trading events
-                  </p>
+        {/* Details Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column - Vault Details & Chart */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Vault Card */}
+            <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white">Exploding Vault</h2>
+                <div className="inline-flex items-center gap-2 bg-[#58A6FF]/15 backdrop-blur-[12px] ring-1 ring-[#58A6FF]/40 px-3 py-1.5 text-sm text-white rounded-[8px] shadow-[0_0_18px_rgba(88,166,255,0.35)]">
+                  <span className="inline-block h-2 w-2 rounded-full bg-[#58A6FF] shadow-[0_0_10px_rgba(88,166,255,0.8)]"></span>
+                  <span className="font-semibold">Current winner</span>
+                  <span className="font-mono text-white/90">{data.timer.lastBuyerAddress ? formatAddress(data.timer.lastBuyerAddress) : 'N/A'}</span>
                 </div>
               </div>
-            </Card>
-
-            {/* Last Buyer Section */}
-            {data.timer.lastBuyerAddress && (
-              <Card className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Last Buyer</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Buyer Address</p>
-                      <p className="font-mono text-sm text-gray-900">{formatAddress(data.timer.lastBuyerAddress)}</p>
+              {/* Total Vault Value with nested REVS and SOL cards */}
+              <div className="bg-black/20 ring-1 ring-white/10 p-6 mb-4">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-semibold text-white/90">Total Vault Value</h3>
+                    <span className="text-base font-semibold text-white/85">${(data.vault.treasury.amount * 0.0007).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-2.5 py-0.5 text-xs text-white/85 rounded-[8px]">Total Assets <strong className="font-semibold">2</strong></span>
+                    <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-2.5 py-0.5 text-xs text-white/85 rounded-[8px]">Vault Type <strong className="font-semibold">DAT</strong></span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-1">
+                  <div className="bg-white/5 ring-1 ring-white/10 p-4">
+                    <div className="flex items-center gap-3">
+                      <img src="/images/token.png" alt="REVS" className="h-10 w-10 rounded-full object-cover" />
+                      <div className="flex flex-col">
+                        <div className="text-2xl font-bold text-white">{Number(data.vault.treasury.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {data.vaultConfig?.airdropAsset || 'REVS'}</div>
+                        <div className="text-sm text-white/70">${(data.vault.treasury.amount * 0.0007).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">Amount</p>
-                      <p className="font-semibold text-green-600 text-lg">{data.timer.lastPurchaseAmount.toFixed(2)} SOL</p>
+                  </div>
+                  <div className="bg-white/5 ring-1 ring-white/10 p-4">
+                    <div className="flex items-center gap-3">
+                      <img src="/images/Solana_logo.png" alt="SOL" className="h-10 w-10 rounded-full object-contain" />
+                      <div className="flex flex-col">
+                        <div className="text-2xl font-bold text-white">87.39 SOL</div>
+                        <div className="text-sm text-white/70">$12,345.00</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </Card>
-            )}
-
-            {/* Vault Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* total value moved to header */}
+              </div>
               
-              {/* Treasury Card */}
-              <Card className="p-6 bg-gray-900 text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Treasury</h3>
-                  <CurrencyDollarIcon className="w-6 h-6 text-gray-400" />
+              {/* Vault Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+                <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">BID PRICE</div>
+                  <div className="text-base font-semibold text-white tabular-nums">$0.0007</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-2">
-                    {data.vault.treasury.amount.toFixed(2)} {data.vault.treasury.asset}
-                  </div>
-                  <div className="text-xl text-gray-300 font-semibold">
-                    ${data.vault.treasury.usdValue.toFixed(2)}
-                  </div>
-                  <div className="text-sm text-gray-400 mt-2">
-                    Growing with each purchase
-                  </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">BID:WIN</div>
+                  <div className="text-base font-semibold text-white tabular-nums">{data.vault.potentialWinnings.multiplier}x</div>
                 </div>
-              </Card>
+                <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">WINNER'S TAKE</div>
+                  <div className="text-base font-semibold text-white">50% of Vault</div>
+                </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">TRADE FEE</div>
+                  <div className="text-base font-semibold text-white">10%</div>
+                </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">ENDGAME</div>
+                  <div className="text-base font-semibold text-white">{data.vault.endgame.daysLeft} Days</div>
+                </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">TIMER</div>
+                  <div className="text-base font-semibold text-white">1 Hour</div>
+                </div>
+              </div>
 
-              {/* Potential Winnings Card */}
-              <Card className="p-6 bg-gray-800 text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Potential Winnings</h3>
-                  <GiftIcon className="w-6 h-6 text-gray-400" />
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-2">
-                    {data.vault.potentialWinnings.multiplier}x
-                  </div>
-                  <div className="text-xl text-gray-300 font-semibold">
-                    ${data.vault.potentialWinnings.usdValue.toFixed(2)}
-                  </div>
-                  <div className="text-sm text-gray-400 mt-2">
-                    Last buyer wins all
-                  </div>
-                </div>
-              </Card>
-
-              {/* Endgame Days Left Card */}
-              <Card className="p-6 bg-gray-900 text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Endgame Days Left</h3>
-                  <ChartBarIcon className="w-6 h-6 text-gray-400" />
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-2">
-                    {data.vault.endgame.daysLeft}
-                  </div>
-                  <div className="text-lg text-gray-300 font-semibold">
-                    Days until endgame
-                  </div>
-                  <div className="text-sm text-gray-400 mt-2">
-                    Distribution period begins
-                  </div>
-                </div>
-              </Card>
-
-              {/* Airdrop Countdown Card */}
-              <Card className="p-6 bg-gray-800 text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Next Airdrop</h3>
-                  <CloudArrowDownIcon className="w-6 h-6 text-gray-400" />
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-2 font-mono">
-                    {formatTime(airdropTime)}
-                  </div>
-                  <div className="text-lg text-gray-300 font-semibold">
-                    Daily at 12 PM ET
-                  </div>
-                  <div className="text-sm text-gray-400 mt-2">
-                    Hold {data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'} tokens
-                  </div>
-                </div>
-              </Card>
+              {/* Hunt the Vault button matching header */}
+              <div className="flex">
+                <button onClick={() => setShowHuntModal(true)} className="inline-flex items-center gap-2 justify-center w-full px-4 sm:px-5 py-2.5 text-sm sm:text-base font-semibold rounded-none text-white bg-[#58A6FF] hover:bg-[#6fb3ff] shadow-[0_0_28px_rgba(88,166,255,0.45)]">
+                  <img src="/images/78.png" alt="Darwin" className="h-5 w-5 object-contain" />
+                  Hunt the Vault
+                </button>
+              </div>
+              
+              {/* Hunt the Vault Button removed per request */}
             </div>
 
-          </div>
-
-          {/* Right Column - How it Works and Trade Widget */}
-          <div className="space-y-6">
-            
-            {/* How it Works - Now at the top */}
-            <Card className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">How it Works</h3>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    1
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Buy {data.vaultConfig?.airdropAsset || 'TOKEN'} to Reset Timer</h4>
-                    <p className="text-sm text-gray-600">Purchase 1 token to reset the vault timer</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    2
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Win Half the Treasury</h4>
-                    <p className="text-sm text-gray-600">If the timer expires before endgame, the last buyer wins half the scratcher winnings</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    3
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Claim Airdrops & Treasury</h4>
-                    <p className="text-sm text-gray-600">Hold {data.vaultConfig?.airdropAsset || 'TOKEN'} for chance to win daily airdrops & have a claim on your portion of the scratcher winnings if endgame is reached</p>
-                  </div>
-                </div>
-                
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => window.open('https://docs.darwinvaults.com', '_blank')}
-                  >
-                    Read Full Documentation
-                  </Button>
-                </div>
-              </div>
-            </Card>
-
-            {/* Trade Widget */}
-            <Card className="p-6">
+            {/* CHART (Birdeye) */}
+            <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">
-                  Trade {data.vaultConfig?.airdropAsset || 'TOKEN'}
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-sm text-green-600">Live</span>
-                </div>
+                <h2 className="text-xl font-bold text-white">Chart</h2>
+                <span className="text-xs text-white/60 bg-white/10 px-3 py-1">REVS</span>
               </div>
-              <div className="mb-4">
-                <p className="text-gray-600 text-sm mb-2">Buy to reset the timer and win the vault!</p>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
-                  <p className="text-orange-700 text-sm font-medium">
-                    ⚡ Last buyer wins {data.vault.potentialWinnings.multiplier}x the treasury!
-                  </p>
-                </div>
-              </div>
-              <div className="overflow-hidden">
-                <JupiterWidget 
-                  tokenAddress={data.vaultConfig?.tokenMint || data.token?.address || "9VxExA1iRPbuLLdSJ2rB3nyBxsyLReT4aqzZBMaBaY1p"}
-                  tokenSymbol={data.vaultConfig?.airdropAsset || "TOKEN"}
+              <div className="ring-1 ring-white/10 p-0 h-[420px] bg-white">
+                <iframe
+                  src="https://www.geckoterminal.com/solana/pools/8pN9qCiZg3KPg79R5cL4AF9xXVTWoJPxaVWf5ormvCwa?embed=1&info=0&swaps=0&grayscale=0&light_chart=1&chart_type=price&resolution=15m"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 'none', borderRadius: '0' }}
+                  title="REVS Chart"
                 />
               </div>
-            </Card>
+            </div>
+                  </div>
 
-            {/* Vault Info - Expanded */}
-            <Card className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Vault Information</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Vault Asset:</span>
-                    <div className="font-medium">{data.vaultConfig?.vaultAsset || 'SOL'}</div>
+          {/* Right Column - Sidebar */}
+          <div className="space-y-6">
+            
+            {/* Airdrops Section */}
+            <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white">Airdrops</h3>
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-3 py-1 text-xs text-white/90 rounded-[8px]">
+                    50 winners/hour
                   </div>
-                  <div>
-                    <span className="text-gray-500">Airdrop Asset:</span>
-                    <div className="font-medium">{data.vaultConfig?.airdropAsset || 'REVS'}</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Min Hold Amount:</span>
-                    <div className="font-medium">{data.vaultConfig?.minHoldAmount?.toLocaleString() || '200,000'}</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Timer Duration:</span>
-                    <div className="font-medium">{data.vaultConfig?.timerDuration ? `${data.vaultConfig.timerDuration / 3600}h` : '1h'}</div>
+                  <div className="flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-3 py-1 text-xs text-white/90 rounded-[8px]">
+                    <img 
+                      src="/images/token.png" 
+                      alt="REVS" 
+                      className="h-4 w-4 object-contain rounded-full" 
+                    />
+                    {data.vaultConfig?.airdropAsset || 'REVS'}
                   </div>
                 </div>
-                
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="text-sm space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Start Date:</span>
-                      <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.startDate).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Endgame Date:</span>
-                      <span className="font-medium">{data.vaultConfig ? new Date(data.vaultConfig.endgameDate).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Distribution Interval:</span>
-                      <span className="font-medium">{data.vaultConfig ? `${data.vaultConfig.distributionInterval / 60}min` : '5min'}</span>
+              </div>
+              
+              <div className="bg-black/20 ring-1 ring-white/10 p-4 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-white/70">NEXT DROP</span>
+                  <span className="text-sm font-bold text-white">{formatTime(airdropTime)}</span>
+                </div>
+                <div className="w-full bg-white/10 h-2">
+                  <div className="bg-[#58A6FF] h-2" style={{width: `${Math.max(0, Math.min(100, (1 - (airdropTime / 3600)) * 100))}%`}}></div>
+                  </div>
+                  </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-black/20 ring-1 ring-white/10 p-4 text-center">
+                  <div className="text-xs text-white/60 uppercase tracking-wider mb-1">HOURLY POOL</div>
+                  <div className="text-lg font-bold text-white">$42,560</div>
+                  </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-4 text-center">
+                  <div className="text-xs text-white/60 uppercase tracking-wider mb-1">MUST HOLD</div>
+                  <div className="text-lg font-bold text-white">200,000</div>
+                </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-4 text-center">
+                  <div className="text-xs text-white/60 uppercase tracking-wider mb-1">TOTAL AIRDROPPED</div>
+                  <div className="text-lg font-bold text-white">$1.23M</div>
+                </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-4 text-center">
+                  <div className="text-xs text-white/60 uppercase tracking-wider mb-1">APY*</div>
+                  <div className="text-lg font-bold text-white">164%</div>
+                </div>
+            </div>
+
+              <div className="text-center mb-4">
+                <p className="text-sm text-white/70">Daily pool randomly awarded to eligible holders.</p>
+          </div>
+
+              <div>
+                <a 
+                  href="#" 
+                  className="w-full inline-flex items-center justify-center gap-2 bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90"
+                >
+                  View all airdrops
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            {/* How it Works Section */}
+            <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6 min-h-[420px]">
+              <h3 className="text-lg font-bold text-white mb-4">How it Works</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-black/20 ring-1 ring-white/10 p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center h-6 w-6 aspect-square rounded-full bg-white/10 text-white text-xs leading-none shrink-0">1</span>
+                    <div>
+                      <h4 className="font-semibold text-white text-sm">Buy REVS to reset timer</h4>
+                      <p className="text-xs text-white/70 mt-1">Each purchase resets the vault timer.</p>
                     </div>
                   </div>
                 </div>
-                
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="text-sm">
-                    <span className="text-gray-500">Token Address:</span>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className="font-mono text-xs text-gray-700 break-all">
-                        {data.vaultConfig?.tokenMint || 'N/A'}
-                      </span>
-                      <button 
-                        onClick={() => navigator.clipboard.writeText(data.vaultConfig?.tokenMint || '')}
-                        className="text-gray-400 hover:text-gray-600 flex-shrink-0"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </button>
+                <div className="bg-black/20 ring-1 ring-white/10 p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center h-6 w-6 aspect-square rounded-full bg-white/10 text-white text-xs leading-none shrink-0">2</span>
+                    <div>
+                      <h4 className="font-semibold text-white text-sm">Win half the treasury</h4>
+                      <p className="text-xs text-white/70 mt-1">If timer hits zero, last buyer takes the pot.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center h-6 w-6 aspect-square rounded-full bg-white/10 text-white text-xs leading-none shrink-0">3</span>
+                    <div>
+                      <h4 className="font-semibold text-white text-sm">Holders stack with daily airdrops</h4>
+                      <p className="text-xs text-white/70 mt-1">Everyday there are 50 winners who receive a portion of trading volume</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-black/20 ring-1 ring-white/10 p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center h-6 w-6 aspect-square rounded-full bg-white/10 text-white text-xs leading-none shrink-0">4</span>
+                    <div>
+                      <h4 className="font-semibold text-white text-sm">Holders receive the vault if endgame is reached</h4>
+                      <p className="text-xs text-white/70 mt-1">If the timer stays alive until endgame, the vault is distribued to holders pro-rata</p>
                     </div>
                   </div>
                 </div>
               </div>
-            </Card>
+            </div>
+
+            {/* Trade REVS and Vault Information removed per request */}
+                    </div>
+                  </div>
+      </div>
+                
+      {/* Footer */}
+      {/* Trending Vaults - list view, vertical scroll */}
+      <div className="mx-auto max-w-7xl px-4 pb-8">
+        <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-4 mb-6">
+          <h3 className="text-lg font-bold text-white mb-3">Trending Vaults</h3>
+          <div className="max-h-[520px] overflow-y-auto pr-2">
+            <div className="space-y-3">
+              {[1,2,3,4,5,6,7,8,9,10].map((i) => (
+                <VaultRow
+                  key={i}
+                  name={`Vault ${i}`}
+                  timer={formatTime(currentTime)}
+                  pfp="/images/token.png"
+                  price={"$0.0007"}
+                  baseAsset={i % 2 === 0 ? "SOL" : "REVS"}
+                  treasury={`$${(data.vault.treasury.amount/1000000).toFixed(1)}M`}
+                  potentialWin={`${data.vault.potentialWinnings.multiplier}×`}
+                  apy="N/A"
+                  endgame={`${data.vault.endgame.daysLeft}d`}
+                  onTrade={() => {}}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
+
+      <SiteFooter />
+
+      {/* Hunt Modal */}
+      {showHuntModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-black">Hunt the Vault</h3>
+                      <button 
+                onClick={() => setShowHuntModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+                      >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+            <div className="bg-white">
+              <JupiterWidget 
+                tokenAddress={data?.vaultConfig?.tokenMint || 'So11111111111111111111111111111111111111112'}
+                tokenSymbol={data?.vaultConfig?.airdropAsset || 'REVS'}
+              />
+              </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

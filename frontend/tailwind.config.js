@@ -7,6 +7,13 @@ module.exports = {
     "./components/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
   ],
+  safelist: [
+    // gradients / rings / shadows used in Featured card & tiles
+    'aspect-[21/9]', 'aspect-[16/9]',
+    'bg-[radial-gradient(1000px_400px_at_50%_-10%,rgba(92,120,255,.25),transparent_60%)]',
+    'bg-[radial-gradient(1200px_520px_at_15%_-10%,rgba(92,120,255,.22),transparent_60%),radial-gradient(900px_420px_at_90%_0%,rgba(28,189,136,.18),transparent_55%)]',
+    'shadow-[inset_0_-60px_120px_rgba(0,0,0,.35)]'
+  ],
   theme: {
     extend: {
       colors: {
@@ -30,9 +37,9 @@ module.exports = {
         "3xl": "1.75rem",
       },
       boxShadow: {
-        glass: "0 10px 40px rgba(0,0,0,.35)",
+        glow: "0 0 120px rgba(92,120,255,.16)",
+        jungle: "0 0 120px rgba(28,189,136,.12)",
         card: "0 14px 44px rgba(0,0,0,.45)",
-        glow: "0 0 120px rgba(255,85,0,.15)",
       },
     },
   },
