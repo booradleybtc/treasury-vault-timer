@@ -73,8 +73,7 @@ export function VaultRow(props: VaultRowProps) {
             )}
           </div>
           {status === 'pre_ico' && icoDate ? (
-            <div className="mt-1 flex items-center gap-2 text-sm text-white/90">
-              <span className="text-xs text-white/60">ICO Date</span>
+            <div className="mt-2 flex items-center gap-2 text-sm text-white/90">
               <span className="text-sm font-semibold">{icoDate.split(' - ')[0].replace(/, 2025/, '')}</span>
               <span className="text-xs text-white/70">{icoDate.split(' - ')[1]}</span>
               <a 
