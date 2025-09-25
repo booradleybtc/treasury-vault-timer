@@ -203,7 +203,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
             {meta.icoProposedAt && (
               <div className="relative z-10 p-6 mb-8">
                 <div className="max-w-2xl mx-auto">
-                  <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-6 py-4 rounded-lg">
+                  <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-6 py-4">
                     <div className="text-center">
                       <div className="text-sm text-cyan-300 mb-2">ICO Date & Time</div>
                       <div className="text-3xl font-bold text-white mb-3">{formatICODate(meta.icoProposedAt)}</div>
@@ -319,7 +319,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
               <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
                 <h3 className="text-xl font-bold text-white mb-4">Trade Fee Splits</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-4">
+                  <div className="flex justify-between items-center border-b border-gray-400/30 pb-2 mb-4">
                     <span className="text-white/70 font-semibold">Total Trade Fee</span>
                     <span className="text-white font-bold">{meta.totalTradeFee || 5}%</span>
                   </div>

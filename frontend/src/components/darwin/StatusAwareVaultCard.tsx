@@ -363,7 +363,7 @@ export function StatusAwareVaultCard({
         airdropAsset={airdropAssetMetadata.metadata?.symbol || '—'}
         airdropAssetLogo={airdropAssetMetadata.metadata?.logoURI || '/images/token.png'}
         vaultAssetLogo={vaultAssetMetadata.metadata?.logoURI || '/images/token.png'}
-        tradeFee={status === 'pre_ico' ? `${(meta.splits?.creator || 0) + (meta.splits?.treasury || 0) + (meta.splits?.airdrops || 0) + (meta.splits?.darwin || 0)}%` : '5%'}
+        tradeFee={status === 'pre_ico' ? `${meta.totalTradeFee || 5}%` : '5%'}
       />
               {renderICOInfo()}
             </div>
@@ -372,15 +372,16 @@ export function StatusAwareVaultCard({
     case 'row':
       return (
         <div className="relative">
-          <VaultRow 
-            {...baseProps}
-            status={status}
-            icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
-            buttonText={config.buttonText || 'Trade'}
-            airdropAsset={airdropAssetMetadata.metadata?.symbol || '—'}
-            airdropAssetLogo={airdropAssetMetadata.metadata?.logoURI || '/images/token.png'}
-            vaultAssetLogo={vaultAssetMetadata.metadata?.logoURI || '/images/token.png'}
-          />
+      <VaultRow 
+        {...baseProps}
+        status={status}
+        icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
+        buttonText={config.buttonText || 'Trade'}
+        airdropAsset={airdropAssetMetadata.metadata?.symbol || '—'}
+        airdropAssetLogo={airdropAssetMetadata.metadata?.logoURI || '/images/token.png'}
+        vaultAssetLogo={vaultAssetMetadata.metadata?.logoURI || '/images/token.png'}
+        tradeFee={status === 'pre_ico' ? `${meta.totalTradeFee || 5}%` : '5%'}
+      />
           {renderICOInfo()}
         </div>
       );

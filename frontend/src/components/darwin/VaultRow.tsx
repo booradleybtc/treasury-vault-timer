@@ -39,11 +39,12 @@ export type VaultRowProps = {
   buttonText?: string;
   airdropAsset?: string;
   airdropAssetLogo?: string;
+  tradeFee?: string;
   vaultAssetLogo?: string;
 };
 
 export function VaultRow(props: VaultRowProps) {
-  const { name, timer, pfp, price, baseAsset, treasury, potentialWin, apy, endgame, onTrade, status, icoDate, buttonText, airdropAsset, airdropAssetLogo, vaultAssetLogo } = props;
+  const { name, timer, pfp, price, baseAsset, treasury, potentialWin, apy, endgame, onTrade, status, icoDate, buttonText, airdropAsset, airdropAssetLogo, vaultAssetLogo, tradeFee } = props;
 
   const getTokenImage = (tokenSymbol: string) => {
     const tokenImages: { [key: string]: string } = {
@@ -114,7 +115,7 @@ export function VaultRow(props: VaultRowProps) {
           <DataCell label="Timer">{timer.includes('h') ? timer : timer.includes('m') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`}</DataCell>
           <DataCell label="Lifespan">{endgame}</DataCell>
           <DataCell label="Trade Fee">
-            <div className="text-white/90">5%</div>
+            <div className="text-white/90">{tradeFee || "5%"}</div>
           </DataCell>
         </>
       ) : (
