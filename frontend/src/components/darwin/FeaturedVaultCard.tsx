@@ -59,19 +59,17 @@ export function FeaturedVaultCard({
   aspect = "21/9",
 }: FeaturedVaultCardProps) {
   
-  const getTokenImage = (tokenSymbol: string) => {
-    // Common SPL tokens with their image URLs
+  const getTokenImage = (tokenAddress: string) => {
+    // For now, use static mapping. In the future, this will use the SPL token service
     const tokenImages: { [key: string]: string } = {
-      'SOL': '/images/Solana_logo.png',
-      'REVS': '/images/token.png', // Default token image
-      'USDC': '/images/USDC.png',
-      'USDT': '/images/USDT.png',
-      'BTC': '/images/BTC.png',
-      'ETH': '/images/ETH.png',
-      'zBTC': '/images/zBTC.png',
+      'So11111111111111111111111111111111111111112': '/images/Solana_logo.png', // SOL
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/USDC.png', // USDC
+      'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/USDT.png', // USDT
+      'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/mSOL.png', // mSOL
+      '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/ETH.png', // ETH
     };
     
-    return tokenImages[tokenSymbol] || '/images/token.png';
+    return tokenImages[tokenAddress] || '/images/token.png';
   };
   const handleCopy = () => {
     if (addressShort && navigator?.clipboard) {

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { TokenSelector } from '@/components/ui/TokenSelector';
 
 export default function LaunchWizardPage() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function LaunchWizardPage() {
     description: '',
     ticker: '',
     treasuryWallet: '',
-    icoAsset: 'SOL', // SOL or USDC
+    icoAsset: 'So11111111111111111111111111111111111111112', // SOL address
     icoProposedAt: '',
     supplyIntended: '',
     bidMultiplier: 100,
@@ -21,8 +22,8 @@ export default function LaunchWizardPage() {
     minHoldAmount: 0,
     airdropInterval: 3600,
     airdropMode: 'rewards', // rewards | jackpot | lottery | powerball | none
-    vaultAsset: 'SOL',
-    airdropAsset: 'REVS',
+    vaultAsset: 'So11111111111111111111111111111111111111112', // SOL address
+    airdropAsset: '', // Will be populated by user
     // Splits
     splitCreator: 0,
     splitTreasury: 0,
@@ -248,16 +249,12 @@ export default function LaunchWizardPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">ICO Raise Asset</label>
-                <select
-                  name="icoAsset"
-                  value={(formData as any).icoAsset || 'SOL'}
-                  onChange={handleChange}
-                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
-                >
-                  <option value="SOL">SOL</option>
-                  <option value="USDC">USDC</option>
-                </select>
+                <TokenSelector
+                  label="ICO Raise Asset"
+                  value={formData.icoAsset}
+                  onChange={(address) => setFormData(prev => ({ ...prev, icoAsset: address }))}
+                  placeholder="Select token for ICO raise..."
+                />
               </div>
               <div>
                 <label className="block text-sm text-white/80 mb-2">Proposed ICO Date *</label>
@@ -355,26 +352,19 @@ export default function LaunchWizardPage() {
             <h2 className="text-lg font-bold text-white mb-4">Assets & Tax Split</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-white/80 mb-2">Vault Asset</label>
-                <select
-                  name="vaultAsset"
+                <TokenSelector
+                  label="Vault Asset"
                   value={formData.vaultAsset}
-                  onChange={handleChange}
-                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
-                >
-                  <option value="SOL">SOL</option>
-                  <option value="USDC">USDC</option>
-                  <option value="BTC">BTC</option>
-                </select>
+                  onChange={(address) => setFormData(prev => ({ ...prev, vaultAsset: address }))}
+                  placeholder="Select vault asset token..."
+                />
               </div>
               <div>
-                <label className="block text-sm text-white/80 mb-2">Airdrop Asset</label>
-                <input
-                  type="text"
-                  name="airdropAsset"
+                <TokenSelector
+                  label="Airdrop Asset"
                   value={formData.airdropAsset}
-                  onChange={handleChange}
-                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                  onChange={(address) => setFormData(prev => ({ ...prev, airdropAsset: address }))}
+                  placeholder="Select airdrop asset token..."
                 />
               </div>
               <div>
