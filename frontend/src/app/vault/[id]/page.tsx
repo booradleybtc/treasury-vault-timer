@@ -27,10 +27,10 @@ const getTokenSymbol = (address: string): string => {
 const getTokenImage = (address: string): string => {
   const tokenImages: { [key: string]: string } = {
     'So11111111111111111111111111111111111111112': '/images/Solana_logo.png',
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/USDC.png',
-    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/USDT.png',
-    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/mSOL.png',
-    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/ETH.png',
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/token.png', // Using generic token image since USDC.png doesn't exist
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/token.png', // Using generic token image since USDT.png doesn't exist
+    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/token.png', // Using generic token image since mSOL.png doesn't exist
+    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/token.png', // Using generic token image since ETH.png doesn't exist
   };
   
   return tokenImages[address] || '/images/token.png';

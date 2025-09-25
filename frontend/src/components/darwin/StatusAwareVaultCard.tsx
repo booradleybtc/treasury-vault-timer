@@ -14,7 +14,7 @@ const getTokenSymbol = (address: string): string => {
     '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 'ETH',
   };
   
-  return tokenMap[address] || address.slice(0, 4) + '...';
+  return tokenMap[address] || (address.length > 10 ? address.slice(0, 4) + '...' : address);
 };
 
 export type VaultStatus = 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'extinct';

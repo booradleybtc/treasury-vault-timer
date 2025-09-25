@@ -28,14 +28,16 @@ export function TallVaultCard(props: TallVaultCardProps) {
   const getTokenImage = (tokenSymbol: string) => {
     const tokenImages: { [key: string]: string } = {
       'SOL': '/images/Solana_logo.png',
-      'USDC': '/images/USDC.png',
-      'USDT': '/images/USDT.png',
+      'USDC': '/images/token.png', // Using generic token image since USDC.png doesn't exist
+      'USDT': '/images/token.png', // Using generic token image since USDT.png doesn't exist
       'REVS': '/images/token.png',
-      'BONK': '/images/BONK.png',
-      'WIF': '/images/WIF.png',
-      'JUP': '/images/JUP.png',
-      'RAY': '/images/RAY.png',
-      'ORCA': '/images/ORCA.png',
+      'BONK': '/images/token.png',
+      'WIF': '/images/token.png',
+      'JUP': '/images/token.png',
+      'RAY': '/images/token.png',
+      'ORCA': '/images/token.png',
+      'MSOL': '/images/token.png',
+      'ETH': '/images/token.png',
     };
     return tokenImages[tokenSymbol.toUpperCase()] || '/images/token.png';
   };

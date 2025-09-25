@@ -63,10 +63,10 @@ export function FeaturedVaultCard({
     // For now, use static mapping. In the future, this will use the SPL token service
     const tokenImages: { [key: string]: string } = {
       'So11111111111111111111111111111111111111112': '/images/Solana_logo.png', // SOL
-      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/USDC.png', // USDC
-      'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/USDT.png', // USDT
-      'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/mSOL.png', // mSOL
-      '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/ETH.png', // ETH
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/token.png', // USDC - using generic token image since USDC.png doesn't exist
+      'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/token.png', // USDT - using generic token image since USDT.png doesn't exist
+      'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/token.png', // mSOL - using generic token image since mSOL.png doesn't exist
+      '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/token.png', // ETH - using generic token image since ETH.png doesn't exist
     };
     
     return tokenImages[tokenAddress] || '/images/token.png';

@@ -1,6 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Clock, AlertCircle, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 
+// Helper function to get token symbol from address
+const getTokenSymbol = (address: string): string => {
+  const tokenMap: { [key: string]: string } = {
+    'So11111111111111111111111111111111111111112': 'SOL',
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT',
+    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'mSOL',
+    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 'ETH',
+  };
+  
+  return tokenMap[address] || (address.length > 10 ? address.slice(0, 4) + '...' : address);
+};
+
+// Helper function to get token image from address
+const getTokenImage = (address: string): string => {
+  const tokenImages: { [key: string]: string } = {
+    'So11111111111111111111111111111111111111112': '/images/Solana_logo.png',
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/token.png', // Using generic token image since USDC.png doesn't exist
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/token.png', // Using generic token image since USDT.png doesn't exist
+    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/token.png', // Using generic token image since mSOL.png doesn't exist
+    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/token.png', // Using generic token image since ETH.png doesn't exist
+  };
+  
+  return tokenImages[address] || '/images/token.png';
+};
+
 export type VaultStatus = 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'extinct';
 
 interface VaultData {
@@ -126,46 +152,207 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
       case 'pre_ico':
         return (
           <div className="py-12">
-            <h2 className="text-2xl font-bold text-white mb-4 text-center">Pre-ICO Stage</h2>
-            <p className="text-white/70 mb-8 max-w-md mx-auto text-center">
-              This vault is scheduled to begin its ICO fundraise. 
-              The ICO will run for 24 hours and must raise at least ${meta.icoThresholdUsd || 1000} to proceed to launch.
-            </p>
-            
-            {meta.icoProposedAt && (
-              <div className="bg-white/5 rounded-lg p-6 mb-8 max-w-md mx-auto text-center">
-                <div className="text-sm text-white/60 mb-2">ICO Date & Time</div>
-                <div className="text-2xl font-bold text-blue-400">{formatICODate(meta.icoProposedAt)}</div>
+            {/* Hero Section with Banner and ICO Date Card */}
+            <div className="relative bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 overflow-hidden mb-8">
+              {/* Banner Background */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: meta.bannerUrl ? `url('${meta.bannerUrl}')` : "url('/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png')"
+                }}
+              />
+              {/* Overlay */}
+              <div className="absolute inset-0 bg-black/70" />
+              
+              {/* ICO Date Card on top of banner */}
+              {meta.icoProposedAt && (
+                <div className="relative z-10 p-6">
+                  <div className="max-w-2xl mx-auto">
+                    <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-6 py-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm text-cyan-300 mb-2">ICO Date & Time</div>
+                          <div className="text-xl font-bold text-white">{formatICODate(meta.icoProposedAt)}</div>
+                        </div>
+                        <a 
+                          href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-cyan-300 hover:text-cyan-200 transition-colors text-2xl"
+                          title="Add to Calendar"
+                        >
+                          📅
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Vault Title and Stage */}
+              <div className="relative p-8 lg:p-12">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+                  <div className="flex-1 text-center lg:text-left">
+                    <div className="flex flex-col lg:flex-row items-center gap-6 mb-4">
+                      <img 
+                        src={meta.logoUrl || "/images/token.png"} 
+                        alt={meta.ticker || "Token"} 
+                        className="h-20 w-20 rounded-[8px] object-cover ring-2 ring-white/20 bg-white p-1" 
+                      />
+                      <div className="flex flex-col items-center lg:items-start">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h1 className="text-3xl lg:text-4xl font-bold text-white">{vault.name}</h1>
+                          <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1 text-sm text-cyan-300 font-semibold">
+                            Pre-ICO
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-3 py-1 text-sm text-white/90 rounded-[8px]">
+                            <span className="font-mono text-sm text-white/70">
+                              {meta.ticker || getTokenSymbol(vault.airdropAsset || '')}
+                            </span>
+                          </div>
+                          {meta.links?.x && (
+                            <a 
+                              href={meta.links.x} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-white/60 hover:text-white transition-colors inline-flex items-center"
+                              aria-label="View on X"
+                            >
+                              <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-4 w-4 object-contain" />
+                            </a>
+                          )}
+                          {meta.links?.website && (
+                            <a 
+                              href={meta.links.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-white/60 hover:text-white transition-colors inline-flex items-center"
+                              aria-label="Website"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              <div className="bg-white/5 rounded-lg p-6">
-                <h3 className="font-semibold text-white mb-4 text-lg">Vault Details</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Name:</span>
-                    <span className="text-white">{vault.name}</span>
+            {/* Content Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Vault Details Card */}
+              <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Vault Details</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Vault Name</span>
+                    <span className="text-white font-semibold">{vault.name}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Ticker:</span>
-                    <span className="text-white">{meta.ticker || '—'}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Timer Duration</span>
+                    <span className="text-white font-semibold">{Math.floor((vault.timerDuration || 3600) / 3600)} Hour{(Math.floor((vault.timerDuration || 3600) / 3600)) !== 1 ? 's' : ''}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Supply:</span>
-                    <span className="text-white">{meta.supplyIntended || '—'}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Vault Lifespan</span>
+                    <span className="text-white font-semibold">{meta.vaultLifespanDays || 100} Days</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Bid:Win:</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">BID:WIN Ratio</span>
                     <span className="text-white font-semibold">{meta.bidMultiplier || 100}×</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Lifespan:</span>
-                    <span className="text-white">{meta.vaultLifespanDays || 100} days</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Minimum Buy to Reset</span>
+                    <span className="text-white font-semibold">{meta.minBuyToReset || 'N/A'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Timer Length:</span>
-                    <span className="text-white">{Math.floor(vault.timerDuration / 3600)} hours</span>
+                </div>
+              </div>
+
+              {/* Assets Card */}
+              <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Assets</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70">Vault Asset</span>
+                    <div className="flex items-center gap-2">
+                      <img src={getTokenImage(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} alt={getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} className="h-5 w-5 object-contain" />
+                      <span className="text-white font-semibold">{getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70">Airdrop Asset</span>
+                    <div className="flex items-center gap-2">
+                      <img src={getTokenImage(vault.airdropAsset || '')} alt={getTokenSymbol(vault.airdropAsset || '')} className="h-5 w-5 object-contain" />
+                      <span className="text-white font-semibold">{getTokenSymbol(vault.airdropAsset || '')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Airdrop Details Card */}
+              <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Airdrop Details</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Type</span>
+                    <span className="text-white font-semibold">{meta.airdropMode || 'Rewards'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Frequency</span>
+                    <span className="text-white font-semibold">{Math.floor((meta.airdropInterval || 3600) / 60)} mins</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Minimum Hold</span>
+                    <span className="text-white font-semibold">{meta.minHoldAmount || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trade Fee Splits Card */}
+              <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Trade Fee Splits</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Creator</span>
+                    <span className="text-white font-semibold">{meta.splits?.creator || 0}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Treasury</span>
+                    <span className="text-white font-semibold">{meta.splits?.treasury || 0}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Airdrops</span>
+                    <span className="text-white font-semibold">{meta.splits?.airdrops || 0}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Darwin Builder Fund</span>
+                    <span className="text-white font-semibold">{meta.splits?.darwin || 0}%</span>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-white/10 pt-2">
+                    <span className="text-white/70 font-semibold">Total Tax</span>
+                    <span className="text-white font-bold">{(meta.splits?.creator || 0) + (meta.splits?.treasury || 0) + (meta.splits?.airdrops || 0) + (meta.splits?.darwin || 0)}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Disclaimer Card */}
+              <div className="lg:col-span-2 bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Disclaimer</h3>
+                <div className="text-white/70 text-sm space-y-2">
+                  <p>This vault is currently in the Pre-ICO stage. The ICO will begin on the specified date and time above.</p>
+                  <p>During the ICO, participants can contribute SOL or USDC to the treasury wallet. Darwin platform takes 5% of the total raise.</p>
+                  <p>If the ICO raises less than ${meta.icoThresholdUsd || 1000} USD, the vault may be marked as extinct. If it raises ${meta.icoThresholdUsd || 1000} or more, it will proceed to the live trading stage.</p>
+                  <p>Please conduct your own research before participating in any ICO or trading activities.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/70">Min Buy to Reset:</span>
