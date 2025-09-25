@@ -38,10 +38,12 @@ export type VaultRowProps = {
   icoDate?: string;
   buttonText?: string;
   airdropAsset?: string;
+  airdropAssetLogo?: string;
+  vaultAssetLogo?: string;
 };
 
 export function VaultRow(props: VaultRowProps) {
-  const { name, timer, pfp, price, baseAsset, treasury, potentialWin, apy, endgame, onTrade, status, icoDate, buttonText, airdropAsset } = props;
+  const { name, timer, pfp, price, baseAsset, treasury, potentialWin, apy, endgame, onTrade, status, icoDate, buttonText, airdropAsset, airdropAssetLogo, vaultAssetLogo } = props;
 
   const getTokenImage = (tokenSymbol: string) => {
     const tokenImages: { [key: string]: string } = {
@@ -98,13 +100,13 @@ export function VaultRow(props: VaultRowProps) {
         <>
           <DataCell label="Vault Asset">
             <div className="flex items-center justify-center gap-2">
-              <img src={getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4" />
+              <img src={vaultAssetLogo || getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4" />
               <span>{baseAsset}</span>
             </div>
           </DataCell>
           <DataCell label="Airdrop Asset">
             <div className="flex items-center justify-center gap-2">
-              <img src={getTokenImage(airdropAsset || "REVS")} alt={airdropAsset || "REVS"} className="h-4 w-4" />
+              <img src={airdropAssetLogo || getTokenImage(airdropAsset || "REVS")} alt={airdropAsset || "REVS"} className="h-4 w-4" />
               <span>{airdropAsset || "REVS"}</span>
             </div>
           </DataCell>
@@ -121,7 +123,7 @@ export function VaultRow(props: VaultRowProps) {
           <div className="text-center">
             <div className="text-[10px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
             <div className="mt-0.5 text-sm text-white/90 flex items-center justify-center gap-2">
-              <img src={getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4" />
+              <img src={vaultAssetLogo || getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4" />
               <span>{baseAsset}</span>
             </div>
           </div>

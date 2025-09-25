@@ -19,11 +19,13 @@ export type TallVaultCardProps = {
   icoDate?: string;
   buttonText?: string;
   airdropAsset?: string;
+  airdropAssetLogo?: string;
+  vaultAssetLogo?: string;
   tradeFee?: string;
 };
 
 export function TallVaultCard(props: TallVaultCardProps) {
-  const { name, timer, imageUrl, price, baseAsset, treasury, potentialWin, apy, endgame, pfp, tokenTicker, addressShort, onTrade, status, icoDate, buttonText, airdropAsset, tradeFee } = props;
+  const { name, timer, imageUrl, price, baseAsset, treasury, potentialWin, apy, endgame, pfp, tokenTicker, addressShort, onTrade, status, icoDate, buttonText, airdropAsset, airdropAssetLogo, vaultAssetLogo, tradeFee } = props;
 
   const getTokenImage = (tokenSymbol: string) => {
     const tokenImages: { [key: string]: string } = {
@@ -105,14 +107,14 @@ export function TallVaultCard(props: TallVaultCardProps) {
               <div className="text-center">
                 <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
                 <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
-                  <img src={getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
+                  <img src={vaultAssetLogo || getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{baseAsset}</span>
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Airdrop Asset</div>
                 <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
-                  <img src={getTokenImage(airdropAsset || "REVS")} alt={airdropAsset || "REVS"} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
+                  <img src={airdropAssetLogo || getTokenImage(airdropAsset || "REVS")} alt={airdropAsset || "REVS"} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{airdropAsset || "REVS"}</span>
                 </div>
               </div>
@@ -127,7 +129,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
               <div className="text-center">
                 <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
                 <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
-                  <img src={getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
+                  <img src={vaultAssetLogo || getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{baseAsset}</span>
                 </div>
               </div>

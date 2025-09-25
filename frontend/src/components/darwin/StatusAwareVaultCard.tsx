@@ -3,18 +3,51 @@ import { FeaturedVaultCard } from './FeaturedVaultCard';
 import { TallVaultCard } from './TallVaultCard';
 import { VaultRow } from './VaultRow';
 import { Copy, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { splTokenService } from '@/services/splTokenService';
+import { useState, useEffect } from 'react';
 
-// Helper function to get token symbol from address
-const getTokenSymbol = (address: string): string => {
-  const tokenMap: { [key: string]: string } = {
-    'So11111111111111111111111111111111111111112': 'SOL',
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
-    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT',
-    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'mSOL',
-    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 'ETH',
-  };
-  
-  return tokenMap[address] || (address.length > 10 ? address.slice(0, 4) + '...' : address);
+// Hook to get token metadata
+const useTokenMetadata = (address: string) => {
+  const [metadata, setMetadata] = useState<{ symbol: string; logoURI?: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!address) {
+      setMetadata(null);
+      return;
+    }
+
+    const fetchMetadata = async () => {
+      setLoading(true);
+      try {
+        const tokenData = await splTokenService.getTokenMetadata(address);
+        if (tokenData) {
+          setMetadata({
+            symbol: tokenData.symbol,
+            logoURI: tokenData.logoURI
+          });
+        } else {
+          // Fallback for unknown tokens
+          setMetadata({
+            symbol: address.length > 10 ? address.slice(0, 4) + '...' : address,
+            logoURI: '/images/token.png'
+          });
+        }
+      } catch (error) {
+        // Fallback on error
+        setMetadata({
+          symbol: address.length > 10 ? address.slice(0, 4) + '...' : address,
+          logoURI: '/images/token.png'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [address]);
+
+  return { metadata, loading };
 };
 
 export type VaultStatus = 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'extinct';
@@ -71,6 +104,10 @@ export function StatusAwareVaultCard({
 }: StatusAwareVaultCardProps) {
   const status = vault.status || 'pre_ico';
   const meta = vault.meta || {};
+  
+  // Get token metadata for vault and airdrop assets
+  const vaultAssetMetadata = useTokenMetadata(vault.vaultAsset || '');
+  const airdropAssetMetadata = useTokenMetadata(vault.airdropAsset || '');
   
   // Status-specific configurations
   const getStatusConfig = (status: VaultStatus) => {
@@ -258,12 +295,12 @@ export function StatusAwareVaultCard({
   const baseProps = {
     name: vault.name,
     title: vault.name,
-    tokenTicker: meta.ticker || getTokenSymbol(vault.airdropAsset || ''),
+    tokenTicker: meta.ticker || airdropAssetMetadata.metadata?.symbol || '—',
     addressShort: vault.tokenMint ? `${vault.tokenMint.slice(0,6)}...${vault.tokenMint.slice(-4)}` : '—',
     imageUrl,
     pfp: meta.logoUrl || '/images/token.png',
     price: status === 'live' ? '$0.0000' : 'N/A',
-    baseAsset: getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112'),
+    baseAsset: vaultAssetMetadata.metadata?.symbol || 'SOL',
     treasury: status === 'live' ? '$12.2M' : 'N/A',
     potentialWin: status === 'live' ? '100×' : (status === 'pre_ico' ? `${meta.bidMultiplier || 100}×` : '—'),
     apy: status === 'live' ? 'N/A' : 'N/A',
@@ -314,14 +351,16 @@ export function StatusAwareVaultCard({
         case 'tall':
           return (
             <div className="relative">
-              <TallVaultCard 
-                {...baseProps}
-                status={status}
-                icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
-                buttonText={config.buttonText || 'Trade'}
-                airdropAsset={getTokenSymbol(vault.airdropAsset || '')}
-                tradeFee={status === 'pre_ico' ? `${(meta.splits?.creator || 0) + (meta.splits?.treasury || 0) + (meta.splits?.airdrops || 0) + (meta.splits?.darwin || 0)}%` : '5%'}
-              />
+      <TallVaultCard 
+        {...baseProps}
+        status={status}
+        icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
+        buttonText={config.buttonText || 'Trade'}
+        airdropAsset={airdropAssetMetadata.metadata?.symbol || '—'}
+        airdropAssetLogo={airdropAssetMetadata.metadata?.logoURI || '/images/token.png'}
+        vaultAssetLogo={vaultAssetMetadata.metadata?.logoURI || '/images/token.png'}
+        tradeFee={status === 'pre_ico' ? `${(meta.splits?.creator || 0) + (meta.splits?.treasury || 0) + (meta.splits?.airdrops || 0) + (meta.splits?.darwin || 0)}%` : '5%'}
+      />
               {renderICOInfo()}
             </div>
           );
@@ -334,7 +373,9 @@ export function StatusAwareVaultCard({
             status={status}
             icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
             buttonText={config.buttonText || 'Trade'}
-            airdropAsset={vault.airdropAsset || 'REVS'}
+            airdropAsset={airdropAssetMetadata.metadata?.symbol || '—'}
+            airdropAssetLogo={airdropAssetMetadata.metadata?.logoURI || '/images/token.png'}
+            vaultAssetLogo={vaultAssetMetadata.metadata?.logoURI || '/images/token.png'}
           />
           {renderICOInfo()}
         </div>
