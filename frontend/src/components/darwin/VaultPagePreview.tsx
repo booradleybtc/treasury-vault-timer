@@ -199,30 +199,6 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
       case 'pre_ico':
         return (
           <div className="py-12">
-            {/* ICO Date Card on top of original banner */}
-            {meta.icoProposedAt && (
-              <div className="relative z-10 p-6 mb-8">
-                <div className="max-w-2xl mx-auto">
-                  <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-6 py-4">
-                    <div className="text-center">
-                      <div className="text-sm text-cyan-300 mb-2">ICO Date & Time</div>
-                      <div className="text-3xl font-bold text-white mb-3">{formatICODate(meta.icoProposedAt)}</div>
-                      <a 
-                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200 transition-colors text-sm"
-                        title="Add to Calendar"
-                      >
-                        <span>📅</span>
-                        <span>Set Reminder</span>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Pre-ICO explanation paragraph */}
             <div className="text-center mb-8">
               <p className="text-white/70 mb-8 max-w-md mx-auto text-center">
@@ -308,25 +284,25 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
               <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
                 <h3 className="text-xl font-bold text-white mb-4">Trade Fee Splits</h3>
                 <div className="space-y-4">
+                  <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-4">
+                    <span className="text-white/70 font-semibold">Total Trade Fee</span>
+                    <span className="text-white font-bold">{meta.totalTradeFee || 5}%</span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Creator</span>
-                    <span className="text-white font-semibold">{meta.splits?.creator || 0}%</span>
+                    <span className="text-white font-semibold">{meta.splits?.creator || 0}% of total</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Treasury</span>
-                    <span className="text-white font-semibold">{meta.splits?.treasury || 0}%</span>
+                    <span className="text-white font-semibold">{meta.splits?.treasury || 0}% of total</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Airdrops</span>
-                    <span className="text-white font-semibold">{meta.splits?.airdrops || 0}%</span>
+                    <span className="text-white font-semibold">{meta.splits?.airdrops || 0}% of total</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Darwin Builder Fund</span>
-                    <span className="text-white font-semibold">{meta.splits?.darwin || 0}%</span>
-                  </div>
-                  <div className="flex justify-between items-center border-t border-white/10 pt-2">
-                    <span className="text-white/70 font-semibold">Total Tax</span>
-                    <span className="text-white font-bold">{(meta.splits?.creator || 0) + (meta.splits?.treasury || 0) + (meta.splits?.airdrops || 0) + (meta.splits?.darwin || 0)}%</span>
+                    <span className="text-white font-semibold">{meta.splits?.darwin || 0}% of total</span>
                   </div>
                 </div>
               </div>
@@ -560,8 +536,29 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
 
       {/* Banner */}
       {meta.bannerUrl && (
-        <div className="w-full h-48 overflow-hidden">
+        <div className="relative w-full h-64 overflow-hidden">
           <img src={meta.bannerUrl} alt="Vault Banner" className="w-full h-full object-cover" />
+          {/* ICO Date Card overlay */}
+          {status === 'pre_ico' && meta.icoProposedAt && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-[10px] ring-1 ring-gray-700/50 px-6 py-4 rounded-lg">
+                <div className="text-center">
+                  <div className="text-sm text-gray-300 mb-2">ICO Date & Time</div>
+                  <div className="text-3xl font-bold text-white mb-3">{formatICODate(meta.icoProposedAt)}</div>
+                  <a 
+                    href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm"
+                    title="Add to Calendar"
+                  >
+                    <span>📅</span>
+                    <span>Set Reminder</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

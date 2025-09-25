@@ -24,7 +24,9 @@ export default function LaunchWizardPage() {
     airdropMode: 'rewards', // rewards | jackpot | lottery | powerball | none
     vaultAsset: 'So11111111111111111111111111111111111111112', // SOL address
     airdropAsset: '', // Will be populated by user
-    // Splits
+    // Trade Fee
+    totalTradeFee: 5, // Default 5%
+    // Splits (percentages of total trade fee)
     splitCreator: 0,
     splitTreasury: 0,
     splitAirdrops: 0,
@@ -90,6 +92,7 @@ export default function LaunchWizardPage() {
           minBuyToReset: Number(formData.minBuyToReset),
           airdropInterval: Number(formData.airdropInterval),
           airdropMode: formData.airdropMode,
+          totalTradeFee: Number(formData.totalTradeFee),
           splits: {
             creator: Number(formData.splitCreator),
             treasury: Number(formData.splitTreasury),
@@ -367,6 +370,19 @@ export default function LaunchWizardPage() {
                   placeholder="Select airdrop asset token..."
                 />
               </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm text-white/80 mb-2">Total Trade Fee (%)</label>
+                <input
+                  type="number"
+                  name="totalTradeFee"
+                  value={(formData as any).totalTradeFee || 5}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                />
+                <p className="text-xs text-white/60 mt-1">The total percentage fee charged on each trade</p>
+              </div>
               <div>
                 <label className="block text-sm text-white/80 mb-2">Creator Split (%)</label>
                 <input
@@ -374,6 +390,8 @@ export default function LaunchWizardPage() {
                   name="splitCreator"
                   value={(formData as any).splitCreator || 0}
                   onChange={handleChange}
+                  min="0"
+                  max="100"
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
               </div>
@@ -384,8 +402,11 @@ export default function LaunchWizardPage() {
                   name="splitTreasury"
                   value={(formData as any).splitTreasury || 0}
                   onChange={handleChange}
+                  min="0"
+                  max="100"
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
+                <p className="text-xs text-white/60 mt-1">% of total trade fee</p>
               </div>
               <div>
                 <label className="block text-sm text-white/80 mb-2">Airdrops Split (%)</label>
@@ -394,8 +415,11 @@ export default function LaunchWizardPage() {
                   name="splitAirdrops"
                   value={(formData as any).splitAirdrops || 0}
                   onChange={handleChange}
+                  min="0"
+                  max="100"
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
+                <p className="text-xs text-white/60 mt-1">% of total trade fee</p>
               </div>
               <div>
                 <label className="block text-sm text-white/80 mb-2">Darwin Builders Fund (%)</label>
@@ -404,8 +428,11 @@ export default function LaunchWizardPage() {
                   name="splitDarwin"
                   value={(formData as any).splitDarwin || 0}
                   onChange={handleChange}
+                  min="0"
+                  max="100"
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
+                <p className="text-xs text-white/60 mt-1">% of total trade fee</p>
               </div>
             </div>
           </div>
