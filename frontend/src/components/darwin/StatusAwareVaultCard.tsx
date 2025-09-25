@@ -332,7 +332,7 @@ export function StatusAwareVaultCard({
             websiteUrl={meta.links?.website}
             stats={status === 'pre_ico' ? [
               { label: 'Vault Asset', value: baseProps.baseAsset },
-              { label: 'Airdrop Asset', value: vault.airdropAsset || 'REVS' },
+              { label: 'Airdrop Asset', value: airdropAssetMetadata.metadata?.symbol || 'REVS' },
               { label: 'Potential Win', value: `${meta.bidMultiplier || 100}×` },
               { label: 'Timer Length', value: `${Math.floor(vault.timerDuration / 3600)} Hour${Math.floor(vault.timerDuration / 3600) !== 1 ? 's' : ''}` },
               { label: 'Lifespan', value: `${meta.vaultLifespanDays || 100} Days` },

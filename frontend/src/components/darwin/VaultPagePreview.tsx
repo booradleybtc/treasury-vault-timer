@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Clock, AlertCircle, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
+import { splTokenService } from '@/services/splTokenService';
 
 // Helper function to get token symbol from address
 const getTokenSymbol = (address: string): string => {
@@ -71,9 +72,55 @@ interface VaultPagePreviewProps {
   className?: string;
 }
 
+// Hook to get token metadata
+const useTokenMetadata = (address: string) => {
+  const [metadata, setMetadata] = useState<{ symbol: string; logoURI?: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!address) {
+      setMetadata(null);
+      return;
+    }
+
+    const fetchMetadata = async () => {
+      setLoading(true);
+      try {
+        const tokenData = await splTokenService.getTokenMetadata(address);
+        if (tokenData) {
+          setMetadata({
+            symbol: tokenData.symbol,
+            logoURI: tokenData.logoURI
+          });
+        } else {
+          setMetadata({
+            symbol: address.length > 10 ? address.slice(0, 4) + '...' : address,
+            logoURI: '/images/token.png'
+          });
+        }
+      } catch (error) {
+        setMetadata({
+          symbol: address.length > 10 ? address.slice(0, 4) + '...' : address,
+          logoURI: '/images/token.png'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [address]);
+
+  return { metadata, loading };
+};
+
 export function VaultPagePreview({ vault, status, className }: VaultPagePreviewProps) {
   const [countdown, setCountdown] = useState('');
   const meta = vault.meta || {};
+  
+  // Get token metadata for vault and airdrop assets
+  const vaultAssetMetadata = useTokenMetadata(vault.vaultAsset || '');
+  const airdropAssetMetadata = useTokenMetadata(vault.airdropAsset || '');
 
   function formatICODate(icoDate: string): string {
     const date = new Date(icoDate);
@@ -157,19 +204,18 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
               <div className="relative z-10 p-6 mb-8">
                 <div className="max-w-2xl mx-auto">
                   <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-6 py-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm text-cyan-300 mb-2">ICO Date & Time</div>
-                        <div className="text-2xl font-bold text-white">{formatICODate(meta.icoProposedAt)}</div>
-                      </div>
+                    <div className="text-center">
+                      <div className="text-sm text-cyan-300 mb-2">ICO Date & Time</div>
+                      <div className="text-3xl font-bold text-white mb-3">{formatICODate(meta.icoProposedAt)}</div>
                       <a 
                         href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-cyan-300 hover:text-cyan-200 transition-colors text-2xl"
+                        className="inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200 transition-colors text-sm"
                         title="Add to Calendar"
                       >
-                        📅
+                        <span>📅</span>
+                        <span>Set Reminder</span>
                       </a>
                     </div>
                   </div>
@@ -221,15 +267,15 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                   <div className="flex items-center justify-between">
                     <span className="text-white/70">Vault Asset</span>
                     <div className="flex items-center gap-2">
-                      <img src={getTokenImage(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} alt={getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} className="h-5 w-5 object-contain" />
-                      <span className="text-white font-semibold">{getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')}</span>
+                      <img src={vaultAssetMetadata.metadata?.logoURI || getTokenImage(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} alt={vaultAssetMetadata.metadata?.symbol || getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} className="h-5 w-5 object-contain" />
+                      <span className="text-white font-semibold">{vaultAssetMetadata.metadata?.symbol || getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-white/70">Airdrop Asset</span>
                     <div className="flex items-center gap-2">
-                      <img src={getTokenImage(vault.airdropAsset || '')} alt={getTokenSymbol(vault.airdropAsset || '')} className="h-5 w-5 object-contain" />
-                      <span className="text-white font-semibold">{getTokenSymbol(vault.airdropAsset || '')}</span>
+                      <img src={airdropAssetMetadata.metadata?.logoURI || getTokenImage(vault.airdropAsset || '')} alt={airdropAssetMetadata.metadata?.symbol || getTokenSymbol(vault.airdropAsset || '')} className="h-5 w-5 object-contain" />
+                      <span className="text-white font-semibold">{airdropAssetMetadata.metadata?.symbol || getTokenSymbol(vault.airdropAsset || '')}</span>
                     </div>
                   </div>
                 </div>
@@ -250,6 +296,10 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Minimum Hold</span>
                     <span className="text-white font-semibold">{meta.minHoldAmount || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Minimum Buy to Reset Timer</span>
+                    <span className="text-white font-semibold">{meta.minBuyToReset || 'N/A'}</span>
                   </div>
                 </div>
               </div>
@@ -504,19 +554,6 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                 </svg>
               </a>
             )}
-            <div className="text-right">
-              <div className="text-sm text-white/60">Status</div>
-              <div className={`text-lg font-semibold ${
-                status === 'pre_ico' ? 'text-cyan-400' :
-                status === 'ico' ? 'text-green-400' :
-                status === 'ico_pending' ? 'text-yellow-400' :
-                status === 'pre_launch' ? 'text-purple-400' :
-                status === 'live' ? 'text-emerald-400' :
-                'text-red-400'
-              }`}>
-                {status.replace('_', ' ').toUpperCase()}
-              </div>
-            </div>
           </div>
         </div>
       </div>

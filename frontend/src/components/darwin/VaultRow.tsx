@@ -18,7 +18,7 @@ function DataCell({ label, children, numeric = false }: { label: string; childre
   return (
     <div className="text-center">
       <div className="text-[10px] uppercase tracking-[.16em] text-white/60 leading-tight">{label}</div>
-      <div className={cn("mt-0.5 text-sm text-white/90", numeric && "tabular-nums")}>{children}</div>
+      <div className={cn("mt-1.5 text-sm text-white/90", numeric && "tabular-nums")}>{children}</div>
     </div>
   );
 }

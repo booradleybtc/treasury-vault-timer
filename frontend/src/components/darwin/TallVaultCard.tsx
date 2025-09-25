@@ -106,14 +106,14 @@ export function TallVaultCard(props: TallVaultCardProps) {
             <>
               <div className="text-center">
                 <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
-                <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
+                <div className="mt-2 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
                   <img src={vaultAssetLogo || getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{baseAsset}</span>
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Airdrop Asset</div>
-                <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
+                <div className="mt-2 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
                   <img src={airdropAssetLogo || getTokenImage(airdropAsset || "REVS")} alt={airdropAsset || "REVS"} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{airdropAsset || "REVS"}</span>
                 </div>
@@ -128,7 +128,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
               <Stat label="Price" value={price ?? "N/A"} numeric />
               <div className="text-center">
                 <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
-                <div className="mt-1 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
+                <div className="mt-2 text-sm sm:text-base text-white/90 inline-flex items-center justify-center gap-2">
                   <img src={vaultAssetLogo || getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
                   <span>{baseAsset}</span>
                 </div>
