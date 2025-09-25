@@ -353,66 +353,6 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
             </div>
           </div>
         );
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Min Buy to Reset:</span>
-                    <span className="text-white">{meta.minBuyToReset || 1}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white/5 rounded-lg p-6">
-                <h3 className="font-semibold text-white mb-4 text-lg">Assets & Splits</h3>
-                <div className="space-y-3 text-sm mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Vault Asset:</span>
-                    <span className="text-white font-semibold">{vault.vaultAsset || 'SOL'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Airdrop Asset:</span>
-                    <span className="text-white font-semibold">{vault.airdropAsset || 'REVS'}</span>
-                  </div>
-                </div>
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="font-medium text-white mb-3">Airdrop Settings</h4>
-                  <div className="space-y-2 text-sm mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-white/70">Airdrop Mode:</span>
-                      <span className="text-white">{meta.airdropMode || 'rewards'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-white/70">Airdrop Interval:</span>
-                      <span className="text-white">{meta.airdropInterval ? `${Math.floor(meta.airdropInterval / 60)} mins` : '1 hour'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-white/70">Min Hold for Airdrop:</span>
-                      <span className="text-white">{vault.minHoldAmount || 0}</span>
-                    </div>
-                  </div>
-                  <h4 className="font-medium text-white mb-3">Tax Splits</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-white/70">Creator:</span>
-                      <span className="text-white">{meta.splits?.creator || 0}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-white/70">Treasury:</span>
-                      <span className="text-white">{meta.splits?.treasury || 0}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-white/70">Airdrops:</span>
-                      <span className="text-white">{meta.splits?.airdrops || 0}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-white/70">Darwin:</span>
-                      <span className="text-white">{meta.splits?.darwin || 0}%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
 
       case 'ico':
         return (
