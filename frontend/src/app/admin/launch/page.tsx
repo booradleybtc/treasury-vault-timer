@@ -16,6 +16,7 @@ export default function LaunchWizardPage() {
     icoProposedAt: '',
     supplyIntended: '',
     bidMultiplier: 100,
+    vaultTokenSupply: 1000000,
     timerDuration: 3600,
     vaultLifespanDays: 100,
     minBuyToReset: 0,
@@ -88,6 +89,7 @@ export default function LaunchWizardPage() {
           icoProposedAt: startDate,
           supplyIntended: formData.supplyIntended,
           bidMultiplier: Number(formData.bidMultiplier),
+          vaultTokenSupply: Number(formData.vaultTokenSupply),
           vaultLifespanDays: Number(formData.vaultLifespanDays),
           minBuyToReset: Number(formData.minBuyToReset),
           airdropInterval: Number(formData.airdropInterval),
@@ -276,6 +278,44 @@ export default function LaunchWizardPage() {
           <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
             <h2 className="text-lg font-bold text-white mb-4">Timer & Airdrops</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-white/80 mb-2">Vault Token Supply</label>
+                <input
+                  type="number"
+                  name="vaultTokenSupply"
+                  value={(formData as any).vaultTokenSupply || 1000000}
+                  onChange={handleChange}
+                  min="1"
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                />
+                <p className="text-xs text-white/60 mt-1">Total supply of vault tokens</p>
+              </div>
+              <div>
+                <label className="block text-sm text-white/80 mb-2">BID:WIN Multiplier</label>
+                <select
+                  name="bidMultiplier"
+                  value={(formData as any).bidMultiplier || 100}
+                  onChange={handleChange}
+                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
+                >
+                  <option value={100}>100×</option>
+                  <option value={200}>200×</option>
+                  <option value={300}>300×</option>
+                  <option value={400}>400×</option>
+                  <option value={500}>500×</option>
+                  <option value={750}>750×</option>
+                  <option value={1000}>1,000×</option>
+                  <option value={1500}>1,500×</option>
+                  <option value={2000}>2,000×</option>
+                  <option value={2500}>2,500×</option>
+                  <option value={3000}>3,000×</option>
+                  <option value={4000}>4,000×</option>
+                  <option value={5000}>5,000×</option>
+                  <option value={7500}>7,500×</option>
+                  <option value={10000}>10,000×</option>
+                </select>
+                <p className="text-xs text-white/60 mt-1">Multiplier for potential wins</p>
+              </div>
               <div>
                 <label className="block text-sm text-white/80 mb-2">Vault Lifespan (days)</label>
                 <input

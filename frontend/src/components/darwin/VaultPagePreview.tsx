@@ -199,6 +199,30 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
       case 'pre_ico':
         return (
           <div className="py-12">
+            {/* ICO Date Card */}
+            {meta.icoProposedAt && (
+              <div className="relative z-10 p-6 mb-8">
+                <div className="max-w-2xl mx-auto">
+                  <div className="bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-[10px] ring-1 ring-gray-700/50 px-6 py-4 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-sm text-gray-300 mb-2">ICO Date & Time</div>
+                      <div className="text-3xl font-bold text-white mb-3">{formatICODate(meta.icoProposedAt)}</div>
+                      <a 
+                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm"
+                        title="Add to Calendar"
+                      >
+                        <span>📅</span>
+                        <span>Set Reminder</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Pre-ICO explanation paragraph */}
             <div className="text-center mb-8">
               <p className="text-white/70 mb-8 max-w-md mx-auto text-center">
@@ -218,6 +242,10 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                     <span className="text-white font-semibold">{vault.name}</span>
                   </div>
                   <div className="flex justify-between items-center">
+                    <span className="text-white/70">Vault Token Supply</span>
+                    <span className="text-white font-semibold">{meta.vaultTokenSupply ? meta.vaultTokenSupply.toLocaleString() : 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
                     <span className="text-white/70">Timer Duration</span>
                     <span className="text-white font-semibold">{Math.floor((vault.timerDuration || 3600) / 3600)} Hour{(Math.floor((vault.timerDuration || 3600) / 3600)) !== 1 ? 's' : ''}</span>
                   </div>
@@ -226,7 +254,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                     <span className="text-white font-semibold">{meta.vaultLifespanDays || 100} Days</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-white/70">BID:WIN Ratio</span>
+                    <span className="text-white/70">BID:WIN Multiplier</span>
                     <span className="text-white font-semibold">{meta.bidMultiplier || 100}×</span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -536,29 +564,8 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
 
       {/* Banner */}
       {meta.bannerUrl && (
-        <div className="relative w-full h-64 overflow-hidden">
+        <div className="w-full h-64 overflow-hidden">
           <img src={meta.bannerUrl} alt="Vault Banner" className="w-full h-full object-cover" />
-          {/* ICO Date Card overlay */}
-          {status === 'pre_ico' && meta.icoProposedAt && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-[10px] ring-1 ring-gray-700/50 px-6 py-4 rounded-lg">
-                <div className="text-center">
-                  <div className="text-sm text-gray-300 mb-2">ICO Date & Time</div>
-                  <div className="text-3xl font-bold text-white mb-3">{formatICODate(meta.icoProposedAt)}</div>
-                  <a 
-                    href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm"
-                    title="Add to Calendar"
-                  >
-                    <span>📅</span>
-                    <span>Set Reminder</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
