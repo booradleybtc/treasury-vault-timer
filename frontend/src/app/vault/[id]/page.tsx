@@ -10,6 +10,32 @@ import { FeaturedVaultCard } from '@/components/darwin/FeaturedVaultCard';
 import { ArrowLeft, Clock, CurrencyDollar, Gift, ChartBar, CloudArrowDown } from '@phosphor-icons/react';
 import dynamic from 'next/dynamic';
 
+// Helper function to get token symbol from address
+const getTokenSymbol = (address: string): string => {
+  const tokenMap: { [key: string]: string } = {
+    'So11111111111111111111111111111111111111112': 'SOL',
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT',
+    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'mSOL',
+    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 'ETH',
+  };
+  
+  return tokenMap[address] || address.slice(0, 4) + '...';
+};
+
+// Helper function to get token image from address
+const getTokenImage = (address: string): string => {
+  const tokenImages: { [key: string]: string } = {
+    'So11111111111111111111111111111111111111112': '/images/Solana_logo.png',
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/USDC.png',
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/USDT.png',
+    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/mSOL.png',
+    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/ETH.png',
+  };
+  
+  return tokenImages[address] || '/images/token.png';
+};
+
 // Dynamically import JupiterWidget to avoid SSR issues
 const JupiterWidget = dynamic(() => import('@/components/JupiterWidget'), {
   ssr: false,
@@ -310,13 +336,13 @@ export default function VaultPage() {
                           </span>
                         </div>
                         {vaultConfig?.meta?.links?.x && (
-                          <a 
+                        <a 
                             href={vaultConfig.meta.links.x} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-white/60 hover:text-white transition-colors inline-flex items-center"
-                            aria-label="View on X"
-                          >
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-white/60 hover:text-white transition-colors inline-flex items-center"
+                          aria-label="View on X"
+                        >
                             <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-4 w-4 object-contain" />
                           </a>
                         )}
@@ -330,8 +356,8 @@ export default function VaultPage() {
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
+                          </svg>
+                        </a>
                         )}
                       </div>
                     </div>
@@ -348,9 +374,9 @@ export default function VaultPage() {
                       }
                     </div>
                   ) : (
-                    <div className="tabular-nums text-5xl lg:text-6xl font-extrabold leading-none tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,.6)] text-white mb-4">
-                      {formatTime(currentTime)}
-                    </div>
+                  <div className="tabular-nums text-5xl lg:text-6xl font-extrabold leading-none tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,.6)] text-white mb-4">
+                    {formatTime(currentTime)}
+                  </div>
                   )}
                   <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-3 py-1 text-sm text-white/90 rounded-[8px]">
                     {vaultConfig?.status === 'pre_ico' ? 
@@ -402,15 +428,15 @@ export default function VaultPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-white/70">Vault Asset</span>
                   <div className="flex items-center gap-2">
-                    <img src="/images/Solana_logo.png" alt="SOL" className="h-5 w-5 object-contain" />
-                    <span className="text-white font-semibold">{vaultConfig?.vaultAsset || 'SOL'}</span>
+                    <img src={getTokenImage(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')} alt={getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')} className="h-5 w-5 object-contain" />
+                    <span className="text-white font-semibold">{getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-white/70">Airdrop Asset</span>
                   <div className="flex items-center gap-2">
-                    <img src="/images/token.png" alt="REVS" className="h-5 w-5 object-contain" />
-                    <span className="text-white font-semibold">{vaultConfig?.airdropAsset || 'REVS'}</span>
+                    <img src={getTokenImage(vaultConfig?.airdropAsset || '')} alt={getTokenSymbol(vaultConfig?.airdropAsset || '')} className="h-5 w-5 object-contain" />
+                    <span className="text-white font-semibold">{getTokenSymbol(vaultConfig?.airdropAsset || '')}</span>
                   </div>
                 </div>
               </div>
@@ -474,10 +500,10 @@ export default function VaultPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Left Column - Vault Details & Chart */}
-            <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column - Vault Details & Chart */}
+          <div className="lg:col-span-2 space-y-6">
             
             {/* Vault Card */}
             <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
@@ -693,8 +719,8 @@ export default function VaultPage() {
             </div>
 
             {/* Trade REVS and Vault Information removed per request */}
-            </div>
-          </div>
+                    </div>
+                  </div>
         )}
       </div>
                 

@@ -4,6 +4,19 @@ import { TallVaultCard } from './TallVaultCard';
 import { VaultRow } from './VaultRow';
 import { Copy, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
+// Helper function to get token symbol from address
+const getTokenSymbol = (address: string): string => {
+  const tokenMap: { [key: string]: string } = {
+    'So11111111111111111111111111111111111111112': 'SOL',
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT',
+    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'mSOL',
+    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 'ETH',
+  };
+  
+  return tokenMap[address] || address.slice(0, 4) + '...';
+};
+
 export type VaultStatus = 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'extinct';
 
 interface VaultData {
@@ -245,12 +258,12 @@ export function StatusAwareVaultCard({
   const baseProps = {
     name: vault.name,
     title: vault.name,
-    tokenTicker: meta.ticker || vault.airdropAsset || 'REVS',
+    tokenTicker: meta.ticker || getTokenSymbol(vault.airdropAsset || ''),
     addressShort: vault.tokenMint ? `${vault.tokenMint.slice(0,6)}...${vault.tokenMint.slice(-4)}` : '—',
     imageUrl,
     pfp: meta.logoUrl || '/images/token.png',
     price: status === 'live' ? '$0.0000' : 'N/A',
-    baseAsset: vault.vaultAsset || 'SOL',
+    baseAsset: getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112'),
     treasury: status === 'live' ? '$12.2M' : 'N/A',
     potentialWin: status === 'live' ? '100×' : (status === 'pre_ico' ? `${meta.bidMultiplier || 100}×` : '—'),
     apy: status === 'live' ? 'N/A' : 'N/A',
@@ -306,7 +319,7 @@ export function StatusAwareVaultCard({
                 status={status}
                 icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
                 buttonText={config.buttonText || 'Trade'}
-                airdropAsset={vault.airdropAsset || 'REVS'}
+                airdropAsset={getTokenSymbol(vault.airdropAsset || '')}
                 tradeFee={status === 'pre_ico' ? `${(meta.splits?.creator || 0) + (meta.splits?.treasury || 0) + (meta.splits?.airdrops || 0) + (meta.splits?.darwin || 0)}%` : '5%'}
               />
               {renderICOInfo()}
