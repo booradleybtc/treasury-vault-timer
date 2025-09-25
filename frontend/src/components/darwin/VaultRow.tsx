@@ -66,7 +66,7 @@ export function VaultRow(props: VaultRowProps) {
     <div className={cn(GRID, "gap-1 items-center rounded-none ring-1 ring-white/10 bg-white/5 backdrop-blur-[10px] px-5 py-4")}> 
       {/* Vault + timer */}
       <div className="flex items-center gap-4">
-        <img src={pfp} alt={name} className="h-16 w-16 rounded-md object-cover border border-white/10 bg-white" />
+            <img src={pfp} alt={name} className="h-16 w-16 rounded-md object-cover" />
         <div>
           <div className="flex items-center gap-2 font-bold text-white leading-tight text-base sm:text-lg">
             {name}

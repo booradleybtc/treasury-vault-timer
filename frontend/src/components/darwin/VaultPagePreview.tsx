@@ -177,9 +177,8 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
               </div>
             )}
 
-            {/* Pre-ICO Stage text and paragraph */}
+            {/* Pre-ICO explanation paragraph */}
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-white mb-4">Pre-ICO Stage</h2>
               <p className="text-white/70 mb-8 max-w-md mx-auto text-center">
                 This vault is scheduled to begin its ICO fundraise. 
                 The ICO will run for 24 hours and must raise at least ${meta.icoThresholdUsd || 1000} to proceed to launch.
@@ -456,16 +455,21 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
             <div>
               <h1 className="text-xl font-bold text-white">{vault.name}</h1>
               <div className="flex items-center gap-2 mt-1">
-                <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                  status === 'pre_ico' ? 'bg-blue-500 text-white' :
-                  status === 'ico' ? 'bg-green-500 text-white animate-pulse' :
-                  status === 'ico_pending' ? 'bg-yellow-500 text-black' :
-                  status === 'pre_launch' ? 'bg-purple-500 text-white' :
-                  status === 'live' ? 'bg-emerald-500 text-black' :
-                  'bg-red-500 text-white'
-                }`}>
-                  {status.replace('_', ' ').toUpperCase()}
-                </span>
+                {status === 'pre_ico' ? (
+                  <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-2 py-1 text-xs text-cyan-300 font-semibold">
+                    Pre-ICO
+                  </div>
+                ) : (
+                  <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                    status === 'ico' ? 'bg-green-500 text-white animate-pulse' :
+                    status === 'ico_pending' ? 'bg-yellow-500 text-black' :
+                    status === 'pre_launch' ? 'bg-purple-500 text-white' :
+                    status === 'live' ? 'bg-emerald-500 text-black' :
+                    'bg-red-500 text-white'
+                  }`}>
+                    {status.replace('_', ' ').toUpperCase()}
+                  </span>
+                )}
                 {meta.ticker && (
                   <span className="px-2 py-1 bg-emerald-500 text-black text-xs font-semibold rounded">
                     {meta.ticker}
@@ -475,15 +479,16 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {meta.links?.x && (
               <a 
                 href={meta.links.x}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 hover:bg-white/20 rounded"
+                className="text-white/60 hover:text-white transition-colors"
+                aria-label="View on X"
               >
-                <ExternalLink className="w-4 h-4" />
+                <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-5 w-5" />
               </a>
             )}
             {meta.links?.website && (
@@ -491,11 +496,27 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                 href={meta.links.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 hover:bg-white/20 rounded"
+                className="text-white/60 hover:text-white transition-colors"
+                aria-label="Website"
               >
-                <ExternalLink className="w-4 h-4" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
               </a>
             )}
+            <div className="text-right">
+              <div className="text-sm text-white/60">Status</div>
+              <div className={`text-lg font-semibold ${
+                status === 'pre_ico' ? 'text-cyan-400' :
+                status === 'ico' ? 'text-green-400' :
+                status === 'ico_pending' ? 'text-yellow-400' :
+                status === 'pre_launch' ? 'text-purple-400' :
+                status === 'live' ? 'text-emerald-400' :
+                'text-red-400'
+              }`}>
+                {status.replace('_', ' ').toUpperCase()}
+              </div>
+            </div>
           </div>
         </div>
       </div>

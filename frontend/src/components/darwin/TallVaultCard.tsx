@@ -61,7 +61,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
         {/* Header info over banner */}
         <div className="absolute inset-0 p-4 sm:p-5 flex items-center justify-between text-white">
           <div className="flex items-center gap-3 sm:gap-4">
-            <img src={pfp || "/images/token.png"} alt={name} className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover flex-shrink-0 border border-white/10 bg-white" />
+            <img src={pfp || "/images/token.png"} alt={name} className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover flex-shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="text-sm sm:text-base font-semibold leading-tight truncate" title={name}>{name}</div>
               <div className="text-xs sm:text-sm text-white/80 mt-1 truncate">{tokenTicker || ""}</div>

@@ -326,6 +326,10 @@ export function StatusAwareVaultCard({
             showVaultStagePill={config.showVaultStagePill}
             icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : undefined}
             tokenPfpUrl={meta.logoUrl || '/images/token.png'}
+            vaultAssetLogo={vaultAssetMetadata.metadata?.logoURI || '/images/token.png'}
+            airdropAssetLogo={airdropAssetMetadata.metadata?.logoURI || '/images/token.png'}
+            xUrl={meta.links?.x}
+            websiteUrl={meta.links?.website}
             stats={status === 'pre_ico' ? [
               { label: 'Vault Asset', value: baseProps.baseAsset },
               { label: 'Airdrop Asset', value: vault.airdropAsset || 'REVS' },

@@ -20,7 +20,10 @@ export type FeaturedVaultCardProps = {
   winnerAddressShort?: string;
   endgameDays?: number;
   vaultAssetIconSrc?: string;
+  vaultAssetLogo?: string;
+  airdropAssetLogo?: string;
   xUrl?: string;
+  websiteUrl?: string;
   onPrev?: () => void;
   onNext?: () => void;
   onClickTitle?: () => void;
@@ -47,7 +50,10 @@ export function FeaturedVaultCard({
   winnerAddressShort,
   endgameDays,
   vaultAssetIconSrc,
+  vaultAssetLogo,
+  airdropAssetLogo,
   xUrl,
+  websiteUrl,
   onPrev,
   onNext,
   onClickTitle,
@@ -144,12 +150,12 @@ export function FeaturedVaultCard({
               <div key={i} className="text-center text-white">
                 <div className="text-[12px] uppercase tracking-[.18em] text-white/70">{s.label}</div>
                 <div className="mt-1 text-[20px] md:text-[26px] font-bold leading-none drop-shadow-[0_1px_6px_rgba(0,0,0,.35)] flex items-center justify-center gap-2">
-                  {(s.label === 'Vault Asset' || s.label === 'Airdrop Asset') && (
-                    <img src={getTokenImage(s.value)} alt={s.value} className="h-5 w-5 rounded-sm" />
+                  {s.label === 'Vault Asset' && (
+                    <img src={vaultAssetLogo || vaultAssetIconSrc || getTokenImage(s.value)} alt={s.value} className="h-5 w-5 rounded-sm" />
                   )}
-                  {s.label === 'Vault Asset' && vaultAssetIconSrc ? (
-                    <img src={vaultAssetIconSrc} alt={s.value} className="h-5 w-5 rounded-sm" />
-                  ) : null}
+                  {s.label === 'Airdrop Asset' && (
+                    <img src={airdropAssetLogo || getTokenImage(s.value)} alt={s.value} className="h-5 w-5 rounded-sm" />
+                  )}
                   <span>{s.value}</span>
                 </div>
               </div>
