@@ -305,7 +305,7 @@ export function StatusAwareVaultCard({
     potentialWin: status === 'live' ? '100×' : (status === 'pre_ico' ? `${meta.bidMultiplier || 100}×` : '—'),
     apy: status === 'live' ? 'N/A' : 'N/A',
     endgame: status === 'live' ? '91d' : (status === 'pre_ico' ? `${meta.vaultLifespanDays || 100}d` : '—'),
-    timer: status === 'pre_ico' ? `${Math.floor(vault.timerDuration / 3600)}h` : config.timerValue,
+        timer: status === 'pre_ico' ? (vault.timerDuration >= 3600 ? `${Math.floor(vault.timerDuration / 3600)}h` : `${Math.floor(vault.timerDuration / 60)}m`) : config.timerValue,
     onTrade: config.disabledTrade ? undefined : onTrade,
     onClickTitle,
     className,
@@ -334,7 +334,7 @@ export function StatusAwareVaultCard({
               { label: 'Vault Asset', value: baseProps.baseAsset },
               { label: 'Airdrop Asset', value: airdropAssetMetadata.metadata?.symbol || 'REVS' },
               { label: 'Potential Win', value: `${meta.bidMultiplier || 100}×` },
-              { label: 'Timer Length', value: `${Math.floor(vault.timerDuration / 3600)} Hour${Math.floor(vault.timerDuration / 3600) !== 1 ? 's' : ''}` },
+              { label: 'Timer Length', value: vault.timerDuration >= 3600 ? `${Math.floor(vault.timerDuration / 3600)} Hour${Math.floor(vault.timerDuration / 3600) !== 1 ? 's' : ''}` : `${Math.floor(vault.timerDuration / 60)} Min${Math.floor(vault.timerDuration / 60) !== 1 ? 's' : ''}` },
               { label: 'Lifespan', value: `${meta.vaultLifespanDays || 100} Days` },
             ] : [
               { label: 'Price', value: baseProps.price },

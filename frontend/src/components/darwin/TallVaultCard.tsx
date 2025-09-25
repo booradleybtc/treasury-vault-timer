@@ -119,7 +119,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
                 </div>
               </div>
               <Stat label="BID:WIN" value={potentialWin} numeric />
-              <Stat label="Timer Length" value={timer.includes('h') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`} />
+              <Stat label="Timer Length" value={timer.includes('h') ? timer : timer.includes('m') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`} />
               <Stat label="Lifespan" value={endgame} />
               <Stat label="Trade Fee" value={tradeFee || "5%"} numeric />
             </>

@@ -203,15 +203,15 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
             {meta.icoProposedAt && (
               <div className="relative z-10 p-6 mb-8">
                 <div className="max-w-2xl mx-auto">
-                  <div className="bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-[10px] ring-1 ring-gray-700/50 px-6 py-4 rounded-lg">
+                  <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-6 py-4 rounded-lg">
                     <div className="text-center">
-                      <div className="text-sm text-gray-300 mb-2">ICO Date & Time</div>
+                      <div className="text-sm text-cyan-300 mb-2">ICO Date & Time</div>
                       <div className="text-3xl font-bold text-white mb-3">{formatICODate(meta.icoProposedAt)}</div>
                       <a 
                         href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm"
+                        className="inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200 transition-colors text-sm"
                         title="Add to Calendar"
                       >
                         <span>📅</span>
@@ -291,7 +291,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Type</span>
-                    <span className="text-white font-semibold">{meta.airdropMode || 'Rewards'}</span>
+                    <span className="text-white font-semibold capitalize">{meta.airdropMode || 'Rewards'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Frequency</span>
@@ -301,9 +301,16 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                     <span className="text-white/70">Minimum Hold</span>
                     <span className="text-white font-semibold">{meta.minHoldAmount || 'N/A'}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/70">Minimum Buy to Reset Timer</span>
-                    <span className="text-white font-semibold">{meta.minBuyToReset || 'N/A'}</span>
+                </div>
+                <div className="mt-4 p-3 bg-white/5 rounded border border-white/10">
+                  <div className="text-xs text-white/60 mb-2">Mode Explanation:</div>
+                  <div className="text-sm text-white/80">
+                    {meta.airdropMode === 'rewards' && "Tokens are distributed to all eligible holders based on their holdings."}
+                    {meta.airdropMode === 'jackpot' && "Randomly selects 10 holders for distribution with tiered rewards (1st: 40%, 2nd: 20%, 3rd: 10%, others share remaining 30%)."}
+                    {meta.airdropMode === 'lottery' && "One random holder wins the entire distributed amount as a prize. More tokens held means more chances to win."}
+                    {meta.airdropMode === 'powerball' && "Randomly selects up to 50 holders and distributes equal prizes to each winner. The total distribution amount is split equally among all selected winners."}
+                    {meta.airdropMode === 'none' && "No airdrops will be distributed."}
+                    {!meta.airdropMode && "Tokens are distributed to all eligible holders based on their holdings."}
                   </div>
                 </div>
               </div>

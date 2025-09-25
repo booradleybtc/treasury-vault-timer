@@ -111,7 +111,7 @@ export function VaultRow(props: VaultRowProps) {
             </div>
           </DataCell>
           <DataCell label="BID:WIN" numeric>{potentialWin}</DataCell>
-          <DataCell label="Timer">{timer.includes('h') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`}</DataCell>
+          <DataCell label="Timer">{timer.includes('h') ? timer : timer.includes('m') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`}</DataCell>
           <DataCell label="Lifespan">{endgame}</DataCell>
           <DataCell label="Trade Fee">
             <div className="text-white/90">5%</div>
