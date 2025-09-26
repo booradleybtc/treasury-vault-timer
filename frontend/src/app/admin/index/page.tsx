@@ -521,38 +521,6 @@ export default function AdminIndex() {
           </div>
         )}
         
-        {/* Vault Card Preview Section */}
-        <div className="mb-8">
-          <div className="bg-white/5 ring-1 ring-white/10 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-white font-semibold">Vault Card Preview & Design</div>
-              <div className="flex items-center gap-2">
-                <select className="bg-white/10 text-white px-3 py-1" value={stage} onChange={(e)=>setStage(e.target.value as any)}>
-                  <option value="all">All</option>
-                  <option value="pre_ico">Pre‑ICO</option>
-                  <option value="ico">ICO Now</option>
-                  <option value="pending">Pending</option>
-                  <option value="prelaunch">Pre-Launch</option>
-                  <option value="active">Live</option>
-                  <option value="winner_confirmation">Winner</option>
-                  <option value="endgame_processing">Endgame</option>
-                  <option value="extinct">Extinct</option>
-                </select>
-                <span className="text-white/60 text-sm">Preview how cards look for different vaults and statuses</span>
-              </div>
-            </div>
-            
-            {/* Card Preview Grid */}
-            <VaultCardPreviewGrid vaults={vaults} selectedStatus={stage} />
-            
-            <div className="text-center">
-              <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded">
-                Edit Card Designs
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div className="mb-8">
           <div className="bg-white/5 ring-1 ring-white/10 p-4">
             <div className="flex items-center justify-between mb-3">
@@ -681,6 +649,94 @@ export default function AdminIndex() {
                 </div>
               ))}
               {vaults.length===0 && <div className="text-white/60">No vaults yet.</div>}
+            </div>
+          </div>
+        </div>
+
+        {/* Vault Card Preview Section */}
+        <div className="mb-8">
+          <div className="bg-white/5 ring-1 ring-white/10 p-4">
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-white font-semibold text-xl">Vault Card Preview & Design</div>
+              <div className="flex items-center gap-4">
+                <select className="bg-white/10 text-white px-4 py-2 rounded" value={stage} onChange={(e)=>setStage(e.target.value as any)}>
+                  <option value="pre_ico">Pre‑ICO</option>
+                  <option value="ico">ICO Live</option>
+                  <option value="pending">Pending</option>
+                  <option value="prelaunch">Pre-Launch</option>
+                  <option value="active">Live</option>
+                  <option value="winner_confirmation">Winner Confirmation</option>
+                  <option value="endgame_processing">Endgame Processing</option>
+                  <option value="extinct">Extinct</option>
+                </select>
+                <button 
+                  onClick={() => router.push('/admin/card-preview')}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
+                >
+                  Full Card Preview
+                </button>
+              </div>
+            </div>
+            
+            {/* Single Card Previews - Clean Layout */}
+            <div className="space-y-8">
+              {/* Featured Card Preview */}
+              <div>
+                <h3 className="text-white font-semibold mb-4 text-lg">Featured Card</h3>
+                <div className="max-w-4xl">
+                  <VaultCardPreview 
+                    vault={vaults.find(v => v.status === stage) || vaults[0]} 
+                    variant="featured" 
+                    className="scale-90 origin-top-left"
+                  />
+                </div>
+              </div>
+              
+              {/* Tall Card Preview */}
+              <div>
+                <h3 className="text-white font-semibold mb-4 text-lg">Tall Card</h3>
+                <div className="max-w-md">
+                  <VaultCardPreview 
+                    vault={vaults.find(v => v.status === stage) || vaults[0]} 
+                    variant="tall" 
+                    className="scale-75 origin-top-left"
+                  />
+                </div>
+              </div>
+              
+              {/* List Card Preview */}
+              <div>
+                <h3 className="text-white font-semibold mb-4 text-lg">List Card</h3>
+                <div className="max-w-2xl">
+                  <VaultCardPreview 
+                    vault={vaults.find(v => v.status === stage) || vaults[0]} 
+                    variant="row" 
+                    className="scale-90 origin-top-left"
+                  />
+                </div>
+              </div>
+              
+              {/* Dedicated Page Preview */}
+              <div>
+                <h3 className="text-white font-semibold mb-4 text-lg">Dedicated Page</h3>
+                <div className="bg-white/5 p-6 rounded-lg border border-white/10">
+                  <div className="text-white/80 text-center py-8">
+                    <div className="text-lg font-semibold mb-2">Dedicated Vault Page</div>
+                    <div className="text-sm text-white/60 mb-4">
+                      Full vault details, trading interface, and real-time data
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const vault = vaults.find(v => v.status === stage) || vaults[0];
+                        if (vault) router.push(`/vault/${vault.id}`);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+                    >
+                      View Dedicated Page
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
