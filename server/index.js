@@ -853,7 +853,7 @@ async function checkSingleVaultTreasuryBalance(vaultId) {
 app.get('/api/admin/vaults/:id/treasury-balance', async (req, res) => {
   try {
     const { id } = req.params;
-    const vault = await db.getVaultById(id);
+    const vault = await db.getVault(id);
     
     if (!vault || !vault.treasuryWallet) {
       return res.status(404).json({ error: 'Vault or treasury wallet not found' });
@@ -1236,7 +1236,7 @@ app.post('/api/test/update-vault', async (req, res) => {
 app.post('/api/admin/vaults/:id/force-ico-end', async (req, res) => {
   try {
     const { id } = req.params;
-    const vault = await db.getVaultById(id);
+    const vault = await db.getVault(id);
     
     if (!vault) {
       return res.status(404).json({ error: 'Vault not found' });
@@ -1286,7 +1286,7 @@ app.post('/api/admin/vaults/:id/force-ico-end', async (req, res) => {
 app.post('/api/admin/vaults/:id/force-launch', async (req, res) => {
   try {
     const { id } = req.params;
-    const vault = await db.getVaultById(id);
+    const vault = await db.getVault(id);
     
     if (!vault) {
       return res.status(404).json({ error: 'Vault not found' });
@@ -1349,7 +1349,7 @@ app.post('/api/admin/vaults/:id/force-timer-expire', async (req, res) => {
 app.post('/api/admin/vaults/:id/force-endgame', async (req, res) => {
   try {
     const { id } = req.params;
-    const vault = await db.getVaultById(id);
+    const vault = await db.getVault(id);
     
     if (!vault) {
       return res.status(404).json({ error: 'Vault not found' });
@@ -1416,7 +1416,7 @@ app.get('/api/admin/vaults/:id/monitoring-status', async (req, res) => {
 app.post('/api/admin/vaults/:id/start-monitoring', async (req, res) => {
   try {
     const { id } = req.params;
-    const vault = await db.getVaultById(id);
+    const vault = await db.getVault(id);
     
     if (!vault) {
       return res.status(404).json({ error: 'Vault not found' });
@@ -1559,7 +1559,7 @@ app.post('/api/admin/vaults/:id/process-refund', async (req, res) => {
     console.log(`💰 Processing refund for vault: ${id}`);
     
     // Get vault data
-    const vault = await db.getVaultById(id);
+    const vault = await db.getVault(id);
     if (!vault) {
       return res.status(404).json({ error: 'Vault not found' });
     }
@@ -2179,7 +2179,7 @@ app.post('/api/admin/vaults/:id/stage2', async (req, res) => {
     }
     
     // Get current vault data
-    const vault = await db.getVaultById(id);
+    const vault = await db.getVault(id);
     if (!vault) {
       return res.status(404).json({ error: 'Vault not found' });
     }
