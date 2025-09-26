@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { VaultCardPreviewGrid } from '@/components/admin/VaultCardPreview';
+import { VaultCardPreview } from '@/components/admin/VaultCardPreview';
 
 export default function AdminIndex() {
   const router = useRouter();
