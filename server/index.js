@@ -1151,6 +1151,65 @@ app.get('/api/wallets', (req, res) => {
 });
 
 // Combined data endpoint
+// Unified API endpoint for vault data - optimized for performance
+app.get('/api/vaults/data', async (req, res) => {
+  try {
+    // Calculate vault data once
+    calculateVaultData();
+    
+    // Get all vaults with their data
+    const vaults = await db.getAllVaults();
+    const vaultsWithData = [];
+    
+    for (const vault of vaults) {
+      // Get whitelisted addresses for each vault
+      const whitelistedAddresses = await db.getWhitelistedAddresses(vault.id);
+      
+      // For active vaults, include real-time data
+      if (vault.status === 'active' && vault.id === 'revs-vault-001') {
+        vaultsWithData.push({
+          ...vault,
+          whitelistedAddresses,
+          realTimeData: {
+            timer: globalTimer,
+            token: {
+              address: REVS_TOKEN_ADDRESS,
+              price: tokenData.price,
+              marketCap: tokenData.marketCap,
+              volume24h: tokenData.volume24h,
+              lastUpdated: tokenData.lastUpdated
+            },
+            vault: vaultData,
+            wallets: {
+              balances: walletBalances,
+              totalSol: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.sol, 0),
+              totalUsd: Object.values(walletBalances).reduce((sum, wallet) => sum + wallet.usd, 0)
+            }
+          }
+        });
+      } else {
+        // For inactive vaults, just return basic data
+        vaultsWithData.push({
+          ...vault,
+          whitelistedAddresses,
+          realTimeData: null
+        });
+      }
+    }
+    
+    res.json({
+      vaults: vaultsWithData,
+      monitoring: {
+        isMonitoring: monitoringState.isMonitoring,
+        lastUpdated: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Vaults data API error:', error);
+    res.status(500).json({ error: 'Failed to fetch vaults data' });
+  }
+});
+
 app.get('/api/dashboard', async (req, res) => {
   try {
     // Calculate vault data before sending
