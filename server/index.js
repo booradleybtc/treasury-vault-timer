@@ -358,6 +358,102 @@ let globalTimer = {
   lastTxSignature: null
 };
 
+// ICO threshold monitoring
+const ICO_THRESHOLD_USD = 10000; // $10,000 USD threshold for evolution
+const PENDING_TIMEOUT_HOURS = 48; // 48 hours before auto-refund
+
+// ICO monitoring functions
+async function checkICOThresholds() {
+  try {
+    const vaults = await db.getAllVaults();
+    
+    for (const vault of vaults) {
+      if (vault.status === 'ico') {
+        // Check if ICO has ended (24 hours passed)
+        const icoEndTime = new Date(vault.meta?.icoEndsAt);
+        const now = new Date();
+        
+        if (now >= icoEndTime) {
+          // ICO period ended, check if threshold was met
+          const totalVolumeUSD = vault.totalVolume || 0;
+          
+          if (totalVolumeUSD >= ICO_THRESHOLD_USD) {
+            // Threshold met - move to pending for Stage 2
+            await db.updateVault(vault.id, {
+              status: 'pending',
+              updatedAt: new Date().toISOString()
+            });
+            
+            console.log(`🎉 Vault ${vault.id} met ICO threshold ($${totalVolumeUSD.toLocaleString()}) - moved to pending for Stage 2`);
+          } else {
+            // Threshold not met - mark for refund
+            await db.updateVault(vault.id, {
+              status: 'refund_required',
+              updatedAt: new Date().toISOString()
+            });
+            
+            console.log(`❌ Vault ${vault.id} did not meet ICO threshold ($${totalVolumeUSD.toLocaleString()}) - marked for refund`);
+          }
+        }
+      } else if (vault.status === 'pending') {
+        // Check if pending timeout has been reached
+        const pendingSince = new Date(vault.updatedAt);
+        const now = new Date();
+        const hoursPending = (now - pendingSince) / (1000 * 60 * 60);
+        
+        if (hoursPending >= PENDING_TIMEOUT_HOURS) {
+          // Timeout reached - mark for refund
+          await db.updateVault(vault.id, {
+            status: 'refund_required',
+            updatedAt: new Date().toISOString()
+          });
+          
+          console.log(`⏰ Vault ${vault.id} pending timeout reached (${hoursPending.toFixed(1)} hours) - marked for refund`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error checking ICO thresholds:', error);
+  }
+}
+
+// Check ICO thresholds every 5 minutes
+setInterval(checkICOThresholds, 5 * 60 * 1000);
+
+// API endpoint to get pending vaults for admin dashboard
+app.get('/api/admin/vaults/pending', async (req, res) => {
+  try {
+    const vaults = await db.getAllVaults();
+    const pendingVaults = vaults.filter(vault => vault.status === 'pending');
+    
+    // Add time remaining for pending timeout
+    const pendingVaultsWithTimeout = pendingVaults.map(vault => {
+      const pendingSince = new Date(vault.updatedAt);
+      const now = new Date();
+      const hoursPending = (now - pendingSince) / (1000 * 60 * 60);
+      const hoursRemaining = Math.max(0, PENDING_TIMEOUT_HOURS - hoursPending);
+      
+      return {
+        ...vault,
+        pendingInfo: {
+          hoursPending: Math.round(hoursPending * 10) / 10,
+          hoursRemaining: Math.round(hoursRemaining * 10) / 10,
+          pendingSince: vault.updatedAt
+        }
+      };
+    });
+    
+    res.json({ 
+      pendingVaults: pendingVaultsWithTimeout,
+      totalPending: pendingVaultsWithTimeout.length,
+      timeoutHours: PENDING_TIMEOUT_HOURS
+    });
+  } catch (error) {
+    console.error('❌ Error fetching pending vaults:', error);
+    res.status(500).json({ error: 'Failed to fetch pending vaults' });
+  }
+});
+
 // Monitoring control
 let monitoringState = {
   isMonitoring: false,
@@ -883,6 +979,77 @@ app.post('/api/admin/vaults/:id/stop', (req, res) => {
     res.json({ success: true, message: `Vault ${id} stopped successfully` });
   } catch (error) {
     res.status(500).json({ error: 'Failed to stop vault' });
+  }
+});
+
+// Stage 2 completion endpoint
+app.post('/api/admin/vaults/:id/stage2', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tokenAddress, distributionWallet, whitelistAddresses, vaultLaunchDate } = req.body;
+    
+    console.log(`🚀 Completing Stage 2 setup for vault: ${id}`);
+    
+    // Validate required fields
+    if (!tokenAddress || !distributionWallet || !vaultLaunchDate) {
+      return res.status(400).json({ error: 'Missing required fields: tokenAddress, distributionWallet, vaultLaunchDate' });
+    }
+    
+    // Get current vault data
+    const vault = await db.getVaultById(id);
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    // Update vault with Stage 2 data
+    const updatedMeta = {
+      ...vault.meta,
+      stage2: {
+        tokenAddress,
+        distributionWallet,
+        whitelistAddresses: whitelistAddresses || [],
+        vaultLaunchDate,
+        completedAt: new Date().toISOString()
+      }
+    };
+    
+    // Update vault status to 'active' and set launch date
+    await db.updateVault(id, {
+      status: 'active',
+      meta: JSON.stringify(updatedMeta),
+      tokenMint: tokenAddress,
+      distributionWallet: distributionWallet,
+      startDate: vaultLaunchDate,
+      updatedAt: new Date().toISOString()
+    });
+    
+    // Update whitelisted addresses
+    if (whitelistAddresses && whitelistAddresses.length > 0) {
+      // Clear existing whitelist
+      await db.clearWhitelistedAddresses(id);
+      
+      // Add new whitelist addresses
+      for (const address of whitelistAddresses) {
+        await db.addWhitelistedAddress(id, address);
+      }
+    }
+    
+    console.log(`✅ Stage 2 setup completed for vault: ${id}`);
+    res.json({ 
+      success: true, 
+      message: `Stage 2 setup completed for vault ${id}`,
+      vault: {
+        id,
+        status: 'active',
+        tokenMint: tokenAddress,
+        distributionWallet,
+        startDate: vaultLaunchDate
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error completing Stage 2 setup:', error);
+    res.status(500).json({ error: 'Failed to complete Stage 2 setup' });
   }
 });
 

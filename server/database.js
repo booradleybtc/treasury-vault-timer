@@ -445,6 +445,20 @@ class Database {
     });
   }
 
+  async clearWhitelistedAddresses(vaultId) {
+    return new Promise((resolve, reject) => {
+      const sql = 'DELETE FROM whitelisted_addresses WHERE vault_id = ?';
+      this.db.run(sql, [vaultId], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          console.log(`✅ Cleared whitelisted addresses for vault ${vaultId}`);
+          resolve({ vaultId, cleared: this.changes });
+        }
+      });
+    });
+  }
+
   async updateWhitelistedAddresses(vaultId, addresses) {
     return new Promise(async (resolve, reject) => {
       try {
