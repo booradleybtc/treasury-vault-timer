@@ -347,7 +347,10 @@ async function trackTotalAirdroppedSOL() {
   }
 }
 
-// Global timer state
+// Dynamic vault monitoring system
+const vaultMonitors = new Map(); // Map of vaultId -> monitoring state
+
+// Global timer state (for backward compatibility)
 let globalTimer = {
   timeLeft: 3600,
   isActive: true,
@@ -574,28 +577,61 @@ async function getTokenSymbol(mintAddress) {
 // Check treasury balances every 2 minutes during ICO
 setInterval(checkTreasuryBalances, 2 * 60 * 1000);
 
-// Helius webhook integration for real-time treasury monitoring
+// Helius webhook integration for real-time monitoring
 app.post('/webhook/helius', async (req, res) => {
   try {
     const { type, data } = req.body;
     
     if (type === 'TRANSFER') {
-      const { source, destination, amount, token } = data;
+      const { source, destination, amount, token, signature } = data;
       
-      // Check if this is a transfer to any of our treasury wallets
+      // Check if this is a transfer to any of our treasury wallets (ICO monitoring)
       const vaults = await db.getAllVaults();
       const targetVault = vaults.find(vault => 
         vault.treasuryWallet && 
         (vault.treasuryWallet === destination || vault.treasuryWallet === source)
       );
       
-      if (targetVault && vault.status === VAULT_STATUS.ICO) {
-        console.log(`🔔 Webhook: Transfer detected for vault ${targetVault.id}`);
+      if (targetVault && targetVault.status === VAULT_STATUS.ICO) {
+        console.log(`🔔 Webhook: Treasury transfer detected for vault ${targetVault.id}`);
         console.log(`   From: ${source} → To: ${destination}`);
         console.log(`   Amount: ${amount} ${token || 'SOL'}`);
         
         // Trigger immediate treasury balance check for this vault
         await checkSingleVaultTreasuryBalance(targetVault.id);
+      }
+      
+      // Check if this is a token purchase for any active vault (timer monitoring)
+      for (const [vaultId, monitorState] of vaultMonitors) {
+        if (monitorState.tokenMint === token && monitorState.isActive) {
+          console.log(`🔔 Webhook: Token purchase detected for vault ${vaultId}`);
+          console.log(`   Token: ${token}, Amount: ${amount}, Buyer: ${source}`);
+          
+          // Check if buyer is whitelisted
+          const isWhitelisted = monitorState.whitelistedAddresses.some(
+            wa => wa.address === source
+          );
+          
+          if (!isWhitelisted) {
+            // Valid purchase - reset timer
+            monitorState.timeLeft = monitorState.timerDuration;
+            monitorState.lastPurchaseTime = new Date();
+            monitorState.lastBuyerAddress = source;
+            monitorState.lastPurchaseAmount = amount;
+            
+            console.log(`🔄 Webhook Timer Reset: Vault ${vaultId} - ${amount} tokens by ${source}`);
+            
+            // Emit purchase event
+            io.emit('vault-purchase', {
+              vaultId,
+              buyer: source,
+              amount: amount,
+              timeLeft: monitorState.timeLeft
+            });
+          } else {
+            console.log(`🚫 Webhook: Whitelisted address ${source} excluded from vault ${vaultId}`);
+          }
+        }
       }
     }
     
@@ -764,13 +800,16 @@ async function checkPrelaunchVaults() {
         const now = new Date();
         
         if (now >= launchDate) {
-          // Launch date reached - activate vault
+          // Launch date reached - activate vault and start monitoring
           await db.updateVault(vault.id, {
             status: VAULT_STATUS.ACTIVE,
             updatedAt: new Date().toISOString()
           });
           
-          console.log(`🚀 Vault ${vault.id} launched! Timer is now active.`);
+          // Start dynamic monitoring for this vault's token
+          await startVaultMonitoring(vault);
+          
+          console.log(`🚀 Vault ${vault.id} launched! Timer is now active for token ${vault.tokenMint}.`);
         }
       }
     }
@@ -779,8 +818,281 @@ async function checkPrelaunchVaults() {
   }
 }
 
+// Start monitoring for a specific vault's token
+async function startVaultMonitoring(vault) {
+  try {
+    if (!vault.tokenMint) {
+      console.error(`❌ No token mint found for vault ${vault.id}`);
+      return;
+    }
+    
+    // Create monitoring state for this vault
+    const monitorState = {
+      vaultId: vault.id,
+      tokenMint: vault.tokenMint,
+      timerDuration: vault.timerDuration || 3600,
+      timeLeft: vault.timerDuration || 3600,
+      isActive: true,
+      lastPurchaseTime: null,
+      lastBuyerAddress: null,
+      lastPurchaseAmount: null,
+      lastCheckedSignature: null,
+      whitelistedAddresses: await db.getWhitelistedAddresses(vault.id),
+      startTime: new Date()
+    };
+    
+    // Store in vault monitors map
+    vaultMonitors.set(vault.id, monitorState);
+    
+    // Start monitoring interval for this vault
+    const intervalId = setInterval(async () => {
+      await monitorVaultToken(vault.id);
+    }, 1000); // Check every second
+    
+    monitorState.intervalId = intervalId;
+    
+    console.log(`📡 Started monitoring vault ${vault.id} for token ${vault.tokenMint}`);
+    
+  } catch (error) {
+    console.error(`❌ Error starting vault monitoring for ${vault.id}:`, error);
+  }
+}
+
+// Monitor a specific vault's token for purchases
+async function monitorVaultToken(vaultId) {
+  try {
+    const monitorState = vaultMonitors.get(vaultId);
+    if (!monitorState || !monitorState.isActive) return;
+    
+    // Decrement timer
+    monitorState.timeLeft = Math.max(0, monitorState.timeLeft - 1);
+    
+    // Check for new token purchases
+    await checkTokenPurchases(vaultId, monitorState);
+    
+    // Emit timer update via Socket.IO
+    io.emit('vault-timer-update', {
+      vaultId,
+      timeLeft: monitorState.timeLeft,
+      isActive: monitorState.isActive,
+      lastPurchaseTime: monitorState.lastPurchaseTime,
+      lastBuyerAddress: monitorState.lastBuyerAddress,
+      lastPurchaseAmount: monitorState.lastPurchaseAmount
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error monitoring vault ${vaultId}:`, error);
+  }
+}
+
+// Check for token purchases for a specific vault
+async function checkTokenPurchases(vaultId, monitorState) {
+  try {
+    const { tokenMint, lastCheckedSignature } = monitorState;
+    
+    // Get recent transactions for this token
+    const signatures = await connection.getSignaturesForAddress(
+      new PublicKey(tokenMint),
+      { limit: 10, before: lastCheckedSignature }
+    );
+    
+    for (const sig of signatures) {
+      if (sig.signature === lastCheckedSignature) break;
+      
+      try {
+        const tx = await connection.getParsedTransaction(sig.signature, {
+          maxSupportedTransactionVersion: 0
+        });
+        
+        if (tx && tx.meta && tx.meta.logMessages) {
+          // Parse transaction for token transfers
+          const transferInfo = parseTokenTransfer(tx, tokenMint);
+          
+          if (transferInfo && transferInfo.amount > 0) {
+            // Check if buyer is whitelisted
+            const isWhitelisted = monitorState.whitelistedAddresses.some(
+              wa => wa.address === transferInfo.buyer
+            );
+            
+            if (!isWhitelisted) {
+              // Valid purchase - reset timer
+              monitorState.timeLeft = monitorState.timerDuration;
+              monitorState.lastPurchaseTime = new Date();
+              monitorState.lastBuyerAddress = transferInfo.buyer;
+              monitorState.lastPurchaseAmount = transferInfo.amount;
+              monitorState.lastCheckedSignature = sig.signature;
+              
+              console.log(`🔄 Timer reset for vault ${vaultId} - Purchase: ${transferInfo.amount} tokens by ${transferInfo.buyer}`);
+              
+              // Emit purchase event
+              io.emit('vault-purchase', {
+                vaultId,
+                buyer: transferInfo.buyer,
+                amount: transferInfo.amount,
+                timeLeft: monitorState.timeLeft
+              });
+            } else {
+              console.log(`🚫 Whitelisted address ${transferInfo.buyer} excluded from vault ${vaultId} timer reset`);
+            }
+          }
+        }
+      } catch (txError) {
+        console.log(`⚠️ Error parsing transaction ${sig.signature}:`, txError.message);
+      }
+    }
+    
+    // Update last checked signature
+    if (signatures.length > 0) {
+      monitorState.lastCheckedSignature = signatures[0].signature;
+    }
+    
+  } catch (error) {
+    console.error(`❌ Error checking token purchases for vault ${vaultId}:`, error);
+  }
+}
+
+// Parse token transfer from transaction
+function parseTokenTransfer(tx, tokenMint) {
+  try {
+    if (!tx.meta || !tx.meta.logMessages) return null;
+    
+    // Look for token transfer logs
+    for (const log of tx.meta.logMessages) {
+      if (log.includes('Transfer') && log.includes(tokenMint)) {
+        // Parse transfer log to extract buyer and amount
+        // This is a simplified parser - you might need to enhance based on actual log format
+        const transferMatch = log.match(/Transfer (\d+) tokens/);
+        if (transferMatch) {
+          return {
+            buyer: tx.transaction.message.accountKeys[0].toString(), // Simplified
+            amount: parseInt(transferMatch[1])
+          };
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error parsing token transfer:', error);
+    return null;
+  }
+}
+
+// Stop monitoring for a vault
+function stopVaultMonitoring(vaultId) {
+  const monitorState = vaultMonitors.get(vaultId);
+  if (monitorState && monitorState.intervalId) {
+    clearInterval(monitorState.intervalId);
+    vaultMonitors.delete(vaultId);
+    console.log(`⏹️ Stopped monitoring vault ${vaultId}`);
+  }
+}
+
 // Check prelaunch vaults every minute
 setInterval(checkPrelaunchVaults, 60 * 1000);
+
+// API endpoints for vault monitoring management
+app.get('/api/admin/vaults/:id/monitoring-status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const monitorState = vaultMonitors.get(id);
+    
+    if (monitorState) {
+      res.json({
+        vaultId: id,
+        isMonitoring: true,
+        tokenMint: monitorState.tokenMint,
+        timeLeft: monitorState.timeLeft,
+        isActive: monitorState.isActive,
+        lastPurchaseTime: monitorState.lastPurchaseTime,
+        lastBuyerAddress: monitorState.lastBuyerAddress,
+        lastPurchaseAmount: monitorState.lastPurchaseAmount,
+        startTime: monitorState.startTime
+      });
+    } else {
+      res.json({
+        vaultId: id,
+        isMonitoring: false,
+        message: 'Vault is not currently being monitored'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error getting monitoring status:', error);
+    res.status(500).json({ error: 'Failed to get monitoring status' });
+  }
+});
+
+app.post('/api/admin/vaults/:id/start-monitoring', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVaultById(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    if (!vault.tokenMint) {
+      return res.status(400).json({ error: 'Vault has no token mint configured' });
+    }
+    
+    // Start monitoring
+    await startVaultMonitoring(vault);
+    
+    res.json({
+      success: true,
+      message: `Started monitoring vault ${id} for token ${vault.tokenMint}`,
+      tokenMint: vault.tokenMint
+    });
+    
+  } catch (error) {
+    console.error('❌ Error starting vault monitoring:', error);
+    res.status(500).json({ error: 'Failed to start monitoring' });
+  }
+});
+
+app.post('/api/admin/vaults/:id/stop-monitoring', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Stop monitoring
+    stopVaultMonitoring(id);
+    
+    res.json({
+      success: true,
+      message: `Stopped monitoring vault ${id}`
+    });
+    
+  } catch (error) {
+    console.error('❌ Error stopping vault monitoring:', error);
+    res.status(500).json({ error: 'Failed to stop monitoring' });
+  }
+});
+
+app.get('/api/admin/vaults/monitoring-overview', async (req, res) => {
+  try {
+    const monitoringOverview = [];
+    
+    for (const [vaultId, monitorState] of vaultMonitors) {
+      monitoringOverview.push({
+        vaultId,
+        tokenMint: monitorState.tokenMint,
+        timeLeft: monitorState.timeLeft,
+        isActive: monitorState.isActive,
+        lastPurchaseTime: monitorState.lastPurchaseTime,
+        startTime: monitorState.startTime
+      });
+    }
+    
+    res.json({
+      totalMonitoring: vaultMonitors.size,
+      vaults: monitoringOverview
+    });
+    
+  } catch (error) {
+    console.error('❌ Error getting monitoring overview:', error);
+    res.status(500).json({ error: 'Failed to get monitoring overview' });
+  }
+});
 
 // Refund system API endpoints
 app.get('/api/admin/vaults/refund-required', async (req, res) => {

@@ -8,6 +8,7 @@ export default function AdminIndex() {
   const [vaults, setVaults] = useState<any[]>([]);
   const [pendingVaults, setPendingVaults] = useState<any[]>([]);
   const [refundVaults, setRefundVaults] = useState<any[]>([]);
+  const [monitoringVaults, setMonitoringVaults] = useState<any[]>([]);
   const [stage, setStage] = useState<'all'|'pre_ico'|'ico'|'countdown'|'active'|'extinct'>('all');
   const [deletingVault, setDeletingVault] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -38,9 +39,18 @@ export default function AdminIndex() {
       } catch {}
     };
     
+    const loadMonitoring = async () => {
+      try {
+        const res = await fetch(`${BACKEND}/api/admin/vaults/monitoring-overview`);
+        const js = await res.json();
+        setMonitoringVaults(js.vaults || []);
+      } catch {}
+    };
+    
     load();
     loadPending();
     loadRefunds();
+    loadMonitoring();
   }, [BACKEND]);
 
   // Reset delete state after 5 seconds of inactivity
@@ -71,6 +81,26 @@ export default function AdminIndex() {
     } catch (error) {
       console.error('Error checking treasury balance:', error);
       alert('Error checking treasury balance');
+    }
+  };
+
+  const checkMonitoringStatus = async (vaultId: string) => {
+    try {
+      const response = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/monitoring-status`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        if (data.isMonitoring) {
+          alert(`Monitoring Status for ${vaultId}:\nToken: ${data.tokenMint}\nTime Left: ${Math.floor(data.timeLeft / 60)}m ${data.timeLeft % 60}s\nStatus: ${data.isActive ? 'Active' : 'Inactive'}\nLast Purchase: ${data.lastPurchaseTime ? new Date(data.lastPurchaseTime).toLocaleString() : 'None'}`);
+        } else {
+          alert(`Vault ${vaultId} is not currently being monitored.`);
+        }
+      } else {
+        alert('Failed to fetch monitoring status');
+      }
+    } catch (error) {
+      console.error('Error checking monitoring status:', error);
+      alert('Error checking monitoring status');
     }
   };
 
@@ -212,6 +242,54 @@ export default function AdminIndex() {
                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-semibold"
                       >
                         Process Refund
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Active Vault Monitoring Section */}
+        {monitoringVaults.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-green-500/10 ring-1 ring-green-500/20 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-green-300 font-semibold flex items-center gap-2">
+                  📡 Active Vault Monitoring ({monitoringVaults.length} vault{monitoringVaults.length !== 1 ? 's' : ''})
+                </div>
+                <div className="text-green-400 text-sm">
+                  Real-time token purchase monitoring
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                {monitoringVaults.map(v => (
+                  <div key={v.vaultId} className="flex items-center justify-between bg-green-500/5 ring-1 ring-green-500/20 p-4">
+                    <div className="text-white flex-1">
+                      <div className="font-semibold text-lg">{v.vaultId}</div>
+                      <div className="text-xs text-white/60 mb-1">Token: {v.tokenMint}</div>
+                      <div className="text-sm text-white/80">
+                        <span className="mr-4">Time Left: {Math.floor(v.timeLeft / 60)}m {v.timeLeft % 60}s</span>
+                        <span className="mr-4">Status: {v.isActive ? 'Active' : 'Inactive'}</span>
+                        {v.lastPurchaseTime && (
+                          <span className="text-green-400">
+                            Last Purchase: {new Date(v.lastPurchaseTime).toLocaleTimeString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        v.isActive ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-300'
+                      }`}>
+                        {v.isActive ? 'MONITORING' : 'INACTIVE'}
+                      </span>
+                      <button 
+                        onClick={() => checkMonitoringStatus(v.vaultId)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs"
+                      >
+                        Status
                       </button>
                     </div>
                   </div>
