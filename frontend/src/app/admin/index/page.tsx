@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { VaultCardPreviewGrid } from '@/components/admin/VaultCardPreview';
 
 export default function AdminIndex() {
   const router = useRouter();
@@ -520,6 +521,38 @@ export default function AdminIndex() {
           </div>
         )}
         
+        {/* Vault Card Preview Section */}
+        <div className="mb-8">
+          <div className="bg-white/5 ring-1 ring-white/10 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-white font-semibold">Vault Card Preview & Design</div>
+              <div className="flex items-center gap-2">
+                <select className="bg-white/10 text-white px-3 py-1" value={stage} onChange={(e)=>setStage(e.target.value as any)}>
+                  <option value="all">All</option>
+                  <option value="pre_ico">Pre‑ICO</option>
+                  <option value="ico">ICO Now</option>
+                  <option value="pending">Pending</option>
+                  <option value="prelaunch">Pre-Launch</option>
+                  <option value="active">Live</option>
+                  <option value="winner_confirmation">Winner</option>
+                  <option value="endgame_processing">Endgame</option>
+                  <option value="extinct">Extinct</option>
+                </select>
+                <span className="text-white/60 text-sm">Preview how cards look for different vaults and statuses</span>
+              </div>
+            </div>
+            
+            {/* Card Preview Grid */}
+            <VaultCardPreviewGrid vaults={vaults} selectedStatus={stage} />
+            
+            <div className="text-center">
+              <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded">
+                Edit Card Designs
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-8">
           <div className="bg-white/5 ring-1 ring-white/10 p-4">
             <div className="flex items-center justify-between mb-3">
@@ -528,8 +561,11 @@ export default function AdminIndex() {
                 <option value="all">All</option>
                 <option value="pre_ico">Pre‑ICO</option>
                 <option value="ico">ICO Now</option>
-                <option value="countdown">Countdown</option>
+                <option value="pending">Pending</option>
+                <option value="prelaunch">Pre-Launch</option>
                 <option value="active">Live</option>
+                <option value="winner_confirmation">Winner</option>
+                <option value="endgame_processing">Endgame</option>
                 <option value="extinct">Extinct</option>
               </select>
             </div>
