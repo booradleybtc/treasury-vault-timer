@@ -7,6 +7,8 @@ export default function AdminIndex() {
   const router = useRouter();
   const [vaults, setVaults] = useState<any[]>([]);
   const [pendingVaults, setPendingVaults] = useState<any[]>([]);
+  const [winnerVaults, setWinnerVaults] = useState<any[]>([]);
+  const [endgameVaults, setEndgameVaults] = useState<any[]>([]);
   const [refundVaults, setRefundVaults] = useState<any[]>([]);
   const [monitoringVaults, setMonitoringVaults] = useState<any[]>([]);
   const [stage, setStage] = useState<'all'|'pre_ico'|'ico'|'countdown'|'active'|'extinct'>('all');
@@ -31,6 +33,22 @@ export default function AdminIndex() {
       } catch {}
     };
     
+    const loadWinners = async () => {
+      try {
+        const res = await fetch(`${BACKEND}/api/admin/vaults/winner-confirmation`);
+        const js = await res.json();
+        setWinnerVaults(js.winnerVaults || []);
+      } catch {}
+    };
+    
+    const loadEndgame = async () => {
+      try {
+        const res = await fetch(`${BACKEND}/api/admin/vaults/endgame-processing`);
+        const js = await res.json();
+        setEndgameVaults(js.endgameVaults || []);
+      } catch {}
+    };
+    
     const loadRefunds = async () => {
       try {
         const res = await fetch(`${BACKEND}/api/admin/vaults/refund-required`);
@@ -49,6 +67,8 @@ export default function AdminIndex() {
     
     load();
     loadPending();
+    loadWinners();
+    loadEndgame();
     loadRefunds();
     loadMonitoring();
   }, [BACKEND]);
@@ -101,6 +121,95 @@ export default function AdminIndex() {
     } catch (error) {
       console.error('Error checking monitoring status:', error);
       alert('Error checking monitoring status');
+    }
+  };
+
+  // Admin control functions for testing progression
+  const forceICOEnd = async (vaultId: string) => {
+    if (!confirm(`Force ICO to end for vault ${vaultId}?`)) return;
+    
+    try {
+      const response = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/force-ico-end`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`ICO ended for vault ${vaultId}\nNew Status: ${data.newStatus}\nThreshold Met: ${data.thresholdMet ? 'Yes' : 'No'}`);
+        // Reload data
+        window.location.reload();
+      } else {
+        alert('Failed to force ICO end');
+      }
+    } catch (error) {
+      console.error('Error forcing ICO end:', error);
+      alert('Error forcing ICO end');
+    }
+  };
+
+  const forceLaunch = async (vaultId: string) => {
+    if (!confirm(`Force launch for vault ${vaultId}?`)) return;
+    
+    try {
+      const response = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/force-launch`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`Vault ${vaultId} launched successfully!`);
+        // Reload data
+        window.location.reload();
+      } else {
+        alert('Failed to force launch');
+      }
+    } catch (error) {
+      console.error('Error forcing launch:', error);
+      alert('Error forcing launch');
+    }
+  };
+
+  const forceTimerExpire = async (vaultId: string) => {
+    if (!confirm(`Force timer to expire for vault ${vaultId}?`)) return;
+    
+    try {
+      const response = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/force-timer-expire`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`Timer expired for vault ${vaultId}\nNew Status: ${data.newStatus}`);
+        // Reload data
+        window.location.reload();
+      } else {
+        alert('Failed to force timer expiration');
+      }
+    } catch (error) {
+      console.error('Error forcing timer expiration:', error);
+      alert('Error forcing timer expiration');
+    }
+  };
+
+  const forceEndgame = async (vaultId: string) => {
+    if (!confirm(`Force endgame for vault ${vaultId}?`)) return;
+    
+    try {
+      const response = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/force-endgame`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`Endgame triggered for vault ${vaultId}\nNew Status: ${data.newStatus}`);
+        // Reload data
+        window.location.reload();
+      } else {
+        alert('Failed to force endgame');
+      }
+    } catch (error) {
+      console.error('Error forcing endgame:', error);
+      alert('Error forcing endgame');
     }
   };
 
@@ -251,6 +360,96 @@ export default function AdminIndex() {
           </div>
         )}
         
+        {/* Winner Confirmation Section */}
+        {winnerVaults.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-purple-500/10 ring-1 ring-purple-500/20 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-purple-300 font-semibold flex items-center gap-2">
+                  🏆 Winner Confirmation ({winnerVaults.length} vault{winnerVaults.length !== 1 ? 's' : ''})
+                </div>
+                <div className="text-purple-400 text-sm">
+                  Timer expired - winners need to claim
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                {winnerVaults.map(v => (
+                  <div key={v.id} className="flex items-center justify-between bg-purple-500/5 ring-1 ring-purple-500/20 p-4">
+                    <div className="text-white flex-1">
+                      <div className="font-semibold text-lg">{v.name}</div>
+                      <div className="text-xs text-white/60 mb-1">{v.id}</div>
+                      <div className="text-sm text-white/80">
+                        <span className="mr-4">Winner: {v.winner?.winnerAddress || 'Unknown'}</span>
+                        <span className="mr-4">Treasury: ${(v.totalVolume || 0).toLocaleString()}</span>
+                        {v.winner?.lastPurchaseTime && (
+                          <span className="text-purple-400">
+                            Last Purchase: {new Date(v.winner.lastPurchaseTime).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-300">
+                        WINNER
+                      </span>
+                      <button 
+                        onClick={() => router.push(`/admin/winner/${v.id}`)}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-semibold"
+                      >
+                        Process Claim
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Endgame Processing Section */}
+        {endgameVaults.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-orange-500/10 ring-1 ring-orange-500/20 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-orange-300 font-semibold flex items-center gap-2">
+                  🎯 Endgame Processing ({endgameVaults.length} vault{endgameVaults.length !== 1 ? 's' : ''})
+                </div>
+                <div className="text-orange-400 text-sm">
+                  Vault lifespan reached - process airdrops
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                {endgameVaults.map(v => (
+                  <div key={v.id} className="flex items-center justify-between bg-orange-500/5 ring-1 ring-orange-500/20 p-4">
+                    <div className="text-white flex-1">
+                      <div className="font-semibold text-lg">{v.name}</div>
+                      <div className="text-xs text-white/60 mb-1">{v.id}</div>
+                      <div className="text-sm text-white/80">
+                        <span className="mr-4">Token: {v.tokenMint}</span>
+                        <span className="mr-4">Treasury: ${(v.totalVolume || 0).toLocaleString()}</span>
+                        <span className="text-orange-400">
+                          Endgame: {new Date(v.updatedAt).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs px-2 py-1 rounded bg-orange-500/20 text-orange-300">
+                        ENDGAME
+                      </span>
+                      <button 
+                        onClick={() => router.push(`/admin/endgame/${v.id}`)}
+                        className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 text-sm font-semibold"
+                      >
+                        Process Airdrops
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Active Vault Monitoring Section */}
         {monitoringVaults.length > 0 && (
           <div className="mb-8">
@@ -324,16 +523,59 @@ export default function AdminIndex() {
                       {v.createdAt && <span>Created: {new Date(v.createdAt).toLocaleDateString()}</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs px-2 py-1 rounded ${
                       v.status === 'active' ? 'bg-green-500/20 text-green-300' :
                       v.status === 'pre_ico' ? 'bg-cyan-500/20 text-cyan-300' :
                       v.status === 'ico' ? 'bg-blue-500/20 text-blue-300' :
+                      v.status === 'prelaunch' ? 'bg-purple-500/20 text-purple-300' :
+                      v.status === 'pending' ? 'bg-orange-500/20 text-orange-300' :
                       v.status === 'extinct' ? 'bg-red-500/20 text-red-300' :
                       'bg-gray-500/20 text-gray-300'
                     }`}>
                       {(v.status||'draft').toUpperCase()}
                     </span>
+                    
+                    {/* Admin Control Buttons for Testing */}
+                    {v.status === 'ico' && (
+                      <button 
+                        onClick={() => forceICOEnd(v.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
+                        title="Force ICO to end (for testing)"
+                      >
+                        End ICO
+                      </button>
+                    )}
+                    
+                    {v.status === 'prelaunch' && (
+                      <button 
+                        onClick={() => forceLaunch(v.id)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs"
+                        title="Force vault to launch (for testing)"
+                      >
+                        Launch
+                      </button>
+                    )}
+                    
+                    {v.status === 'active' && (
+                      <>
+                        <button 
+                          onClick={() => forceTimerExpire(v.id)}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 text-xs"
+                          title="Force timer to expire (for testing)"
+                        >
+                          Expire Timer
+                        </button>
+                        <button 
+                          onClick={() => forceEndgame(v.id)}
+                          className="bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 text-xs"
+                          title="Force endgame (for testing)"
+                        >
+                          Endgame
+                        </button>
+                      </>
+                    )}
+                    
                     <button onClick={()=>router.push(`/admin/details/${v.id}`)} className="bg-white text-black px-3 py-1 text-xs hover:bg-gray-200">Details</button>
                     <button onClick={()=>router.push(`/vault/${v.id}`)} className="bg-white/10 ring-1 ring-white/20 text-white px-3 py-1 text-xs hover:bg-white/20">View</button>
                     {deletingVault === v.id ? (

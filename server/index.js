@@ -373,7 +373,10 @@ const VAULT_STATUS = {
   PENDING: 'pending',
   PRELAUNCH: 'prelaunch', // New status for after Stage 2, before launch date
   ACTIVE: 'active',
-  REFUND_REQUIRED: 'refund_required'
+  WINNER_CONFIRMATION: 'winner_confirmation', // Timer expired, winner needs to claim
+  ENDGAME_PROCESSING: 'endgame_processing', // Vault reached end of lifespan
+  REFUND_REQUIRED: 'refund_required',
+  COMPLETED: 'completed' // Vault fully processed
 };
 
 // Whitelist exclusion check
@@ -867,6 +870,12 @@ async function monitorVaultToken(vaultId) {
     // Decrement timer
     monitorState.timeLeft = Math.max(0, monitorState.timeLeft - 1);
     
+    // Check if timer has expired
+    if (monitorState.timeLeft <= 0) {
+      await handleTimerExpiration(vaultId, monitorState);
+      return;
+    }
+    
     // Check for new token purchases
     await checkTokenPurchases(vaultId, monitorState);
     
@@ -882,6 +891,51 @@ async function monitorVaultToken(vaultId) {
     
   } catch (error) {
     console.error(`❌ Error monitoring vault ${vaultId}:`, error);
+  }
+}
+
+// Handle timer expiration - move to winner confirmation
+async function handleTimerExpiration(vaultId, monitorState) {
+  try {
+    // Stop monitoring
+    stopVaultMonitoring(vaultId);
+    
+    // Update vault status to winner confirmation
+    await db.updateVault(vaultId, {
+      status: VAULT_STATUS.WINNER_CONFIRMATION,
+      updatedAt: new Date().toISOString()
+    });
+    
+    // Store winner information
+    const winnerInfo = {
+      winnerAddress: monitorState.lastBuyerAddress,
+      lastPurchaseTime: monitorState.lastPurchaseTime,
+      lastPurchaseAmount: monitorState.lastPurchaseAmount,
+      timerExpiredAt: new Date().toISOString()
+    };
+    
+    // Update vault meta with winner info
+    const vault = await db.getVaultById(vaultId);
+    const updatedMeta = {
+      ...vault.meta,
+      winner: winnerInfo
+    };
+    
+    await db.updateVault(vaultId, {
+      meta: JSON.stringify(updatedMeta)
+    });
+    
+    console.log(`🏆 Timer expired for vault ${vaultId} - Winner: ${monitorState.lastBuyerAddress}`);
+    
+    // Emit timer expiration event
+    io.emit('vault-timer-expired', {
+      vaultId,
+      winner: monitorState.lastBuyerAddress,
+      lastPurchaseTime: monitorState.lastPurchaseTime
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error handling timer expiration for vault ${vaultId}:`, error);
   }
 }
 
@@ -991,6 +1045,193 @@ function stopVaultMonitoring(vaultId) {
 // Check prelaunch vaults every minute
 setInterval(checkPrelaunchVaults, 60 * 1000);
 
+// Endgame monitoring - check if active vaults have reached end of lifespan
+async function checkEndgameVaults() {
+  try {
+    const vaults = await db.getAllVaults();
+    
+    for (const vault of vaults) {
+      if (vault.status === VAULT_STATUS.ACTIVE) {
+        const vaultLifespan = vault.meta?.vaultLifespan || 7; // Default 7 days
+        const startTime = new Date(vault.meta?.stage2?.vaultLaunchDate);
+        const endTime = new Date(startTime.getTime() + (vaultLifespan * 24 * 60 * 60 * 1000));
+        const now = new Date();
+        
+        if (now >= endTime) {
+          // Vault lifespan reached - move to endgame processing
+          await db.updateVault(vault.id, {
+            status: VAULT_STATUS.ENDGAME_PROCESSING,
+            updatedAt: new Date().toISOString()
+          });
+          
+          // Stop monitoring
+          stopVaultMonitoring(vault.id);
+          
+          console.log(`🎯 Vault ${vault.id} reached end of lifespan - moved to endgame processing`);
+          
+          // Emit endgame event
+          io.emit('vault-endgame', {
+            vaultId: vault.id,
+            endTime: endTime.toISOString()
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error checking endgame vaults:', error);
+  }
+}
+
+// Check endgame vaults every hour
+setInterval(checkEndgameVaults, 60 * 60 * 1000);
+
+// Admin control endpoints for testing vault progression
+app.post('/api/admin/vaults/:id/force-ico-end', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVaultById(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    if (vault.status !== VAULT_STATUS.ICO) {
+      return res.status(400).json({ error: 'Vault is not in ICO status' });
+    }
+    
+    // Force ICO to end and check threshold
+    const totalVolumeUSD = vault.totalVolume || 0;
+    
+    if (totalVolumeUSD >= ICO_THRESHOLD_USD) {
+      // Threshold met - move to pending for Stage 2
+      await db.updateVault(id, {
+        status: VAULT_STATUS.PENDING,
+        updatedAt: new Date().toISOString()
+      });
+      
+      console.log(`🎉 Admin forced ICO end for vault ${id} - met threshold ($${totalVolumeUSD.toLocaleString()}) - moved to pending`);
+    } else {
+      // Threshold not met - mark for refund
+      await db.updateVault(id, {
+        status: VAULT_STATUS.REFUND_REQUIRED,
+        updatedAt: new Date().toISOString()
+      });
+      
+      console.log(`❌ Admin forced ICO end for vault ${id} - did not meet threshold ($${totalVolumeUSD.toLocaleString()}) - marked for refund`);
+    }
+    
+    res.json({
+      success: true,
+      message: `Forced ICO end for vault ${id}`,
+      newStatus: totalVolumeUSD >= ICO_THRESHOLD_USD ? VAULT_STATUS.PENDING : VAULT_STATUS.REFUND_REQUIRED,
+      thresholdMet: totalVolumeUSD >= ICO_THRESHOLD_USD
+    });
+    
+  } catch (error) {
+    console.error('❌ Error forcing ICO end:', error);
+    res.status(500).json({ error: 'Failed to force ICO end' });
+  }
+});
+
+app.post('/api/admin/vaults/:id/force-launch', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVaultById(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    if (vault.status !== VAULT_STATUS.PRELAUNCH) {
+      return res.status(400).json({ error: 'Vault is not in prelaunch status' });
+    }
+    
+    // Force vault to launch
+    await db.updateVault(id, {
+      status: VAULT_STATUS.ACTIVE,
+      updatedAt: new Date().toISOString()
+    });
+    
+    // Start monitoring
+    await startVaultMonitoring(vault);
+    
+    console.log(`🚀 Admin forced launch for vault ${id}`);
+    
+    res.json({
+      success: true,
+      message: `Forced launch for vault ${id}`,
+      newStatus: VAULT_STATUS.ACTIVE
+    });
+    
+  } catch (error) {
+    console.error('❌ Error forcing launch:', error);
+    res.status(500).json({ error: 'Failed to force launch' });
+  }
+});
+
+app.post('/api/admin/vaults/:id/force-timer-expire', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const monitorState = vaultMonitors.get(id);
+    
+    if (!monitorState) {
+      return res.status(400).json({ error: 'Vault is not currently being monitored' });
+    }
+    
+    // Force timer to expire
+    monitorState.timeLeft = 0;
+    await handleTimerExpiration(id, monitorState);
+    
+    console.log(`⏰ Admin forced timer expiration for vault ${id}`);
+    
+    res.json({
+      success: true,
+      message: `Forced timer expiration for vault ${id}`,
+      newStatus: VAULT_STATUS.WINNER_CONFIRMATION
+    });
+    
+  } catch (error) {
+    console.error('❌ Error forcing timer expiration:', error);
+    res.status(500).json({ error: 'Failed to force timer expiration' });
+  }
+});
+
+app.post('/api/admin/vaults/:id/force-endgame', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVaultById(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    if (vault.status !== VAULT_STATUS.ACTIVE) {
+      return res.status(400).json({ error: 'Vault is not active' });
+    }
+    
+    // Force vault to endgame
+    await db.updateVault(id, {
+      status: VAULT_STATUS.ENDGAME_PROCESSING,
+      updatedAt: new Date().toISOString()
+    });
+    
+    // Stop monitoring
+    stopVaultMonitoring(id);
+    
+    console.log(`🎯 Admin forced endgame for vault ${id}`);
+    
+    res.json({
+      success: true,
+      message: `Forced endgame for vault ${id}`,
+      newStatus: VAULT_STATUS.ENDGAME_PROCESSING
+    });
+    
+  } catch (error) {
+    console.error('❌ Error forcing endgame:', error);
+    res.status(500).json({ error: 'Failed to force endgame' });
+  }
+});
+
 // API endpoints for vault monitoring management
 app.get('/api/admin/vaults/:id/monitoring-status', async (req, res) => {
   try {
@@ -1091,6 +1332,56 @@ app.get('/api/admin/vaults/monitoring-overview', async (req, res) => {
   } catch (error) {
     console.error('❌ Error getting monitoring overview:', error);
     res.status(500).json({ error: 'Failed to get monitoring overview' });
+  }
+});
+
+// Winner confirmation API endpoints
+app.get('/api/admin/vaults/winner-confirmation', async (req, res) => {
+  try {
+    const vaults = await db.getAllVaults();
+    const winnerVaults = vaults.filter(vault => vault.status === VAULT_STATUS.WINNER_CONFIRMATION);
+    
+    res.json({
+      winnerVaults: winnerVaults.map(vault => ({
+        id: vault.id,
+        name: vault.name,
+        status: vault.status,
+        totalVolume: vault.totalVolume,
+        treasuryWallet: vault.treasuryWallet,
+        winner: vault.meta?.winner,
+        createdAt: vault.createdAt,
+        updatedAt: vault.updatedAt
+      })),
+      totalWinners: winnerVaults.length
+    });
+  } catch (error) {
+    console.error('❌ Error fetching winner confirmation vaults:', error);
+    res.status(500).json({ error: 'Failed to fetch winner confirmation vaults' });
+  }
+});
+
+// Endgame processing API endpoints
+app.get('/api/admin/vaults/endgame-processing', async (req, res) => {
+  try {
+    const vaults = await db.getAllVaults();
+    const endgameVaults = vaults.filter(vault => vault.status === VAULT_STATUS.ENDGAME_PROCESSING);
+    
+    res.json({
+      endgameVaults: endgameVaults.map(vault => ({
+        id: vault.id,
+        name: vault.name,
+        status: vault.status,
+        totalVolume: vault.totalVolume,
+        treasuryWallet: vault.treasuryWallet,
+        tokenMint: vault.tokenMint,
+        createdAt: vault.createdAt,
+        updatedAt: vault.updatedAt
+      })),
+      totalEndgame: endgameVaults.length
+    });
+  } catch (error) {
+    console.error('❌ Error fetching endgame processing vaults:', error);
+    res.status(500).json({ error: 'Failed to fetch endgame processing vaults' });
   }
 });
 
