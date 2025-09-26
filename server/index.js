@@ -2178,6 +2178,26 @@ app.get('/api/admin/vaults', async (req, res) => {
   }
 });
 
+// Get single vault by ID for admin
+app.get('/api/admin/vaults/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVault(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    // Enhance vault with whitelisted addresses
+    vault.whitelistedAddresses = await db.getWhitelistedAddresses(vault.id);
+    
+    res.json({ vault });
+  } catch (error) {
+    console.error('Error fetching vault:', error);
+    res.status(500).json({ error: 'Failed to fetch vault' });
+  }
+});
+
 app.post('/api/admin/vaults/:id/start', (req, res) => {
   try {
     const { id } = req.params;
