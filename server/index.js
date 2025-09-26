@@ -1085,6 +1085,21 @@ async function checkEndgameVaults() {
 // Check endgame vaults every hour
 setInterval(checkEndgameVaults, 60 * 60 * 1000);
 
+// Test endpoint to check database update
+app.post('/api/test/update-vault', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const result = await db.updateVault(id, {
+      status: 'test_status',
+      updatedAt: new Date().toISOString()
+    });
+    res.json({ success: true, result });
+  } catch (error) {
+    console.error('❌ Test update error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Admin control endpoints for testing vault progression
 app.post('/api/admin/vaults/:id/force-ico-end', async (req, res) => {
   try {
