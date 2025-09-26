@@ -34,8 +34,16 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // Socket.IO (allow localhost + your Render URL)
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'http://localhost:5173',
+      'https://treasury-vault-timer.vercel.app',
+      'https://*.onrender.com',
+      'https://*.vercel.app'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -43,15 +51,17 @@ const io = new Server(server, {
 app.use(cors({ 
   origin: [
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:3002',
     'http://localhost:5173', 
     'https://treasury-vault-timer-backend.onrender.com',
+    'https://treasury-vault-timer.vercel.app',
     'https://*.onrender.com',
     'https://*.vercel.app'
   ], 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json());
 
