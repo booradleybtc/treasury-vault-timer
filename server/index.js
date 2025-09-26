@@ -442,7 +442,7 @@ async function checkICOThresholds() {
 // Check ICO thresholds every 5 minutes
 setInterval(checkICOThresholds, 5 * 60 * 1000);
 
-// Treasury wallet monitoring for ICO threshold
+// Multi-asset treasury wallet monitoring for ICO threshold
 async function checkTreasuryBalances() {
   try {
     const vaults = await db.getAllVaults();
@@ -450,22 +450,64 @@ async function checkTreasuryBalances() {
     for (const vault of vaults) {
       if (vault.status === VAULT_STATUS.ICO && vault.treasuryWallet) {
         try {
-          // Get treasury wallet balance
-          const balance = await connection.getBalance(new PublicKey(vault.treasuryWallet));
-          const balanceSOL = balance / LAMPORTS_PER_SOL;
+          let totalUSDValue = 0;
+          const assetBalances = {};
           
-          // Get SOL price (simplified - you might want to use a price API)
-          const solPrice = 150; // Placeholder - should fetch from price API
-          const balanceUSD = balanceSOL * solPrice;
+          // Check SOL balance
+          const solBalance = await connection.getBalance(new PublicKey(vault.treasuryWallet));
+          const solAmount = solBalance / LAMPORTS_PER_SOL;
+          
+          if (solAmount > 0) {
+            // Get SOL price from Jupiter API
+            const solPrice = await getTokenPrice('So11111111111111111111111111111111111111112');
+            const solUSD = solAmount * solPrice;
+            totalUSDValue += solUSD;
+            assetBalances['SOL'] = { amount: solAmount, price: solPrice, usd: solUSD };
+          }
+          
+          // Check SPL token balances
+          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+            new PublicKey(vault.treasuryWallet),
+            { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }
+          );
+          
+          for (const tokenAccount of tokenAccounts.value) {
+            const tokenInfo = tokenAccount.account.data.parsed.info;
+            const mint = tokenInfo.mint;
+            const amount = tokenInfo.tokenAmount.uiAmount;
+            
+            if (amount > 0) {
+              try {
+                // Get token price from Jupiter API
+                const tokenPrice = await getTokenPrice(mint);
+                const tokenUSD = amount * tokenPrice;
+                totalUSDValue += tokenUSD;
+                
+                // Get token symbol/name
+                const tokenSymbol = await getTokenSymbol(mint);
+                assetBalances[tokenSymbol] = { 
+                  amount, 
+                  price: tokenPrice, 
+                  usd: tokenUSD, 
+                  mint 
+                };
+              } catch (error) {
+                console.log(`⚠️ Could not get price for token ${mint}:`, error.message);
+              }
+            }
+          }
           
           // Update vault total volume if it's higher
-          if (balanceUSD > (vault.totalVolume || 0)) {
+          if (totalUSDValue > (vault.totalVolume || 0)) {
             await db.updateVault(vault.id, {
-              totalVolume: balanceUSD,
+              totalVolume: totalUSDValue,
               updatedAt: new Date().toISOString()
             });
             
-            console.log(`💰 Vault ${vault.id} treasury balance: ${balanceSOL.toFixed(4)} SOL ($${balanceUSD.toFixed(2)})`);
+            console.log(`💰 Vault ${vault.id} treasury balance: $${totalUSDValue.toFixed(2)}`);
+            console.log(`   Assets:`, Object.entries(assetBalances).map(([symbol, data]) => 
+              `${data.amount.toFixed(4)} ${symbol} ($${data.usd.toFixed(2)})`
+            ).join(', '));
           }
         } catch (error) {
           console.error(`❌ Error checking treasury balance for vault ${vault.id}:`, error);
@@ -477,8 +519,135 @@ async function checkTreasuryBalances() {
   }
 }
 
+// Get token price from Jupiter API
+async function getTokenPrice(mintAddress) {
+  try {
+    const response = await fetch(`https://price.jup.ag/v4/price?ids=${mintAddress}`);
+    const data = await response.json();
+    
+    if (data.data && data.data[mintAddress]) {
+      return data.data[mintAddress].price;
+    }
+    
+    // Fallback prices for common tokens
+    const fallbackPrices = {
+      'So11111111111111111111111111111111111111112': 150, // SOL
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 1, // USDC
+      'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 1, // USDT
+      'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': 0.00002, // BONK
+    };
+    
+    return fallbackPrices[mintAddress] || 0;
+  } catch (error) {
+    console.error(`❌ Error fetching price for ${mintAddress}:`, error);
+    return 0;
+  }
+}
+
+// Get token symbol/name
+async function getTokenSymbol(mintAddress) {
+  try {
+    // Try to get from Jupiter token list
+    const response = await fetch('https://token.jup.ag/strict');
+    const tokens = await response.json();
+    const token = tokens.find(t => t.address === mintAddress);
+    
+    if (token) {
+      return token.symbol;
+    }
+    
+    // Fallback symbols
+    const fallbackSymbols = {
+      'So11111111111111111111111111111111111111112': 'SOL',
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
+      'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT',
+      'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': 'BONK',
+    };
+    
+    return fallbackSymbols[mintAddress] || mintAddress.slice(0, 8) + '...';
+  } catch (error) {
+    console.error(`❌ Error fetching symbol for ${mintAddress}:`, error);
+    return mintAddress.slice(0, 8) + '...';
+  }
+}
+
 // Check treasury balances every 2 minutes during ICO
 setInterval(checkTreasuryBalances, 2 * 60 * 1000);
+
+// API endpoint to get detailed treasury balance for a vault
+app.get('/api/admin/vaults/:id/treasury-balance', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVaultById(id);
+    
+    if (!vault || !vault.treasuryWallet) {
+      return res.status(404).json({ error: 'Vault or treasury wallet not found' });
+    }
+    
+    let totalUSDValue = 0;
+    const assetBalances = {};
+    
+    // Check SOL balance
+    const solBalance = await connection.getBalance(new PublicKey(vault.treasuryWallet));
+    const solAmount = solBalance / LAMPORTS_PER_SOL;
+    
+    if (solAmount > 0) {
+      const solPrice = await getTokenPrice('So11111111111111111111111111111111111111112');
+      const solUSD = solAmount * solPrice;
+      totalUSDValue += solUSD;
+      assetBalances['SOL'] = { 
+        amount: solAmount, 
+        price: solPrice, 
+        usd: solUSD,
+        mint: 'So11111111111111111111111111111111111111112'
+      };
+    }
+    
+    // Check SPL token balances
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+      new PublicKey(vault.treasuryWallet),
+      { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }
+    );
+    
+    for (const tokenAccount of tokenAccounts.value) {
+      const tokenInfo = tokenAccount.account.data.parsed.info;
+      const mint = tokenInfo.mint;
+      const amount = tokenInfo.tokenAmount.uiAmount;
+      
+      if (amount > 0) {
+        try {
+          const tokenPrice = await getTokenPrice(mint);
+          const tokenUSD = amount * tokenPrice;
+          totalUSDValue += tokenUSD;
+          
+          const tokenSymbol = await getTokenSymbol(mint);
+          assetBalances[tokenSymbol] = { 
+            amount, 
+            price: tokenPrice, 
+            usd: tokenUSD, 
+            mint 
+          };
+        } catch (error) {
+          console.log(`⚠️ Could not get price for token ${mint}:`, error.message);
+        }
+      }
+    }
+    
+    res.json({
+      vaultId: id,
+      treasuryWallet: vault.treasuryWallet,
+      totalUSDValue,
+      assetBalances,
+      lastChecked: new Date().toISOString(),
+      threshold: ICO_THRESHOLD_USD,
+      thresholdMet: totalUSDValue >= ICO_THRESHOLD_USD
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching treasury balance:', error);
+    res.status(500).json({ error: 'Failed to fetch treasury balance' });
+  }
+});
 
 // Prelaunch monitoring - check if vaults should go live
 async function checkPrelaunchVaults() {

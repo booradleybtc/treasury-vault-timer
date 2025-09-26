@@ -54,6 +54,26 @@ export default function AdminIndex() {
     }
   }, [deletingVault]);
 
+  const checkTreasuryBalance = async (vaultId: string) => {
+    try {
+      const response = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/treasury-balance`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        const assets = Object.entries(data.assetBalances).map(([symbol, info]: [string, any]) => 
+          `${info.amount.toFixed(4)} ${symbol} ($${info.usd.toFixed(2)})`
+        ).join(', ');
+        
+        alert(`Treasury Balance for ${vaultId}:\nTotal: $${data.totalUSDValue.toFixed(2)}\nAssets: ${assets}\nThreshold Met: ${data.thresholdMet ? 'Yes' : 'No'}`);
+      } else {
+        alert('Failed to fetch treasury balance');
+      }
+    } catch (error) {
+      console.error('Error checking treasury balance:', error);
+      alert('Error checking treasury balance');
+    }
+  };
+
   const handleDeleteVault = async (vaultId: string) => {
     if (deletingVault !== vaultId) {
       // First confirmation
@@ -129,11 +149,20 @@ export default function AdminIndex() {
                           Time remaining: {v.pendingInfo?.hoursRemaining || 0}h
                         </span>
                       </div>
+                      <div className="text-xs text-white/60 mt-1">
+                        Treasury: {v.treasuryWallet}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-xs px-2 py-1 rounded bg-yellow-500/20 text-yellow-300">
                         PENDING
                       </span>
+                      <button 
+                        onClick={() => checkTreasuryBalance(v.id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs"
+                      >
+                        Check Balance
+                      </button>
                       <button 
                         onClick={() => router.push(`/admin/stage2/${v.id}`)}
                         className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 text-sm font-semibold"
