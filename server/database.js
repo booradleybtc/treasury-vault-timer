@@ -306,7 +306,7 @@ class Database {
 
   async updateVault(id, updates) {
     return new Promise((resolve, reject) => {
-      const allowedFields = ['name', 'description', 'status', 'token_mint', 'distribution_wallet', 'treasury_wallet', 'dev_wallet', 'start_date', 'endgame_date', 'timer_duration', 'distribution_interval', 'min_hold_amount', 'tax_split_dev', 'tax_split_holders', 'vault_asset', 'airdrop_asset', 'meta', 'custom_token_data'];
+      const allowedFields = ['name', 'description', 'status', 'token_mint', 'distribution_wallet', 'treasury_wallet', 'dev_wallet', 'start_date', 'endgame_date', 'timer_duration', 'distribution_interval', 'min_hold_amount', 'tax_split_dev', 'tax_split_holders', 'vault_asset', 'airdrop_asset', 'meta', 'custom_token_data', 'updated_at'];
       const updateFields = [];
       const values = [];
 
@@ -323,6 +323,7 @@ class Database {
         if (key === 'minHoldAmount') column = 'min_hold_amount';
         if (key === 'vaultAsset') column = 'vault_asset';
         if (key === 'airdropAsset') column = 'airdrop_asset';
+        if (key === 'updatedAt') column = 'updated_at';
         if (key === 'taxSplit') {
           if (typeof updates.taxSplit?.dev !== 'undefined') {
             updateFields.push('tax_split_dev = ?');
