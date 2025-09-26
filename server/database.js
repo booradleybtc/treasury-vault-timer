@@ -114,10 +114,11 @@ class Database {
           const hasTimerFields = Array.isArray(rows) && rows.some((r) => r.name === 'timer_started_at');
           
           if (hasMeta && hasCustomTokenData && hasTimerFields) {
+            console.log('✅ Database schema is up to date - no migration needed');
             return resolve();
           }
 
-          console.log('🛠️ Running SQLite migration: adding meta column and relaxing constraints...');
+          console.log('🛠️ Running SQLite migration: adding timer columns and meta column...');
 
           const createVaultsNew = `
             CREATE TABLE IF NOT EXISTS vaults_new (
@@ -150,9 +151,12 @@ class Database {
             )
           `;
 
-          this.db.serialize(() => {
-            this.db.run('BEGIN');
-            this.db.run(createVaultsNew);
+        this.db.serialize(() => {
+          this.db.run('BEGIN');
+          
+          // Check if vaults_new already exists and drop it if it does
+          this.db.run('DROP TABLE IF EXISTS vaults_new');
+          this.db.run(createVaultsNew);
             // Check which columns exist in the old table
             this.db.all("PRAGMA table_info(vaults)", [], (err, oldRows) => {
               if (err) {
@@ -201,15 +205,30 @@ class Database {
                   return reject(insertErr);
                 }
                 
-                this.db.run('DROP TABLE vaults');
-                this.db.run('ALTER TABLE vaults_new RENAME TO vaults');
-                this.db.run('COMMIT', (commitErr) => {
-                  if (commitErr) {
-                    console.error('❌ Migration commit failed:', commitErr);
-                    return reject(commitErr);
+                // Drop old table and rename new one
+                this.db.run('DROP TABLE IF EXISTS vaults', (dropErr) => {
+                  if (dropErr) {
+                    console.error('Error dropping old vaults table:', dropErr);
+                    this.db.run('ROLLBACK');
+                    return reject(dropErr);
                   }
-                  console.log('✅ SQLite migration complete');
-                  resolve();
+                  
+                  this.db.run('ALTER TABLE vaults_new RENAME TO vaults', (renameErr) => {
+                    if (renameErr) {
+                      console.error('Error renaming vaults_new table:', renameErr);
+                      this.db.run('ROLLBACK');
+                      return reject(renameErr);
+                    }
+                    
+                    this.db.run('COMMIT', (commitErr) => {
+                      if (commitErr) {
+                        console.error('❌ Migration commit failed:', commitErr);
+                        return reject(commitErr);
+                      }
+                      console.log('✅ SQLite migration complete');
+                      resolve();
+                    });
+                  });
                 });
               });
             });
