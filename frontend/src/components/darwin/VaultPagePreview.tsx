@@ -29,7 +29,7 @@ const getTokenImage = (address: string): string => {
   return tokenImages[address] || '/images/token.png';
 };
 
-export type VaultStatus = 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'extinct';
+export type VaultStatus = 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'winner_confirmation' | 'endgame_processing' | 'extinct';
 
 interface VaultData {
   id: string;
@@ -616,6 +616,46 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
           </div>
         );
 
+      case 'winner_confirmation':
+        return (
+          <div className="text-center py-12">
+            <CheckCircle className="w-16 h-16 text-purple-400 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-white mb-4">Winner Confirmation</h2>
+            <p className="text-white/70 mb-6 max-w-md mx-auto">
+              The timer has expired! The winning wallet needs to place a claim. 
+              Our team will review and facilitate the payout and any airdrops to holders.
+            </p>
+            
+            <div className="bg-white/5 rounded-lg p-6 max-w-md mx-auto">
+              <div className="text-sm text-white/60 mb-2">Status</div>
+              <div className="text-lg font-semibold text-purple-400">Winner Confirmation</div>
+              <div className="text-xs text-white/50 mt-2">
+                Winner needs to claim, team will process payout
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'endgame_processing':
+        return (
+          <div className="text-center py-12">
+            <AlertCircle className="w-16 h-16 text-orange-400 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-white mb-4">Endgame Processing</h2>
+            <p className="text-white/70 mb-6 max-w-md mx-auto">
+              The vault has reached the end of its lifespan. Our team will airdrop 
+              treasury to holders that meet the minimum threshold.
+            </p>
+            
+            <div className="bg-white/5 rounded-lg p-6 max-w-md mx-auto">
+              <div className="text-sm text-white/60 mb-2">Status</div>
+              <div className="text-lg font-semibold text-orange-400">Endgame Processing</div>
+              <div className="text-xs text-white/50 mt-2">
+                Team will process airdrops to eligible holders
+              </div>
+            </div>
+          </div>
+        );
+
       case 'extinct':
         return (
           <div className="text-center py-12">
@@ -679,6 +719,8 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                     status === 'ico_pending' ? 'bg-yellow-400 text-black' :
                     status === 'pre_launch' ? 'bg-purple-600 text-white' :
                     status === 'live' ? 'bg-emerald-500 text-black' :
+                    status === 'winner_confirmation' ? 'bg-purple-500 text-white' :
+                    status === 'endgame_processing' ? 'bg-orange-500 text-white' :
                     'bg-red-500 text-white'
                   }`}>
                     {status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}

@@ -10,7 +10,7 @@ export default function PreviewPage() {
   const routeParams = useParams();
   const vaultId = Array.isArray(routeParams?.id) ? routeParams.id[0] : (routeParams?.id as string);
   const [vault, setVault] = useState<any>(null);
-  const [stage, setStage] = useState<'pre_ico'|'ico'|'countdown'|'live'|'extinct'>('pre_ico');
+  const [stage, setStage] = useState<'pre_ico'|'ico'|'ico_pending'|'pre_launch'|'live'|'winner_confirmation'|'endgame_processing'|'extinct'>('pre_ico');
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
   useEffect(() => {
@@ -103,9 +103,12 @@ export default function PreviewPage() {
           <div className="flex items-center gap-2">
             <select className="bg-white/10 text-white px-3 py-2 ring-1 ring-white/10" value={stage} onChange={(e)=>setStage(e.target.value as any)}>
               <option value="pre_ico">Pre‑ICO</option>
-              <option value="ico">ICO</option>
-              <option value="countdown">Countdown</option>
+              <option value="ico">ICO Live</option>
+              <option value="ico_pending">ICO Pending</option>
+              <option value="pre_launch">Pre-Launch</option>
               <option value="live">Live</option>
+              <option value="winner_confirmation">Winner Confirmation</option>
+              <option value="endgame_processing">Endgame Processing</option>
               <option value="extinct">Extinct</option>
             </select>
             <button className="rounded-none bg-white text-black px-3 py-2" onClick={()=>vaultId && router.push(`/vault/${vaultId}`)}>Open Vault Page</button>
