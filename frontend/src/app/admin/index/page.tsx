@@ -147,6 +147,28 @@ export default function AdminIndex() {
     }
   };
 
+  const forceICOSuccess = async (vaultId: string) => {
+    if (!confirm(`Force ICO success for vault ${vaultId}? This will bypass threshold check and move to Stage 2.`)) return;
+    
+    try {
+      const response = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/force-ico-success`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`ICO success forced for vault ${vaultId}\nMoved to pending for Stage 2 setup.`);
+        // Reload data
+        window.location.reload();
+      } else {
+        alert('Failed to force ICO success');
+      }
+    } catch (error) {
+      console.error('Error forcing ICO success:', error);
+      alert('Error forcing ICO success');
+    }
+  };
+
   const forceLaunch = async (vaultId: string) => {
     if (!confirm(`Force launch for vault ${vaultId}?`)) return;
     
@@ -538,13 +560,22 @@ export default function AdminIndex() {
                     
                     {/* Admin Control Buttons for Testing */}
                     {v.status === 'ico' && (
-                      <button 
-                        onClick={() => forceICOEnd(v.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
-                        title="Force ICO to end (for testing)"
-                      >
-                        End ICO
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => forceICOEnd(v.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
+                          title="Force ICO to end (for testing)"
+                        >
+                          End ICO
+                        </button>
+                        <button 
+                          onClick={() => forceICOSuccess(v.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs"
+                          title="Force ICO success - bypass threshold (for testing)"
+                        >
+                          Force Success
+                        </button>
+                      </>
                     )}
                     
                     {v.status === 'prelaunch' && (

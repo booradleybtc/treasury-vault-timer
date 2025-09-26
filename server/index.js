@@ -1284,6 +1284,44 @@ app.post('/api/admin/vaults/:id/force-ico-end', async (req, res) => {
   }
 });
 
+// Force ICO Success - bypass threshold check for testing
+app.post('/api/admin/vaults/:id/force-ico-success', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVault(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    if (vault.status !== VAULT_STATUS.ICO) {
+      return res.status(400).json({ error: 'Vault is not in ICO status' });
+    }
+    
+    // Cancel any existing ICO schedule
+    cancelICOSchedule(id);
+    
+    // Force ICO to succeed - move to pending for Stage 2
+    await db.updateVault(id, {
+      status: VAULT_STATUS.PENDING,
+      updatedAt: new Date().toISOString()
+    });
+    
+    console.log(`🎉 Admin forced ICO success for vault ${id} - moved to pending for Stage 2`);
+    
+    res.json({
+      success: true,
+      message: `Forced ICO success for vault ${id}`,
+      newStatus: VAULT_STATUS.PENDING,
+      thresholdMet: true
+    });
+    
+  } catch (error) {
+    console.error('❌ Error forcing ICO success:', error);
+    res.status(500).json({ error: 'Failed to force ICO success' });
+  }
+});
+
 app.post('/api/admin/vaults/:id/force-launch', async (req, res) => {
   try {
     const { id } = req.params;
@@ -1581,7 +1619,7 @@ app.post('/api/admin/vaults/:id/process-refund', async (req, res) => {
     };
     
     await db.updateVault(id, {
-      status: 'refunded',
+      status: VAULT_STATUS.COMPLETED,
       meta: JSON.stringify(updatedMeta),
       updatedAt: new Date().toISOString()
     });

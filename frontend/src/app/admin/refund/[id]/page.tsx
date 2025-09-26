@@ -1,271 +1,175 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, DollarSign, Wallet, AlertTriangle, Clock } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'react-router-dom';
 
-interface VaultConfig {
-  id: string;
-  name: string;
-  description: string;
-  meta: any;
-  status: string;
-  treasuryWallet: string;
-  totalVolume: number;
-  createdAt: string;
-}
-
-interface RefundFormData {
-  refundTxSignature: string;
-  notes: string;
-}
-
-export default function RefundProcessingPage() {
-  const params = useParams();
+export default function RefundPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const vaultId = params.id as string;
-  
-  const [vault, setVault] = useState<VaultConfig | null>(null);
+  const [vault, setVault] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [refundTxSignature, setRefundTxSignature] = useState('');
+  const [notes, setNotes] = useState('');
   
-  const [formData, setFormData] = useState<RefundFormData>({
-    refundTxSignature: '',
-    notes: ''
-  });
-
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com';
+  const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
   useEffect(() => {
-    loadVaultData();
-  }, [vaultId]);
-
-  const loadVaultData = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/admin/vaults/${vaultId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
-      });
-      
-      if (response.ok) {
+    const loadVault = async () => {
+      try {
+        const response = await fetch(`${BACKEND}/api/admin/vaults`);
         const data = await response.json();
-        setVault(data.vault);
-      } else {
-        setError('Failed to load vault data');
+        const vaultData = data.vaults.find((v: any) => v.id === params.id);
+        setVault(vaultData);
+      } catch (error) {
+        console.error('Error loading vault:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to load vault data:', error);
-      setError('Failed to load vault data');
-    } finally {
-      setLoading(false);
+    };
+
+    loadVault();
+  }, [params.id, BACKEND]);
+
+  const processRefund = async () => {
+    if (!refundTxSignature.trim()) {
+      alert('Please enter a refund transaction signature');
+      return;
     }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-
+    setProcessing(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/admin/vaults/${vaultId}/process-refund`, {
+      const response = await fetch(`${BACKEND}/api/admin/vaults/${params.id}/process-refund`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        mode: 'cors',
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          refundTxSignature: refundTxSignature.trim(),
+          notes: notes.trim()
+        })
       });
 
+      const data = await response.json();
+      
       if (response.ok) {
-        setSuccess(true);
-        setTimeout(() => {
-          router.push('/admin');
-        }, 2000);
+        alert('Refund processed successfully!');
+        router.push('/admin/index');
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to process refund');
+        alert(`Failed to process refund: ${data.error}`);
       }
     } catch (error) {
-      console.error('Failed to process refund:', error);
-      setError('Failed to process refund');
+      console.error('Error processing refund:', error);
+      alert('Error processing refund');
     } finally {
-      setSubmitting(false);
+      setProcessing(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading vault data...</div>
+      <div className="min-h-screen w-full flex items-center justify-center" style={{
+        background: "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/upscaled_lofi_rainforest.png') center 70% / cover fixed",
+      }}>
+        <div className="text-white">Loading...</div>
       </div>
     );
   }
 
   if (!vault) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-red-400 text-xl">Vault not found</div>
-      </div>
-    );
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-white mb-2">Refund Processed!</h2>
-              <p className="text-gray-300 mb-4">
-                Refund for {vault.name} has been successfully processed.
-              </p>
-              <p className="text-sm text-gray-400">
-                Redirecting to admin dashboard...
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen w-full flex items-center justify-center" style={{
+        background: "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/upscaled_lofi_rainforest.png') center 70% / cover fixed",
+      }}>
+        <div className="text-white">Vault not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Button 
-            variant="outline" 
-            onClick={() => router.push('/admin')}
-            className="mb-4 text-white border-white/20 hover:bg-white/10"
+    <div className="min-h-screen w-full" style={{
+      background: "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/upscaled_lofi_rainforest.png') center 70% / cover fixed",
+    }}>
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => router.push('/admin/index')}
+            className="text-white/70 hover:text-white flex items-center gap-2"
           >
-            ← Back to Admin
-          </Button>
-          
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Process Refund
-          </h1>
-          <p className="text-gray-300 text-lg">
-            Process refund for <span className="text-red-400 font-semibold">{vault.name}</span>
-          </p>
+            ← Back to Admin Dashboard
+          </button>
         </div>
 
-        {/* Vault Summary */}
-        <Card className="mb-8 bg-red-500/5 border-red-500/20">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-red-400" />
-              Refund Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-red-500/10 ring-1 ring-red-500/20 p-6">
+          <h1 className="text-2xl font-bold text-red-300 mb-6">Process Refund</h1>
+          
+          <div className="bg-white/5 ring-1 ring-white/10 p-6 mb-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Vault Information</h2>
+            <div className="space-y-2 text-white/80">
+              <div><span className="font-semibold">Name:</span> {vault.name}</div>
+              <div><span className="font-semibold">ID:</span> {vault.id}</div>
+              <div><span className="font-semibold">Status:</span> <span className="text-red-400">{vault.status}</span></div>
+              <div><span className="font-semibold">Amount to Refund:</span> <span className="text-green-400">${(vault.totalVolume || 0).toLocaleString()}</span></div>
+              <div><span className="font-semibold">Treasury Wallet:</span> <span className="font-mono text-sm">{vault.treasuryWallet}</span></div>
+            </div>
+          </div>
+
+          <div className="bg-white/5 ring-1 ring-white/10 p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Refund Processing</h2>
+            
+            <div className="space-y-4">
               <div>
-                <Label className="text-gray-400">Vault Name</Label>
-                <p className="text-white font-semibold">{vault.name}</p>
+                <label className="block text-white/80 text-sm font-medium mb-2">
+                  Refund Transaction Signature *
+                </label>
+                <input
+                  type="text"
+                  value={refundTxSignature}
+                  onChange={(e) => setRefundTxSignature(e.target.value)}
+                  placeholder="Enter the transaction signature for the refund"
+                  className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
               </div>
+
               <div>
-                <Label className="text-gray-400">Treasury Wallet</Label>
-                <p className="text-white font-mono text-sm">{vault.treasuryWallet}</p>
+                <label className="block text-white/80 text-sm font-medium mb-2">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add any notes about the refund process"
+                  rows={3}
+                  className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
               </div>
-              <div>
-                <Label className="text-gray-400">Refund Amount</Label>
-                <p className="text-red-400 font-semibold text-xl">${(vault.totalVolume || 0).toLocaleString()}</p>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={processRefund}
+                  disabled={processing || !refundTxSignature.trim()}
+                  className="bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-semibold"
+                >
+                  {processing ? 'Processing...' : 'Process Refund'}
+                </button>
+                
+                <button
+                  onClick={() => router.push('/admin/index')}
+                  className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded font-semibold"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Refund Form */}
-        <form onSubmit={handleSubmit}>
-          <Card className="bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-red-400" />
-                Refund Processing
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Record the refund transaction details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Transaction Signature */}
-              <div>
-                <Label htmlFor="refundTxSignature" className="text-white">
-                  Refund Transaction Signature *
-                </Label>
-                <Input
-                  id="refundTxSignature"
-                  type="text"
-                  value={formData.refundTxSignature}
-                  onChange={(e) => setFormData(prev => ({ ...prev, refundTxSignature: e.target.value }))}
-                  placeholder="Enter the Solana transaction signature for the refund"
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                  required
-                />
-                <p className="text-sm text-gray-400 mt-1">
-                  The transaction hash from the refund transaction on Solana
-                </p>
-              </div>
-
-              {/* Notes */}
-              <div>
-                <Label htmlFor="notes" className="text-white">
-                  Refund Notes
-                </Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Add any notes about the refund process..."
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                  rows={4}
-                />
-                <p className="text-sm text-gray-400 mt-1">
-                  Optional notes about the refund process or any special circumstances
-                </p>
-              </div>
-
-              {/* Warning */}
-              <Alert className="border-yellow-400/50 bg-yellow-400/10">
-                <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                <AlertDescription className="text-yellow-400">
-                  <strong>Important:</strong> Make sure the refund transaction has been completed on Solana before submitting this form. 
-                  This action will mark the vault as refunded and cannot be undone.
-                </AlertDescription>
-              </Alert>
-
-              {/* Error Display */}
-              {error && (
-                <Alert className="border-red-400/50 bg-red-400/10">
-                  <AlertTriangle className="h-4 w-4 text-red-400" />
-                  <AlertDescription className="text-red-400">
-                    {error}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Submit Button */}
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-2"
-                >
-                  {submitting ? 'Processing Refund...' : 'Process Refund'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </form>
+          <div className="mt-6 bg-yellow-500/10 ring-1 ring-yellow-500/20 p-4">
+            <div className="text-yellow-300 font-semibold mb-2">⚠️ Important Notes:</div>
+            <ul className="text-yellow-200/80 text-sm space-y-1">
+              <li>• This action will mark the refund as processed and move the vault to COMPLETED status</li>
+              <li>• The actual crypto transfer must be done manually using your wallet</li>
+              <li>• Make sure to record the transaction signature for audit purposes</li>
+              <li>• This action cannot be undone</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
