@@ -319,7 +319,7 @@ export default function Stage2Wizard() {
                     type="button" 
                     onClick={addWhitelistAddress}
                     variant="outline"
-                    className="border-white/20 text-white hover:bg-white/10"
+                    className="border-white/20 text-white hover:bg-white/10 bg-white/5"
                   >
                     Add
                   </Button>
@@ -335,7 +335,7 @@ export default function Stage2Wizard() {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeWhitelistAddress(address)}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10 bg-transparent"
                         >
                           Remove
                         </Button>

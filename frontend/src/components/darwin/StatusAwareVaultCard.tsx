@@ -68,7 +68,7 @@ const useTokenMetadata = (address: string) => {
   return { metadata, loading };
 };
 
-export type VaultStatus = 'draft' | 'active' | 'paused' | 'ended' | 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'extinct';
+export type VaultStatus = 'draft' | 'active' | 'paused' | 'ended' | 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'winner_confirmation' | 'endgame_processing' | 'extinct';
 
 interface VaultData {
   id: string;
@@ -290,6 +290,26 @@ export function StatusAwareVaultCard({
           showTimer: true,
           showICOInfo: false,
           disabledTrade: false
+        };
+      case 'winner_confirmation':
+        return {
+          subtitle: 'Winner Confirmation • Claim Required',
+          timerValue: '—',
+          badgeText: 'WINNER',
+          badgeClass: 'bg-purple-500 text-white',
+          showTimer: false,
+          showICOInfo: false,
+          disabledTrade: false // Allow clicking for overlay
+        };
+      case 'endgame_processing':
+        return {
+          subtitle: 'Endgame Processing • Airdrops Pending',
+          timerValue: '—',
+          badgeText: 'ENDGAME',
+          badgeClass: 'bg-orange-500 text-white',
+          showTimer: false,
+          showICOInfo: false,
+          disabledTrade: false // Allow clicking for overlay
         };
       case 'extinct':
         return {

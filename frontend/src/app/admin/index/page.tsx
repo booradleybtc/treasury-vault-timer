@@ -552,6 +552,8 @@ export default function AdminIndex() {
                       v.status === 'ico' ? 'bg-blue-500/20 text-blue-300' :
                       v.status === 'prelaunch' ? 'bg-purple-500/20 text-purple-300' :
                       v.status === 'pending' ? 'bg-orange-500/20 text-orange-300' :
+                      v.status === 'winner_confirmation' ? 'bg-purple-500/20 text-purple-300' :
+                      v.status === 'endgame_processing' ? 'bg-orange-500/20 text-orange-300' :
                       v.status === 'extinct' ? 'bg-red-500/20 text-red-300' :
                       'bg-gray-500/20 text-gray-300'
                     }`}>

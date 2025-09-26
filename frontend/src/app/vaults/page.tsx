@@ -27,7 +27,7 @@ interface VaultConfig {
   taxSplit: { dev: number; holders: number };
   vaultAsset: string;
   airdropAsset: string;
-  status: 'draft' | 'active' | 'paused' | 'ended' | 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'extinct';
+  status: 'draft' | 'active' | 'paused' | 'ended' | 'pre_ico' | 'ico' | 'ico_pending' | 'pre_launch' | 'live' | 'winner_confirmation' | 'endgame_processing' | 'extinct';
   meta?: {
     ticker?: string;
     logoUrl?: string;
@@ -294,7 +294,7 @@ export default function Page() {
           
           {/* Mobile: Filter buttons with glowing underline */}
           <div className="flex flex-wrap gap-2">
-            {["All", "Live Vaults", "ICO Live", "Pre-ICO", "Pre-Launch", "Extinct"].map((option) => (
+            {["All", "Live Vaults", "ICO Live", "Pre-ICO", "Pre-Launch", "Winner", "Endgame", "Extinct"].map((option) => (
               <button
                 key={option}
                 onClick={() => setFilter(option)}
@@ -335,7 +335,7 @@ export default function Page() {
             <h2 className="text-lg font-semibold tracking-tight text-white">Darwin Vaults</h2>
           {/* Desktop: Filter buttons with glowing underline */}
           <div className="flex flex-wrap gap-2">
-            {["All", "Live Vaults", "ICO Live", "Pre-ICO", "Pre-Launch", "Extinct"].map((option) => (
+            {["All", "Live Vaults", "ICO Live", "Pre-ICO", "Pre-Launch", "Winner", "Endgame", "Extinct"].map((option) => (
               <button
                 key={option}
                 onClick={() => setFilter(option)}
@@ -399,6 +399,8 @@ export default function Page() {
             if (filter === 'ICO Live') return (v.status as any) === 'ico';
             if (filter === 'Pre-ICO') return (v.status as any) === 'pre_ico' || (v.status as any) === 'draft';
             if (filter === 'Pre-Launch') return (v.status as any) === 'pre_launch' || (v.status as any) === 'countdown';
+            if (filter === 'Winner') return (v.status as any) === 'winner_confirmation';
+            if (filter === 'Endgame') return (v.status as any) === 'endgame_processing';
             if (filter === 'Extinct') return (v.status as any) === 'extinct' || (v.status as any) === 'ended';
             return true;
           })
@@ -424,6 +426,8 @@ export default function Page() {
             if (filter === 'ICO Live') return (v.status as any) === 'ico';
             if (filter === 'Pre-ICO') return (v.status as any) === 'pre_ico' || (v.status as any) === 'draft';
             if (filter === 'Pre-Launch') return (v.status as any) === 'pre_launch' || (v.status as any) === 'countdown';
+            if (filter === 'Winner') return (v.status as any) === 'winner_confirmation';
+            if (filter === 'Endgame') return (v.status as any) === 'endgame_processing';
             if (filter === 'Extinct') return (v.status as any) === 'extinct' || (v.status as any) === 'ended';
             return true;
           })

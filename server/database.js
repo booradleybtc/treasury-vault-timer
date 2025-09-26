@@ -14,7 +14,7 @@ class Database {
 
   init() {
     // Use persistent storage path in production, local path in development
-    const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'vaults.db');
+    const dbPath = process.env.DATABASE_PATH || (process.env.NODE_ENV === 'production' ? '/data/vaults.db' : path.join(__dirname, 'vaults.db'));
     
     // Ensure the directory exists for persistent storage
     const dbDir = path.dirname(dbPath);
