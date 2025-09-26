@@ -574,6 +574,110 @@ async function getTokenSymbol(mintAddress) {
 // Check treasury balances every 2 minutes during ICO
 setInterval(checkTreasuryBalances, 2 * 60 * 1000);
 
+// Helius webhook integration for real-time treasury monitoring
+app.post('/webhook/helius', async (req, res) => {
+  try {
+    const { type, data } = req.body;
+    
+    if (type === 'TRANSFER') {
+      const { source, destination, amount, token } = data;
+      
+      // Check if this is a transfer to any of our treasury wallets
+      const vaults = await db.getAllVaults();
+      const targetVault = vaults.find(vault => 
+        vault.treasuryWallet && 
+        (vault.treasuryWallet === destination || vault.treasuryWallet === source)
+      );
+      
+      if (targetVault && vault.status === VAULT_STATUS.ICO) {
+        console.log(`🔔 Webhook: Transfer detected for vault ${targetVault.id}`);
+        console.log(`   From: ${source} → To: ${destination}`);
+        console.log(`   Amount: ${amount} ${token || 'SOL'}`);
+        
+        // Trigger immediate treasury balance check for this vault
+        await checkSingleVaultTreasuryBalance(targetVault.id);
+      }
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Webhook error:', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
+// Check treasury balance for a single vault (triggered by webhook)
+async function checkSingleVaultTreasuryBalance(vaultId) {
+  try {
+    const vault = await db.getVaultById(vaultId);
+    if (!vault || !vault.treasuryWallet) return;
+    
+    let totalUSDValue = 0;
+    const assetBalances = {};
+    
+    // Check SOL balance
+    const solBalance = await connection.getBalance(new PublicKey(vault.treasuryWallet));
+    const solAmount = solBalance / LAMPORTS_PER_SOL;
+    
+    if (solAmount > 0) {
+      const solPrice = await getTokenPrice('So11111111111111111111111111111111111111112');
+      const solUSD = solAmount * solPrice;
+      totalUSDValue += solUSD;
+      assetBalances['SOL'] = { amount: solAmount, price: solPrice, usd: solUSD };
+    }
+    
+    // Check SPL token balances
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+      new PublicKey(vault.treasuryWallet),
+      { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }
+    );
+    
+    for (const tokenAccount of tokenAccounts.value) {
+      const tokenInfo = tokenAccount.account.data.parsed.info;
+      const mint = tokenInfo.mint;
+      const amount = tokenInfo.tokenAmount.uiAmount;
+      
+      if (amount > 0) {
+        try {
+          const tokenPrice = await getTokenPrice(mint);
+          const tokenUSD = amount * tokenPrice;
+          totalUSDValue += tokenUSD;
+          
+          const tokenSymbol = await getTokenSymbol(mint);
+          assetBalances[tokenSymbol] = { 
+            amount, 
+            price: tokenPrice, 
+            usd: tokenUSD, 
+            mint 
+          };
+        } catch (error) {
+          console.log(`⚠️ Could not get price for token ${mint}:`, error.message);
+        }
+      }
+    }
+    
+    // Update vault total volume if it's higher
+    if (totalUSDValue > (vault.totalVolume || 0)) {
+      await db.updateVault(vault.id, {
+        totalVolume: totalUSDValue,
+        updatedAt: new Date().toISOString()
+      });
+      
+      console.log(`💰 Webhook Update - Vault ${vault.id} treasury balance: $${totalUSDValue.toFixed(2)}`);
+      console.log(`   Assets:`, Object.entries(assetBalances).map(([symbol, data]) => 
+        `${data.amount.toFixed(4)} ${symbol} ($${data.usd.toFixed(2)})`
+      ).join(', '));
+      
+      // Check if threshold is now met
+      if (totalUSDValue >= ICO_THRESHOLD_USD) {
+        console.log(`🎉 Threshold met via webhook! Vault ${vault.id} has $${totalUSDValue.toFixed(2)}`);
+      }
+    }
+  } catch (error) {
+    console.error(`❌ Error checking single vault treasury balance for ${vaultId}:`, error);
+  }
+}
+
 // API endpoint to get detailed treasury balance for a vault
 app.get('/api/admin/vaults/:id/treasury-balance', async (req, res) => {
   try {
