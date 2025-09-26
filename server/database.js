@@ -1,5 +1,6 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,7 +13,15 @@ class Database {
   }
 
   init() {
-    const dbPath = path.join(__dirname, 'vaults.db');
+    // Use persistent storage path in production, local path in development
+    const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'vaults.db');
+    
+    // Ensure the directory exists for persistent storage
+    const dbDir = path.dirname(dbPath);
+    if (dbDir !== __dirname && !fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    
     this.db = new sqlite3.Database(dbPath, (err) => {
       if (err) {
         console.error('Error opening database:', err);
