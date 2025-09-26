@@ -1251,8 +1251,9 @@ app.post('/api/admin/vaults/:id/force-ico-end', async (req, res) => {
     
     // Force ICO to end and check threshold
     const totalVolumeUSD = vault.totalVolume || 0;
+    const thresholdUsd = vault.meta?.icoThresholdUsd || ICO_THRESHOLD_USD;
     
-    if (totalVolumeUSD >= ICO_THRESHOLD_USD) {
+    if (totalVolumeUSD >= thresholdUsd) {
       // Threshold met - move to pending for Stage 2
       await db.updateVault(id, {
         status: VAULT_STATUS.PENDING,
@@ -1273,8 +1274,8 @@ app.post('/api/admin/vaults/:id/force-ico-end', async (req, res) => {
     res.json({
       success: true,
       message: `Forced ICO end for vault ${id}`,
-      newStatus: totalVolumeUSD >= ICO_THRESHOLD_USD ? VAULT_STATUS.PENDING : VAULT_STATUS.REFUND_REQUIRED,
-      thresholdMet: totalVolumeUSD >= ICO_THRESHOLD_USD
+      newStatus: totalVolumeUSD >= thresholdUsd ? VAULT_STATUS.PENDING : VAULT_STATUS.REFUND_REQUIRED,
+      thresholdMet: totalVolumeUSD >= thresholdUsd
     });
     
   } catch (error) {
