@@ -81,7 +81,8 @@ export default function Page() {
   const CACHE_DURATION = 5000;
 
   useEffect(() => {
-    loadVaultsData();
+    loadVaults();
+    loadDashboardData();
     
     // Listen for mobile menu How it Works trigger
     const handleShowHowItWorks = () => setShowHowItWorksModal(true);
@@ -149,19 +150,9 @@ export default function Page() {
     return () => clearInterval(interval);
   }, [dashboardData?.timer?.timeLeft, dashboardData?.vault?.airdrop?.nextAirdropIn]);
 
-  // Unified data loading function - single API call with caching for better performance
-  const loadVaultsData = async (forceRefresh = false) => {
-    const now = Date.now();
-    
-    // Check cache first (unless force refresh)
-    if (!forceRefresh && now - lastFetchTime < CACHE_DURATION && vaults.length > 0) {
-      return;
-    }
-    
+  const loadVaults = async () => {
     try {
-      setLoading(true);
-      
-      const response = await fetch(`${BACKEND_URL}/api/vaults/data`, {
+      const response = await fetch(`${BACKEND_URL}/api/admin/vaults`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors'
@@ -170,21 +161,35 @@ export default function Page() {
       if (response.ok) {
         const data = await response.json();
         setVaults(data.vaults);
-        
-        // Extract dashboard data from the first active vault
-        const activeVault = data.vaults.find((vault: any) => vault.realTimeData);
-        if (activeVault && activeVault.realTimeData) {
-          setDashboardData(activeVault.realTimeData);
-        }
-        
-        setLastFetchTime(now);
-        setError(null);
       } else {
-        setError(`Failed to load vaults data: ${response.status} ${response.statusText}`);
+        setError('Failed to load vaults');
       }
     } catch (error) {
-      console.error('Failed to load vaults data:', error);
-      setError(`Failed to load vaults data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Failed to load vaults:', error);
+      setError('Failed to load vaults');
+    }
+  };
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`${BACKEND_URL}/api/dashboard`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardData(data);
+        setError(null);
+      } else {
+        setError(`Failed to load dashboard data: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      setError(`Failed to load dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -264,7 +269,7 @@ export default function Page() {
       >
         <div className="text-center">
           <p className="text-red-400 mb-4">{error}</p>
-          <button onClick={() => loadVaultsData(true)} className="text-white border border-white/20 px-4 py-2 rounded">Retry</button>
+          <button onClick={loadVaults} className="text-white border border-white/20 px-4 py-2 rounded">Retry</button>
         </div>
       </div>
     );
