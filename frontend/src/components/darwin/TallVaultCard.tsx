@@ -1,9 +1,12 @@
 import React from "react";
+import { Copy } from "lucide-react";
+import { formatTimerLength } from "@/lib/utils";
 import { cn } from "./cn";
 
 export type TallVaultCardProps = {
   name: string;
-  timer: string;
+  timer?: string | { value: string };
+  timerDuration?: number;
   imageUrl: string;
   price?: string;
   baseAsset: string;
@@ -17,6 +20,10 @@ export type TallVaultCardProps = {
   onTrade?: () => void;
   status?: string;
   icoDate?: string;
+  icoTreasuryAddress?: string;
+  icoAsset?: string;
+  icoThreshold?: number;
+  icoProgress?: number;
   buttonText?: string;
   airdropAsset?: string;
   airdropAssetLogo?: string;
@@ -25,7 +32,9 @@ export type TallVaultCardProps = {
 };
 
 export function TallVaultCard(props: TallVaultCardProps) {
-  const { name, timer, imageUrl, price, baseAsset, treasury, potentialWin, apy, endgame, pfp, tokenTicker, addressShort, onTrade, status, icoDate, buttonText, airdropAsset, airdropAssetLogo, vaultAssetLogo, tradeFee } = props;
+  const { name, timer, timerDuration, imageUrl, price, baseAsset, treasury, potentialWin, apy, endgame, pfp, tokenTicker, addressShort, onTrade, status, icoDate, icoTreasuryAddress, icoAsset, icoThreshold, icoProgress, buttonText, airdropAsset, airdropAssetLogo, vaultAssetLogo, tradeFee } = props;
+  
+  const timerValue = typeof timer === 'string' ? timer : timer?.value || '00:00';
 
   const getTokenImage = (tokenSymbol: string) => {
     const tokenImages: { [key: string]: string } = {
@@ -47,7 +56,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
   return (
     <div className={cn(
       "relative rounded-none ring-1 ring-white/10 bg-white/5 backdrop-blur-[10px] shadow-[0_10px_30px_rgba(0,0,0,.25)] overflow-hidden",
-      "w-full max-w-none sm:max-w-[380px] h-[320px] sm:h-auto"
+      "w-[380px] h-[320px] sm:h-auto flex-shrink-0"
     )}>
       {/* Banner image */}
       <div className="w-full h-24 sm:h-28 relative">
@@ -70,6 +79,11 @@ export function TallVaultCard(props: TallVaultCardProps) {
           {status === 'pre_ico' && (
             <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1.5 text-xs sm:text-sm text-cyan-300 font-semibold">
               Pre-ICO
+            </div>
+          )}
+          {status === 'ico' && (
+            <div className="inline-flex items-center gap-2 rounded-[8px] bg-green-500/20 backdrop-blur-[10px] ring-1 ring-green-400/30 px-3 py-1.5 text-xs sm:text-sm text-green-300 font-semibold">
+              {typeof timer === 'object' ? timer.value : timer}
             </div>
           )}
         </div>
@@ -98,11 +112,35 @@ export function TallVaultCard(props: TallVaultCardProps) {
         </div>
       )}
 
+      {/* ICO Treasury Address - for ICO stage */}
+      {status === 'ico' && icoTreasuryAddress && (
+        <div className="px-4 sm:px-5 py-3 sm:py-4">
+          <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-[10px] ring-1 ring-green-400/30 shadow-[0_0_20px_rgba(34,197,94,0.3)] px-4 py-3">
+            <div className="text-xs text-green-300 mb-2">ICO Treasury Address</div>
+            <div className="flex items-center gap-2 bg-white/10 rounded-lg p-2 mb-2">
+              <code className="text-xs font-mono flex-1 text-left truncate text-white">
+                {icoTreasuryAddress?.slice(0, 8)}...{icoTreasuryAddress?.slice(-8)}
+              </code>
+              <button 
+                onClick={() => navigator.clipboard.writeText(icoTreasuryAddress)}
+                className="p-1 hover:bg-white/20 rounded text-white/70 hover:text-white"
+              >
+                <Copy className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="text-xs text-white/70">
+              Send {icoAsset || 'SOL'} to participate in the ICO
+            </div>
+          </div>
+        </div>
+      )}
+      
+
       {/* Stats grid - 2 rows of 3 columns */}
       <div className="px-4 sm:px-5 py-3 sm:py-4 text-white">
         <div className="rounded-none px-1 sm:px-2 py-2 sm:py-3">
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {status === 'pre_ico' ? (
+          {status === 'pre_ico' || status === 'ico' ? (
             <>
               <div className="text-center">
                 <div className="text-[8px] sm:text-[9px] uppercase tracking-[.16em] text-white/60">Vault Asset</div>
@@ -119,7 +157,7 @@ export function TallVaultCard(props: TallVaultCardProps) {
                 </div>
               </div>
               <Stat label="BID:WIN" value={potentialWin} numeric />
-              <Stat label="Timer Length" value={timer.includes('h') ? timer : timer.includes('m') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`} />
+              <Stat label="Timer Length" value={formatTimerLength(timerDuration || 3600)} />
               <Stat label="Lifespan" value={endgame} />
               <Stat label="Trade Fee" value={tradeFee || "5%"} numeric />
             </>
@@ -143,9 +181,38 @@ export function TallVaultCard(props: TallVaultCardProps) {
           </div>
         </div>
 
+        {/* ICO Progress Bar - above button */}
+      {status === 'ico' && icoTreasuryAddress && (
+        <div className="mt-4 px-4">
+          <div className="w-full bg-white/10 h-5 mb-2 relative overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-green-500 to-emerald-400 h-5 transition-all duration-500"
+              style={{ 
+                width: `${Math.min(((icoProgress || 0) / Math.max(icoThreshold || 1000, icoProgress || 0)) * 100, 100)}%` 
+              }}
+            ></div>
+            {/* $10,000 milestone marker */}
+            <div 
+              className="absolute top-0 h-5 w-0.5 bg-green-400"
+              style={{ 
+                left: `${Math.min((10000 / Math.max(icoThreshold || 1000, icoProgress || 0)) * 100, 100)}%` 
+              }}
+            ></div>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-white/70">${icoProgress || 0}</span>
+            <span className="text-green-400">$10k target</span>
+          </div>
+        </div>
+      )}
+
         <button
           onClick={onTrade}
-          className="mt-4 sm:mt-5 w-full inline-flex items-center justify-center whitespace-nowrap rounded-none bg-white text-black px-3 py-2 text-xs sm:text-sm font-semibold hover:bg-white/90"
+          className={`mt-4 sm:mt-5 w-full inline-flex items-center justify-center whitespace-nowrap rounded-none px-3 py-2 text-xs sm:text-sm font-semibold ${
+            buttonText === 'View ICO'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.5)] hover:shadow-[0_0_25px_rgba(34,197,94,0.7)] hover:from-green-400 hover:to-emerald-400'
+              : 'bg-white text-black hover:bg-white/90'
+          }`}
         >
           {buttonText || "Trade"}
         </button>

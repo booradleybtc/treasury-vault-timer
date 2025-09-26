@@ -30,9 +30,9 @@ class SPLTokenService {
         return this.tokenListCache.get(address)!;
       }
 
-      // Fetch from Jupiter API
+      // Fetch from Jupiter API (all tokens for broader coverage)
       const response = await fetch(
-        `https://token.jup.ag/strict`
+        `https://token.jup.ag/all`
       );
       
       if (!response.ok) {
@@ -73,8 +73,10 @@ class SPLTokenService {
       return token.logoURI;
     }
 
-    // Fallback to generic token image
-    return '/images/token.png';
+    // Try common token logo services for any Solana address
+    const logoUrl = `https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/${address}/logo.png`;
+    this.logoCache.set(address, logoUrl);
+    return logoUrl;
   }
 
   /**
@@ -83,7 +85,7 @@ class SPLTokenService {
   async searchTokens(query: string): Promise<SPLTokenMetadata[]> {
     try {
       const response = await fetch(
-        `https://token.jup.ag/strict`
+        `https://token.jup.ag/all`
       );
       
       if (!response.ok) {
@@ -98,7 +100,7 @@ class SPLTokenService {
         token.name.toLowerCase().includes(query.toLowerCase())
       );
 
-      return filtered.slice(0, 20); // Limit to 20 results
+      return filtered.slice(0, 50); // Limit to 50 results (increased for broader token coverage)
     } catch (error) {
       console.error('Error searching tokens:', error);
       return [];
@@ -111,7 +113,7 @@ class SPLTokenService {
   async getPopularTokens(): Promise<SPLTokenMetadata[]> {
     try {
       const response = await fetch(
-        `https://token.jup.ag/strict`
+        `https://token.jup.ag/all`
       );
       
       if (!response.ok) {
@@ -127,12 +129,45 @@ class SPLTokenService {
         'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT
         'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So', // mSOL
         '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs', // ETH
+        'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', // BONK
+        'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', // JUP
+        'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3', // PYTH
+        '5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm', // RAY
+        'A8BR1VBFhVJCqUV5fo2oHyCE6c3EQ3BQ4nJdW8W3cbX1', // WIF
       ];
 
       return tokenList.filter(token => popularAddresses.includes(token.address));
     } catch (error) {
       console.error('Error fetching popular tokens:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get token metadata for any Solana address (including custom tokens)
+   */
+  async getTokenMetadataForAnyAddress(address: string): Promise<SPLTokenMetadata | null> {
+    try {
+      // First try to get from Jupiter's token list
+      const jupiterToken = await this.getTokenMetadata(address);
+      if (jupiterToken) {
+        return jupiterToken;
+      }
+
+      // If not found in Jupiter, try to fetch from Solana blockchain
+      // This would require a Solana RPC connection, but for now we'll return a basic structure
+      // In a real implementation, you'd use @solana/web3.js to fetch token metadata
+      return {
+        address,
+        symbol: 'UNKNOWN',
+        name: 'Unknown Token',
+        decimals: 9, // Default for most SPL tokens
+        verified: false,
+        logoURI: '/images/token.png'
+      };
+    } catch (error) {
+      console.error('Error fetching token metadata for address:', error);
+      return null;
     }
   }
 

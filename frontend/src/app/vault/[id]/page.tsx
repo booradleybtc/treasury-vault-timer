@@ -9,6 +9,8 @@ import { GlassPanel } from '@/components/darwin/GlassPanel';
 import { FeaturedVaultCard } from '@/components/darwin/FeaturedVaultCard';
 import { ArrowLeft, Clock, CurrencyDollar, Gift, ChartBar, CloudArrowDown } from '@phosphor-icons/react';
 import dynamic from 'next/dynamic';
+import { useTokenMetadata } from '@/hooks/useTokenMetadata';
+import { VaultPagePreview } from '@/components/darwin/VaultPagePreview';
 
 // Helper function to get token symbol from address
 const getTokenSymbol = (address: string): string => {
@@ -108,6 +110,10 @@ export default function VaultPage() {
   const [showHuntModal, setShowHuntModal] = useState(false);
 
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
+
+  // Token metadata hooks - only call when vaultConfig is loaded
+  // const vaultAssetMetadata = useTokenMetadata(vaultConfig?.vaultAsset || '');
+  // const airdropAssetMetadata = useTokenMetadata(vaultConfig?.airdropAsset || '');
 
   const fetchData = async () => {
     try {
@@ -215,6 +221,18 @@ export default function VaultPage() {
 
   const recentBuys = data.buyLog.slice(0, 3);
 
+  // For non-live vaults, use VaultPagePreview component
+  if (vaultConfig?.status && vaultConfig.status !== 'active') {
+    return (
+      <div className="min-h-screen w-full" style={{
+        background: "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/upscaled_lofi_rainforest.png') center 70% / cover fixed",
+      }}>
+        <VaultPagePreview vault={vaultConfig} status={vaultConfig.status} />
+      </div>
+    );
+  }
+
+  // For live vaults, use the original UI
   return (
     <div
       className="min-h-screen w-full relative"
@@ -239,14 +257,22 @@ export default function VaultPage() {
           {/* Center spacer (no dropdown) */}
           <div className="hidden sm:block" />
 
-          {/* Right: Buy CTA */}
-          <button 
-            onClick={() => setShowHuntModal(true)}
-            className="inline-flex items-center gap-2 justify-center px-4 sm:px-5 py-2.5 text-sm sm:text-base font-semibold rounded-none text-white bg-[#58A6FF] hover:bg-[#6fb3ff] shadow-[0_0_28px_rgba(88,166,255,0.45)] focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          >
-            <img src="/images/78.png" alt="Darwin" className="h-5 w-5 object-contain" />
-            Buy Vault
-          </button>
+          {/* Right: Buy CTA or ICO Status */}
+          {vaultConfig?.status !== 'pre_ico' && (
+            <button 
+              onClick={() => setShowHuntModal(true)}
+              className="inline-flex items-center gap-2 justify-center px-4 sm:px-5 py-2.5 text-sm sm:text-base font-semibold rounded-none text-white bg-[#58A6FF] hover:bg-[#6fb3ff] shadow-[0_0_28px_rgba(88,166,255,0.45)] focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            >
+              <img src="/images/78.png" alt="Darwin" className="h-5 w-5 object-contain" />
+              Buy Vault
+            </button>
+          )}
+          {vaultConfig?.status === 'pre_ico' && (
+            <div className="inline-flex items-center gap-2 justify-center px-4 sm:px-5 py-2.5 text-sm sm:text-base font-semibold rounded-none text-white bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30">
+              <Clock className="h-5 w-5" />
+              ICO Coming Soon
+            </div>
+          )}
         </div>
       </header>
       
@@ -264,38 +290,36 @@ export default function VaultPage() {
               }}
             />
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/70" />
+            <div className="absolute inset-0 bg-black/60" />
             
-            {/* ICO Date Card on top of banner */}
+            {/* ICO Date Card on top of banner (centered) */}
             {vaultConfig?.status === 'pre_ico' && vaultConfig?.meta?.icoProposedAt && (
-              <div className="relative z-10 p-6">
-                <div className="max-w-2xl mx-auto">
-                  <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-6 py-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm text-cyan-300 mb-2">ICO Date & Time</div>
-                        <div className="text-xl font-bold text-white">{new Date(vaultConfig.meta.icoProposedAt).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}</div>
-                        <div className="text-lg text-cyan-200">{new Date(vaultConfig.meta.icoProposedAt).toLocaleTimeString('en-US', { 
-                          hour: 'numeric', 
-                          minute: '2-digit',
-                          timeZoneName: 'short'
-                        })}</div>
-                      </div>
-                      <a 
-                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vaultConfig.name}&details=ICO fundraise for ${vaultConfig.name} vault&location=Online`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-cyan-300 hover:text-cyan-200 transition-colors text-2xl"
-                        title="Add to Calendar"
-                      >
-                        📅
-                      </a>
+            <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
+                <div className="ring-1 ring-white/10 shadow-[0_0_20px_rgba(0,0,0,0.2)] px-8 py-6" style={{ backgroundColor: '#080808' }}>
+                  <div className="flex items-center justify-between gap-6">
+                    <div>
+                      <div className="text-base font-semibold text-gray-300 mb-3">ICO Date & Time</div>
+                      <div className="text-2xl md:text-3xl font-extrabold text-white mb-3">{new Date(vaultConfig.meta.icoProposedAt).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}</div>
+                      <div className="text-lg text-gray-300">{new Date(vaultConfig.meta.icoProposedAt).toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        timeZoneName: 'short'
+                      })}</div>
                     </div>
+                    <a 
+                      href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vaultConfig.name}&details=ICO fundraise for ${vaultConfig.name} vault&location=Online`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-300 hover:text-gray-200 transition-colors text-2xl"
+                      title="Add to Calendar"
+                    >
+                      📅
+                    </a>
                   </div>
                 </div>
               </div>
@@ -340,10 +364,10 @@ export default function VaultPage() {
                             href={vaultConfig.meta.links.x} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-white/60 hover:text-white transition-colors inline-flex items-center"
+                          className="text-white/60 hover:text-white transition-colors inline-flex items-center opacity-70 hover:opacity-100"
                           aria-label="View on X"
                         >
-                            <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-4 w-4 object-contain" />
+                            <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-3.5 w-3.5 object-contain" />
                           </a>
                         )}
                         {vaultConfig?.meta?.links?.website && (
@@ -351,10 +375,10 @@ export default function VaultPage() {
                             href={vaultConfig.meta.links.website} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-white/60 hover:text-white transition-colors inline-flex items-center"
-                            aria-label="Website"
+                            className="text-white/60 hover:text-white transition-colors inline-flex items-center opacity-70 hover:opacity-100"
+                            aria-label="External link"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>
                         </a>
@@ -390,9 +414,9 @@ export default function VaultPage() {
                 </div>
               </div>
               
-        {/* Details Section */}
+        {/* Details Section - even spacing below banner & paragraph */}
         {vaultConfig?.status === 'pre_ico' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Vault Details Card */}
             <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
@@ -404,7 +428,12 @@ export default function VaultPage() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-white/70">Timer Duration</span>
-                  <span className="text-white font-semibold">{Math.floor((vaultConfig?.timerDuration || 3600) / 3600)} Hour{(Math.floor((vaultConfig?.timerDuration || 3600) / 3600)) !== 1 ? 's' : ''}</span>
+                  <span className="text-white font-semibold">
+                    {vaultConfig?.timerDuration && vaultConfig.timerDuration < 3600 
+                      ? `${Math.floor(vaultConfig.timerDuration / 60)} Minutes`
+                      : `${Math.floor((vaultConfig?.timerDuration || 3600) / 3600)} Hour${(Math.floor((vaultConfig?.timerDuration || 3600) / 3600)) !== 1 ? 's' : ''}`
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-white/70">Vault Lifespan</span>
@@ -416,7 +445,11 @@ export default function VaultPage() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-white/70">Minimum Buy to Reset</span>
-                  <span className="text-white font-semibold">{vaultConfig?.meta?.minimumBuyToResetTimer || 'N/A'}</span>
+                  <span className="text-white font-semibold">{vaultConfig?.meta?.minBuyToReset || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/70">Vault Token Supply</span>
+                  <span className="text-white font-semibold">{vaultConfig?.meta?.vaultTokenSupply?.toLocaleString() || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -428,15 +461,27 @@ export default function VaultPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-white/70">Vault Asset</span>
                   <div className="flex items-center gap-2">
-                    <img src={getTokenImage(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')} alt={getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')} className="h-5 w-5 object-contain" />
-                    <span className="text-white font-semibold">{getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')}</span>
+                    <img 
+                      src={getTokenImage(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')} 
+                      alt={getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')} 
+                      className="h-5 w-5 object-contain" 
+                    />
+                    <span className="text-white font-semibold">
+                      {getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-white/70">Airdrop Asset</span>
                   <div className="flex items-center gap-2">
-                    <img src={getTokenImage(vaultConfig?.airdropAsset || '')} alt={getTokenSymbol(vaultConfig?.airdropAsset || '')} className="h-5 w-5 object-contain" />
-                    <span className="text-white font-semibold">{getTokenSymbol(vaultConfig?.airdropAsset || '')}</span>
+                    <img 
+                      src={getTokenImage(vaultConfig?.airdropAsset || '')} 
+                      alt={getTokenSymbol(vaultConfig?.airdropAsset || '')} 
+                      className="h-5 w-5 object-contain" 
+                    />
+                    <span className="text-white font-semibold">
+                      {getTokenSymbol(vaultConfig?.airdropAsset || '')}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -465,25 +510,25 @@ export default function VaultPage() {
             <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
               <h3 className="text-xl font-bold text-white mb-4">Trade Fee Splits</h3>
               <div className="space-y-4">
+                <div className="flex justify-between items-center border-b border-gray-400/30 pb-2">
+                  <span className="text-white/70 font-semibold">Total Trade Fee</span>
+                  <span className="text-white font-bold">{vaultConfig?.meta?.totalTradeFee || 5}%</span>
+                </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-white/70">Creator</span>
+                  <span className="text-white/70">Creator (% of total)</span>
                   <span className="text-white font-semibold">{vaultConfig?.meta?.splits?.creator || 0}%</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-white/70">Treasury</span>
+                  <span className="text-white/70">Treasury (% of total)</span>
                   <span className="text-white font-semibold">{vaultConfig?.meta?.splits?.treasury || 0}%</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-white/70">Airdrops</span>
+                  <span className="text-white/70">Airdrops (% of total)</span>
                   <span className="text-white font-semibold">{vaultConfig?.meta?.splits?.airdrops || 0}%</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-white/70">Darwin Builder Fund</span>
+                  <span className="text-white/70">Darwin Builder Fund (% of total)</span>
                   <span className="text-white font-semibold">{vaultConfig?.meta?.splits?.darwin || 0}%</span>
-                </div>
-                <div className="flex justify-between items-center border-t border-white/10 pt-2">
-                  <span className="text-white/70 font-semibold">Total Tax</span>
-                  <span className="text-white font-bold">{(vaultConfig?.meta?.splits?.creator || 0) + (vaultConfig?.meta?.splits?.treasury || 0) + (vaultConfig?.meta?.splits?.airdrops || 0) + (vaultConfig?.meta?.splits?.darwin || 0)}%</span>
                 </div>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Copy, ExternalLink } from "lucide-react";
+import { formatTimerLength } from "@/lib/utils";
 import { cn } from "./cn";
 
 type Stat = { label: string; value: string };
@@ -31,6 +32,10 @@ export type FeaturedVaultCardProps = {
   buttonText?: string;
   showVaultStagePill?: boolean;
   icoDate?: string;
+  icoTreasuryAddress?: string;
+  icoAsset?: string;
+  icoThreshold?: number;
+  icoProgress?: number;
   className?: string;
   aspect?: "21/9" | "16/9" | "3/1";
 };
@@ -61,6 +66,10 @@ export function FeaturedVaultCard({
   buttonText = "Trade",
   showVaultStagePill = false,
   icoDate,
+  icoTreasuryAddress,
+  icoAsset,
+  icoThreshold,
+  icoProgress,
   className,
   aspect = "21/9",
 }: FeaturedVaultCardProps) {
@@ -162,6 +171,29 @@ export function FeaturedVaultCard({
             ))}
           </div>
 
+          {/* middle: ICO treasury address */}
+          {icoTreasuryAddress && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded-none p-6">
+                <div className="text-base text-white/80 mb-3">ICO Treasury Address</div>
+                <div className="flex items-center gap-3 mb-3">
+                  <code className="text-sm font-mono text-white truncate max-w-[250px] bg-black/20 px-3 py-2 rounded">
+                    {icoTreasuryAddress}
+                  </code>
+                  <button 
+                    onClick={() => navigator.clipboard.writeText(icoTreasuryAddress)}
+                    className="p-2 hover:bg-white/20 rounded"
+                  >
+                    <Copy className="w-4 h-4 text-white/70" />
+                  </button>
+                </div>
+                <div className="text-sm text-white/60">
+                  Send {icoAsset || 'SOL'} to participate in the ICO
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* bottom-left: title/subtitle + actions */}
           <div className="absolute bottom-5 left-5">
             <div className="flex items-center gap-3 mb-2">
@@ -169,7 +201,11 @@ export function FeaturedVaultCard({
                 {title}
               </div>
               {showVaultStagePill ? (
-                <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-3 py-1 text-sm text-cyan-300 font-semibold">
+                <div className={`inline-flex items-center gap-2 rounded-[8px] backdrop-blur-[10px] px-3 py-1 text-sm font-semibold ${
+                  subtitle === 'ICO' 
+                    ? 'bg-green-500/20 ring-1 ring-green-400/30 text-green-300'
+                    : 'bg-cyan-500/20 ring-1 ring-cyan-400/30 text-cyan-300'
+                }`}>
                   {subtitle}
                 </div>
               ) : null}
@@ -177,11 +213,15 @@ export function FeaturedVaultCard({
             <div className="mt-3 flex items-center gap-3">
               <button 
                 onClick={onTrade}
-                className="inline-flex items-center justify-center rounded-none bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90"
+                className={`inline-flex items-center justify-center rounded-none px-4 py-2 text-sm font-semibold ${
+                  buttonText === 'Participate in ICO' 
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.5)] hover:shadow-[0_0_25px_rgba(34,197,94,0.7)] hover:from-green-400 hover:to-emerald-400'
+                    : 'bg-white text-black hover:bg-white/90'
+                }`}
               >
                 {buttonText}
               </button>
-              {icoDate && (
+              {icoDate && icoDate !== 'Time Remaining in ICO' && (
                 <a 
                   href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${icoDate.split(' - ')[0]}&details=ICO fundraise for this vault&location=Online`}
                   target="_blank"
@@ -191,6 +231,28 @@ export function FeaturedVaultCard({
                   📅 Set Reminder
                 </a>
               )}
+      {icoTreasuryAddress && (
+        <div className="w-40 bg-white/10 h-4 mb-2 relative overflow-hidden">
+          <div
+            className="bg-gradient-to-r from-green-500 to-emerald-400 h-4 transition-all duration-500"
+            style={{ 
+              width: `${Math.min(((icoProgress || 0) / Math.max(icoThreshold || 1000, icoProgress || 0)) * 100, 100)}%` 
+            }}
+          ></div>
+          {/* $10,000 milestone marker */}
+          <div 
+            className="absolute top-0 h-4 w-0.5 bg-green-400"
+            style={{ 
+              left: `${Math.min((10000 / Math.max(icoThreshold || 1000, icoProgress || 0)) * 100, 100)}%` 
+            }}
+          ></div>
+        </div>
+      )}
+      {icoTreasuryAddress && (
+        <div className="flex justify-end text-xs">
+          <span className="text-green-400">$10k target</span>
+        </div>
+      )}
               {winnerAddressShort ? (
                 <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-xs text-white/90">
                   <span className="uppercase tracking-widest text-white/60">Current Winner</span>
@@ -203,15 +265,26 @@ export function FeaturedVaultCard({
           {/* bottom-right: big timer + endgame pill */}
           <div className="absolute bottom-5 right-5 text-right text-white">
             {icoDate ? (
-              <>
-                <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-sm text-white/90 font-semibold mb-2">
-                  ICO Date
-                </div>
-                <div className="tabular-nums text-2xl md:text-3xl font-bold leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
-                  <div>{icoDate.split(' - ')[0]}</div>
-                  <div className="text-lg font-medium text-white/80">{icoDate.split(' - ')[1]}</div>
-                </div>
-              </>
+              icoDate === 'Time Remaining in ICO' ? (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-sm text-white/90 font-semibold mb-2">
+                    Time Remaining in ICO
+                  </div>
+                  <div className="tabular-nums text-5xl md:text-7xl font-extrabold leading-none tracking-tight text-green-400">
+                    {timer.value}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-3 py-1 text-sm text-white/90 font-semibold mb-2">
+                    ICO Date
+                  </div>
+                  <div className="tabular-nums text-2xl md:text-3xl font-bold leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
+                    <div>{icoDate.split(' - ')[0]}</div>
+                    <div className="text-lg font-medium text-white/80">{icoDate.split(' - ')[1]}</div>
+                  </div>
+                </>
+              )
             ) : (
               <div className="tabular-nums text-5xl md:text-7xl font-extrabold leading-none tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,.45)]">
                 {timer.value}

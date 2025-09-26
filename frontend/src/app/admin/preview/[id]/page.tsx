@@ -14,18 +14,33 @@ export default function PreviewPage() {
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
   useEffect(() => {
-    const load = async () => {
+    const load = () => {
       try {
         if (!vaultId) return;
-        const res = await fetch(`${BACKEND}/api/vault/${vaultId}/config`);
-        if (res.ok) {
-          const js = await res.json();
-          setVault({ ...js.vault, status: stage });
+        
+        // First try to load from localStorage (for preview data)
+        const previewData = localStorage.getItem('vaultPreviewData');
+        if (previewData && vaultId.startsWith('preview-')) {
+          const parsedData = JSON.parse(previewData);
+          setVault({ ...parsedData, status: stage });
+          return;
         }
+        
+        // If not preview data, try to fetch from backend (for existing vaults)
+        const loadFromBackend = async () => {
+          try {
+            const res = await fetch(`${BACKEND}/api/vault/${vaultId}/config`);
+            if (res.ok) {
+              const js = await res.json();
+              setVault({ ...js.vault, status: stage });
+            }
+          } catch {}
+        };
+        loadFromBackend();
       } catch {}
     };
     load();
-  }, [vaultId, BACKEND]);
+  }, [vaultId, BACKEND, stage]);
 
   // Update vault status when stage changes
   useEffect(() => {
@@ -40,7 +55,51 @@ export default function PreviewPage() {
     }}>
       <div className="mx-auto max-w-7xl px-4 py-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-white">Vault Preview</h1>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => {
+                // Store vault data for the wizard to load (convert back to form data format)
+                if (vault) {
+                  const formData = {
+                    name: vault.name || '',
+                    description: vault.description || '',
+                    ticker: vault.meta?.ticker || '',
+                    treasuryWallet: vault.treasuryWallet || '',
+                    icoAsset: vault.meta?.icoAsset || 'So11111111111111111111111111111111111111112',
+                    icoProposedAt: vault.meta?.icoProposedAt ? new Date(vault.meta.icoProposedAt).toISOString().slice(0, 16) : '',
+                    supplyIntended: vault.meta?.supplyIntended || '',
+                    bidMultiplier: vault.meta?.bidMultiplier || 100,
+                    vaultTokenSupply: vault.meta?.vaultTokenSupply || 1000000,
+                    timerDuration: vault.timerDuration ? Math.round(vault.timerDuration / 60) : 60, // convert seconds to minutes
+                    vaultLifespanDays: vault.meta?.vaultLifespanDays || 100,
+                    minBuyToReset: vault.meta?.minBuyToReset || 0,
+                    minHoldAmount: vault.minHoldAmount || 0,
+                    airdropInterval: vault.distributionInterval || 3600,
+                    airdropMode: vault.meta?.airdropMode || 'rewards',
+                    vaultAsset: vault.vaultAsset || 'So11111111111111111111111111111111111111112',
+                    airdropAsset: vault.airdropAsset || '',
+                    totalTradeFee: vault.meta?.totalTradeFee || 5,
+                    splitCreator: vault.meta?.splits?.creator || 0,
+                    splitTreasury: vault.meta?.splits?.treasury || 0,
+                    splitAirdrops: vault.meta?.splits?.airdrops || 0,
+                    splitDarwin: vault.meta?.splits?.darwin || 0,
+                    xUrl: vault.meta?.links?.x || '',
+                    websiteUrl: vault.meta?.links?.website || '',
+                    logoUrl: vault.meta?.logoUrl || '',
+                    bannerUrl: vault.meta?.bannerUrl || '',
+                    // Also store custom token data if available
+                    customTokenData: vault.customTokenData || null
+                  };
+                  localStorage.setItem('vaultWizardData', JSON.stringify(formData));
+                }
+                router.push('/admin/launch');
+              }}
+              className="bg-white/10 text-white px-4 py-2 ring-1 ring-white/10 hover:bg-white/20 flex items-center gap-2"
+            >
+              ← Back to Wizard
+            </button>
+            <h1 className="text-2xl font-bold text-white">Vault Preview</h1>
+          </div>
           <div className="flex items-center gap-2">
             <select className="bg-white/10 text-white px-3 py-2 ring-1 ring-white/10" value={stage} onChange={(e)=>setStage(e.target.value as any)}>
               <option value="pre_ico">Pre‑ICO</option>
@@ -92,27 +151,50 @@ export default function PreviewPage() {
         {/* Launch button */}
         <div className="text-center">
           <button 
-            className="bg-[#58A6FF] hover:bg-[#4a95e6] text-white px-6 py-3 shadow-[0_0_18px_rgba(88,166,255,0.45)] font-semibold" 
+            className="bg-[#58A6FF] hover:bg-[#4a95e6] text-white px-8 py-4 shadow-[0_0_18px_rgba(88,166,255,0.45)] font-semibold text-lg" 
             onClick={async () => {
+              if (!confirm('Are you sure you want to launch this vault? This will make it live and visible to users.')) {
+                return;
+              }
+              
               try {
-                const res = await fetch(`${BACKEND}/api/admin/vaults/${vaultId}/status`, {
-                  method: 'PATCH',
+                if (!vault) {
+                  alert('No vault data to launch');
+                  return;
+                }
+
+                // Create the actual vault in the backend
+                const vaultPayload = {
+                  ...vault,
+                  id: vault.id.replace('preview-', ''), // Remove preview prefix
+                  status: 'pre_ico' // Set to actual launch status
+                };
+
+                const res = await fetch(`${BACKEND}/api/admin/vaults`, {
+                  method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ status: 'pre_ico' })
+                  body: JSON.stringify(vaultPayload)
                 });
+
                 if (res.ok) {
-                  alert('Vault launched as Pre-ICO successfully!');
-                  router.push('/admin/index');
+                  const result = await res.json();
+                  // Clear preview data
+                  localStorage.removeItem('vaultPreviewData');
+                  router.push(`/admin/launch-success/${result.vault?.id || vaultPayload.id}`);
                 } else {
-                  alert('Failed to launch vault');
+                  const errorText = await res.text().catch(() => '');
+                  alert(`Failed to launch vault: ${res.status} ${errorText}`);
                 }
               } catch (e) {
-                alert('Error launching vault');
+                alert('Error launching vault: ' + (e instanceof Error ? e.message : 'Unknown error'));
               }
             }}
           >
-            Launch Vault (Pre‑ICO)
+            🚀 Launch Vault (Pre‑ICO)
           </button>
+          <p className="text-white/60 text-sm mt-2">
+            This will create and launch your vault, making it live and visible to users
+          </p>
         </div>
       </div>
     </div>

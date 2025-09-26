@@ -79,7 +79,7 @@ export default function LaunchWizardPage() {
         minHoldAmount: Number(formData.minHoldAmount),
         vaultAsset: formData.vaultAsset,
         airdropAsset: formData.airdropAsset,
-        status: 'pre_ico_scheduled',
+        status: 'pre_ico',
         meta: {
           stage: 'stage1',
           ticker: formData.ticker?.slice(0, 10),
@@ -239,7 +239,7 @@ export default function LaunchWizardPage() {
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+          <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6 relative z-10">
             <h2 className="text-lg font-bold text-white mb-4">ICO Settings</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -275,7 +275,7 @@ export default function LaunchWizardPage() {
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+          <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6 relative z-10">
             <h2 className="text-lg font-bold text-white mb-4">Timer & Airdrops</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -391,7 +391,7 @@ export default function LaunchWizardPage() {
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+          <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6 relative z-10">
             <h2 className="text-lg font-bold text-white mb-4">Assets & Tax Split</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

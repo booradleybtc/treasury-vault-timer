@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Clock, AlertCircle, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import { splTokenService } from '@/services/splTokenService';
+import { formatTimerLength } from '@/lib/utils';
 
 // Helper function to get token symbol from address
 const getTokenSymbol = (address: string): string => {
@@ -63,12 +64,36 @@ interface VaultData {
     };
     icoThresholdUsd?: number;
   };
+  customTokenData?: {
+    customToken?: {
+      address: string;
+      symbol: string;
+      name: string;
+      logoURI: string;
+    };
+    vaultAsset?: {
+      address: string;
+      symbol: string;
+      name: string;
+      decimals: number;
+      verified: boolean;
+      logoURI: string;
+    };
+    airdropAsset?: {
+      address: string;
+      symbol: string;
+      name: string;
+      decimals: number;
+      verified: boolean;
+      logoURI: string;
+    };
+  };
   status?: VaultStatus;
 }
 
 interface VaultPagePreviewProps {
   vault: VaultData;
-  status: VaultStatus;
+  status?: VaultStatus;
   className?: string;
 }
 
@@ -116,11 +141,30 @@ const useTokenMetadata = (address: string) => {
 
 export function VaultPagePreview({ vault, status, className }: VaultPagePreviewProps) {
   const [countdown, setCountdown] = useState('');
+  const [icoCountdown, setIcoCountdown] = useState('');
   const meta = vault.meta || {};
   
   // Get token metadata for vault and airdrop assets
   const vaultAssetMetadata = useTokenMetadata(vault.vaultAsset || '');
   const airdropAssetMetadata = useTokenMetadata(vault.airdropAsset || '');
+
+  // Use custom token data if available, otherwise fall back to fetched metadata
+  const customTokenData = vault.customTokenData;
+  const finalVaultAssetMetadata = customTokenData?.vaultAsset && vault.vaultAsset === customTokenData.vaultAsset.address
+    ? customTokenData.vaultAsset
+    : vaultAssetMetadata.metadata;
+
+  const finalAirdropAssetMetadata = customTokenData?.airdropAsset && vault.airdropAsset === customTokenData.airdropAsset.address
+    ? customTokenData.airdropAsset
+    : airdropAssetMetadata.metadata;
+
+  const customTokenMetadata = customTokenData?.customToken;
+  const finalCustomVaultMetadata = customTokenMetadata && vault.vaultAsset === customTokenMetadata.address
+    ? customTokenMetadata
+    : null;
+  const finalCustomAirdropMetadata = customTokenMetadata && vault.airdropAsset === customTokenMetadata.address
+    ? customTokenMetadata
+    : null;
 
   function formatICODate(icoDate: string): string {
     const date = new Date(icoDate);
@@ -148,8 +192,19 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
   // Update countdown every second
   useEffect(() => {
     const updateCountdown = () => {
-      if (status === 'ico' && meta.icoEndsAt) {
-        setCountdown(formatCountdown(meta.icoEndsAt));
+      if (status === 'ico') {
+        if (meta.icoEndsAt) {
+          setIcoCountdown(formatCountdown(meta.icoEndsAt));
+        } else if (meta.icoProposedAt) {
+          // Calculate ICO end time: 24 hours from ICO start
+          const icoStart = new Date(meta.icoProposedAt);
+          const icoEnd = new Date(icoStart.getTime() + 24 * 60 * 60 * 1000);
+          setIcoCountdown(formatCountdown(icoEnd.toISOString()));
+        } else {
+          // Fallback: 24 hours from now
+          const fallbackEndTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
+          setIcoCountdown(formatCountdown(fallbackEndTime.toISOString()));
+        }
       } else if (status === 'pre_launch' && vault.startDate) {
         setCountdown(formatCountdown(vault.startDate));
       } else if (status === 'pre_ico' && meta.icoProposedAt) {
@@ -160,7 +215,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [status, meta.icoEndsAt, vault.startDate, meta.icoProposedAt]);
+  }, [status, meta.icoEndsAt, meta.icoProposedAt, vault.startDate]);
 
   function formatCountdown(endDate: string): string {
     const now = new Date();
@@ -198,36 +253,12 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
     switch (status) {
       case 'pre_ico':
         return (
-          <div className="py-12">
-            {/* ICO Date Card */}
-            {meta.icoProposedAt && (
-              <div className="relative z-10 p-6 mb-8">
-                <div className="max-w-2xl mx-auto">
-                  <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.3)] px-6 py-4">
-                    <div className="text-center">
-                      <div className="text-sm text-cyan-300 mb-2">ICO Date & Time</div>
-                      <div className="text-3xl font-bold text-white mb-3">{formatICODate(meta.icoProposedAt)}</div>
-                      <a 
-                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200 transition-colors text-sm"
-                        title="Add to Calendar"
-                      >
-                        <span>📅</span>
-                        <span>Set Reminder</span>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Pre-ICO explanation paragraph */}
+          <div>
+            {/* Title and pre-ICO paragraph */}
             <div className="text-center mb-8">
-              <p className="text-white/70 mb-8 max-w-md mx-auto text-center">
-                This vault is scheduled to begin its ICO fundraise. 
-                The ICO will run for 24 hours and must raise at least ${meta.icoThresholdUsd || 1000} to proceed to launch.
+              <h2 className="text-3xl font-bold text-white mb-2">{vault.name}</h2>
+              <p className="text-white/70 mb-8 max-w-xl mx-auto text-center">
+                The ICO will run for 24 hours and must raise at least $10,000 to proceed to launch.
               </p>
             </div>
 
@@ -247,7 +278,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Timer Duration</span>
-                    <span className="text-white font-semibold">{Math.floor((vault.timerDuration || 3600) / 3600)} Hour{(Math.floor((vault.timerDuration || 3600) / 3600)) !== 1 ? 's' : ''}</span>
+                    <span className="text-white font-semibold">{formatTimerLength(vault.timerDuration || 3600)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Vault Lifespan</span>
@@ -271,15 +302,15 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                   <div className="flex items-center justify-between">
                     <span className="text-white/70">Vault Asset</span>
                     <div className="flex items-center gap-2">
-                      <img src={vaultAssetMetadata.metadata?.logoURI || getTokenImage(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} alt={vaultAssetMetadata.metadata?.symbol || getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} className="h-5 w-5 object-contain" />
-                      <span className="text-white font-semibold">{vaultAssetMetadata.metadata?.symbol || getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')}</span>
+                      <img src={finalCustomVaultMetadata?.logoURI || finalVaultAssetMetadata?.logoURI || getTokenImage(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} alt={finalCustomVaultMetadata?.symbol || finalVaultAssetMetadata?.symbol || getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} className="h-5 w-5 object-contain" />
+                      <span className="text-white font-semibold">{finalCustomVaultMetadata?.symbol || finalVaultAssetMetadata?.symbol || getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-white/70">Airdrop Asset</span>
                     <div className="flex items-center gap-2">
-                      <img src={airdropAssetMetadata.metadata?.logoURI || getTokenImage(vault.airdropAsset || '')} alt={airdropAssetMetadata.metadata?.symbol || getTokenSymbol(vault.airdropAsset || '')} className="h-5 w-5 object-contain" />
-                      <span className="text-white font-semibold">{airdropAssetMetadata.metadata?.symbol || getTokenSymbol(vault.airdropAsset || '')}</span>
+                      <img src={finalCustomAirdropMetadata?.logoURI || finalAirdropAssetMetadata?.logoURI || getTokenImage(vault.airdropAsset || '')} alt={finalCustomAirdropMetadata?.symbol || finalAirdropAssetMetadata?.symbol || getTokenSymbol(vault.airdropAsset || '')} className="h-5 w-5 object-contain" />
+                      <span className="text-white font-semibold">{finalCustomAirdropMetadata?.symbol || finalAirdropAssetMetadata?.symbol || getTokenSymbol(vault.airdropAsset || '')}</span>
                     </div>
                   </div>
                 </div>
@@ -302,7 +333,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                     <span className="text-white font-semibold">{meta.minHoldAmount || 'N/A'}</span>
                   </div>
                 </div>
-                <div className="mt-4 p-3 bg-white/5 rounded border border-white/10">
+                <div className="mt-4 p-3 bg-white/5 border border-white/5">
                   <div className="text-xs text-white/60 mb-2">Mode Explanation:</div>
                   <div className="text-sm text-white/80">
                     {meta.airdropMode === 'rewards' && "Tokens are distributed to all eligible holders based on their holdings."}
@@ -319,7 +350,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
               <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
                 <h3 className="text-xl font-bold text-white mb-4">Trade Fee Splits</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-gray-400/30 pb-2 mb-4">
+                  <div className="flex justify-between items-center pb-2 mb-4">
                     <span className="text-white/70 font-semibold">Total Trade Fee</span>
                     <span className="text-white font-bold">{meta.totalTradeFee || 5}%</span>
                   </div>
@@ -348,7 +379,7 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                 <div className="text-white/70 text-sm space-y-2">
                   <p>This vault is currently in the Pre-ICO stage. The ICO will begin on the specified date and time above.</p>
                   <p>During the ICO, participants can contribute SOL or USDC to the treasury wallet. Darwin platform takes 5% of the total raise.</p>
-                  <p>If the ICO raises less than ${meta.icoThresholdUsd || 1000} USD, the vault may be marked as extinct. If it raises ${meta.icoThresholdUsd || 1000} or more, it will proceed to the live trading stage.</p>
+                  <p>If the ICO raises less than ${meta.icoThresholdUsd || 10000} USD, the vault may be marked as extinct. If it raises ${meta.icoThresholdUsd || 10000} or more, it will proceed to the live trading stage.</p>
                   <p>Please conduct your own research before participating in any ICO or trading activities.</p>
                 </div>
               </div>
@@ -358,23 +389,20 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
 
       case 'ico':
         return (
-          <div className="text-center py-12">
-            <div className="relative inline-block mb-6">
-              <CheckCircle className="w-16 h-16 text-green-400" />
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-400 rounded-full animate-pulse" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-4">ICO Live</h2>
-            <p className="text-white/70 mb-6 max-w-md mx-auto">
-              The ICO fundraise is now live! Send SOL or USDC to the treasury address below. 
-              The ICO runs for 24 hours and must raise at least ${meta.icoThresholdUsd || 1000}.
+          <div>
+            {/* Title and ICO paragraph */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">{vault.name} ICO Live</h2>
+              <p className="text-white/70 mb-8 max-w-xl mx-auto text-center">
+              The ICO fundraise is now live! Send {finalCustomVaultMetadata?.symbol || finalVaultAssetMetadata?.symbol || 'SOL'} to the treasury address below. 
+              The ICO runs for 24 hours and must raise at least ${meta.icoThresholdUsd || 10000}.
             </p>
-            
-            <div className="bg-white/5 rounded-lg p-6 mb-6 max-w-md mx-auto">
-              <div className="text-sm text-white/60 mb-2">ICO Time Remaining</div>
-              <div className="text-3xl font-bold text-green-400 mb-4">{countdown}</div>
-              
+            </div>
+
+            {/* Treasury Address Card */}
+            <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 px-6 pt-6 pb-4 mb-6 max-w-2xl mx-auto">
               <div className="text-sm text-white/60 mb-2">Treasury Address (ICO)</div>
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 bg-white/10 rounded-lg p-3 mb-4">
                 <code className="text-sm font-mono flex-1 text-left">
                   {vault.treasuryWallet || 'No wallet address'}
                 </code>
@@ -386,14 +414,131 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
                 </button>
               </div>
               
-              <div className="text-xs text-white/50 mt-3">
-                Darwin takes 5% • Target: ${meta.icoThresholdUsd || 1000}
+              <div className="text-xs text-white/50 mb-4">
+                Darwin takes 5% • Target: ${meta.icoThresholdUsd || 1000} • ICO Raise Split: 93% to treasury, 7% to liquidity
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-lg p-4 max-w-lg mx-auto">
-              <div className="text-sm text-white/80">
-                <strong>ICO Raise Split:</strong> 93% to treasury, 7% to liquidity
+            {/* Vault Details and Disclaimer from Pre-ICO */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Vault Details Card */}
+              <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Vault Details</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Vault Name</span>
+                    <span className="text-white font-semibold">{vault.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Vault Token Supply</span>
+                    <span className="text-white font-semibold">{meta.vaultTokenSupply ? meta.vaultTokenSupply.toLocaleString() : 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Timer Duration</span>
+                    <span className="text-white font-semibold">{formatTimerLength(vault.timerDuration || 3600)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Vault Lifespan</span>
+                    <span className="text-white font-semibold">{meta.vaultLifespanDays || 100} Days</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">BID:WIN Multiplier</span>
+                    <span className="text-white font-semibold">{meta.bidMultiplier || 100}×</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Minimum Buy to Reset</span>
+                    <span className="text-white font-semibold">{meta.minBuyToReset || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assets Card */}
+              <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Assets</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70">Vault Asset</span>
+                    <div className="flex items-center gap-2">
+                      <img src={finalCustomVaultMetadata?.logoURI || finalVaultAssetMetadata?.logoURI || getTokenImage(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} alt={finalCustomVaultMetadata?.symbol || finalVaultAssetMetadata?.symbol || getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')} className="h-5 w-5 object-contain" />
+                      <span className="text-white font-semibold">{finalCustomVaultMetadata?.symbol || finalVaultAssetMetadata?.symbol || getTokenSymbol(vault.vaultAsset || 'So11111111111111111111111111111111111111112')}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70">Airdrop Asset</span>
+                    <div className="flex items-center gap-2">
+                      <img src={finalCustomAirdropMetadata?.logoURI || finalAirdropAssetMetadata?.logoURI || getTokenImage(vault.airdropAsset || '')} alt={finalCustomAirdropMetadata?.symbol || finalAirdropAssetMetadata?.symbol || getTokenSymbol(vault.airdropAsset || '')} className="h-5 w-5 object-contain" />
+                      <span className="text-white font-semibold">{finalCustomAirdropMetadata?.symbol || finalAirdropAssetMetadata?.symbol || getTokenSymbol(vault.airdropAsset || '')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Airdrop Details Card */}
+              <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Airdrop Details</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Type</span>
+                    <span className="text-white font-semibold capitalize">{meta.airdropMode || 'Rewards'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Frequency</span>
+                    <span className="text-white font-semibold">{Math.floor((meta.airdropInterval || 3600) / 60)} mins</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Minimum Hold</span>
+                    <span className="text-white font-semibold">{meta.minHoldAmount || 'N/A'}</span>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-white/5 border border-white/5">
+                  <div className="text-xs text-white/60 mb-2">Mode Explanation:</div>
+                  <div className="text-sm text-white/80">
+                    {meta.airdropMode === 'rewards' && "Tokens are distributed to all eligible holders based on their holdings."}
+                    {meta.airdropMode === 'jackpot' && "Randomly selects 10 holders for distribution with tiered rewards (1st: 40%, 2nd: 20%, 3rd: 10%, others share remaining 30%)."}
+                    {meta.airdropMode === 'lottery' && "One random holder wins the entire distributed amount as a prize. More tokens held means more chances to win."}
+                    {meta.airdropMode === 'powerball' && "Randomly selects up to 50 holders and distributes equal prizes to each winner. The total distribution amount is split equally among all selected winners."}
+                    {meta.airdropMode === 'none' && "No airdrops will be distributed."}
+                    {!meta.airdropMode && "Tokens are distributed to all eligible holders based on their holdings."}
+                  </div>
+                </div>
+              </div>
+
+              {/* Trade Fee Splits Card */}
+              <div className="bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Trade Fee Splits</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-2 mb-4">
+                    <span className="text-white/70 font-semibold">Total Trade Fee</span>
+                    <span className="text-white font-bold">{meta.totalTradeFee || 5}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Creator</span>
+                    <span className="text-white font-semibold">{meta.splits?.creator || 0}% of total</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Treasury</span>
+                    <span className="text-white font-semibold">{meta.splits?.treasury || 0}% of total</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Airdrops</span>
+                    <span className="text-white font-semibold">{meta.splits?.airdrops || 0}% of total</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Darwin Builder Fund</span>
+                    <span className="text-white font-semibold">{meta.splits?.darwin || 0}% of total</span>
+                </div>
+              </div>
+            </div>
+
+              {/* Disclaimer Card */}
+              <div className="lg:col-span-2 bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Disclaimer</h3>
+                <div className="text-white/70 text-sm space-y-2">
+                  <p>This vault is currently in the ICO stage. The ICO fundraise is now live and accepting contributions.</p>
+                  <p>During the ICO, participants can contribute {finalCustomVaultMetadata?.symbol || finalVaultAssetMetadata?.symbol || 'SOL'} to the treasury wallet. Darwin platform takes 5% of the total raise.</p>
+                  <p>If the ICO raises less than ${meta.icoThresholdUsd || 10000} USD, the vault may be marked as extinct. If it raises ${meta.icoThresholdUsd || 10000} or more, it will proceed to the live trading stage.</p>
+                  <p>Please conduct your own research before participating in any ICO or trading activities.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -503,76 +648,123 @@ export function VaultPagePreview({ vault, status, className }: VaultPagePreviewP
   };
 
   return (
-    <div className={`bg-white/5 backdrop-blur-[10px] ring-1 ring-white/10 rounded-lg overflow-hidden ${className}`}>
+    <div className={`backdrop-blur-xl ring-1 ring-white/15 rounded-lg overflow-hidden text-white ${className}`}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-white/10 to-white/5 p-6 border-b border-white/10">
+      <div className="bg-white/5 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <img 
               src={meta.logoUrl || '/images/token.png'} 
               alt={vault.name}
-              className="w-12 h-12 rounded-lg object-cover border border-white/10"
+              className="w-12 h-12 rounded-lg object-cover"
             />
             <div>
-              <h1 className="text-xl font-bold text-white">{vault.name}</h1>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold text-white">{vault.name}</h1>
+                {meta.ticker && (
+                  <>
+                    <span className="text-white/40">•</span>
+                    <span className="text-emerald-400 font-semibold text-sm">{meta.ticker}</span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-1">
                 {status === 'pre_ico' ? (
-                  <div className="inline-flex items-center gap-2 rounded-[8px] bg-cyan-500/20 backdrop-blur-[10px] ring-1 ring-cyan-400/30 px-2 py-1 text-xs text-cyan-300 font-semibold">
+                  <div className="inline-flex items-center gap-2 rounded-[8px] bg-emerald-500/15 backdrop-blur-[10px] ring-1 ring-emerald-400/30 px-2 py-1 text-xs text-emerald-300 font-semibold">
                     Pre-ICO
                   </div>
                 ) : (
                   <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                    status === 'ico' ? 'bg-green-500 text-white animate-pulse' :
-                    status === 'ico_pending' ? 'bg-yellow-500 text-black' :
-                    status === 'pre_launch' ? 'bg-purple-500 text-white' :
+                    status === 'ico' ? 'bg-green-600 text-white animate-pulse' :
+                    status === 'ico_pending' ? 'bg-yellow-400 text-black' :
+                    status === 'pre_launch' ? 'bg-purple-600 text-white' :
                     status === 'live' ? 'bg-emerald-500 text-black' :
                     'bg-red-500 text-white'
                   }`}>
-                    {status.replace('_', ' ').toUpperCase()}
+                    {status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
                   </span>
                 )}
-                {meta.ticker && (
-                  <span className="px-2 py-1 bg-emerald-500 text-black text-xs font-semibold rounded">
-                    {meta.ticker}
-                  </span>
+                {meta.links?.x && (
+                  <a 
+                    href={meta.links.x}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/60 hover:text-white transition-colors opacity-70 hover:opacity-100"
+                    aria-label="View on X"
+                  >
+                    <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-4 w-4" />
+                  </a>
+                )}
+                {meta.links?.website && (
+                  <a 
+                    href={meta.links.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/60 hover:text-white transition-colors opacity-70 hover:opacity-100"
+                    aria-label="External link"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
                 )}
               </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-3">
-            {meta.links?.x && (
-              <a 
-                href={meta.links.x}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/60 hover:text-white transition-colors"
-                aria-label="View on X"
-              >
-                <img src="/images/X_logo_2023_(white).svg.png" alt="X" className="h-5 w-5" />
-              </a>
-            )}
-            {meta.links?.website && (
-              <a 
-                href={meta.links.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/60 hover:text-white transition-colors"
-                aria-label="Website"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            )}
-          </div>
+          <div />
         </div>
       </div>
 
       {/* Banner */}
       {meta.bannerUrl && (
-        <div className="w-full h-64 overflow-hidden">
+        <div className="w-full h-64 overflow-hidden relative">
           <img src={meta.bannerUrl} alt="Vault Banner" className="w-full h-full object-cover" />
+          {status === 'pre_ico' && meta.icoProposedAt && (
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div className="ring-1 ring-white/10 px-8 py-6" style={{ backgroundColor: '#080808' }}>
+                <div className="text-center">
+                  <div className="text-base font-semibold text-gray-300 mb-3">ICO Date & Time</div>
+                  <div className="text-3xl md:text-4xl font-extrabold text-white mb-4">{formatICODate(meta.icoProposedAt)}</div>
+                  <a 
+                    href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=ICO: ${vault.name}&details=ICO fundraise for ${vault.name} vault&location=Online`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-gray-300 hover:text-gray-200 transition-colors text-base"
+                    title="Add to Calendar"
+                  >
+                    <span>📅</span>
+                    <span>Set Reminder</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+          {status === 'ico' && (
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div className="ring-1 ring-white/10 px-12 py-8 w-96" style={{ backgroundColor: '#080808' }}>
+                <div className="text-center">
+                  <div className="text-base font-semibold text-gray-300 mb-3">ICO Time Remaining</div>
+                  <div className="text-3xl font-bold text-green-400 mb-4">
+                    {status === 'ico' ? icoCountdown : countdown}
+                  </div>
+                  
+                  {/* Progress Meter - clean style without title */}
+                  <div className="mt-4">
+                    <div className="w-full bg-white/10 h-4 relative overflow-hidden mb-2">
+                      <div 
+                        className="bg-gradient-to-r from-green-500 to-emerald-400 h-4 transition-all duration-500"
+                        style={{ width: '0%' }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white">$0</span>
+                      <span className="text-green-400">${meta.icoThresholdUsd || 10000} target</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

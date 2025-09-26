@@ -1,5 +1,7 @@
 import React from "react";
+import { Copy } from "lucide-react";
 import { cn } from "./cn";
+import { formatTimerLength } from "@/lib/utils";
 
 const GRID = "grid grid-cols-[1.7fr_.6fr_.6fr_.6fr_.6fr_.6fr_.6fr_minmax(92px,max-content)]";
 
@@ -7,7 +9,11 @@ function TradeButton({ onClick, label = "Trade" }: { onClick?: () => void; label
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center justify-center whitespace-nowrap rounded-none border border-white/10 bg-white text-black px-3 py-1 text-sm font-medium hover:bg-white/90"
+      className={`inline-flex items-center justify-center whitespace-nowrap rounded-none px-3 py-1 text-sm font-medium ${
+        label === 'View ICO'
+          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:from-green-400 hover:to-emerald-400'
+          : 'border border-white/10 bg-white text-black hover:bg-white/90'
+      }`}
     >
       {label}
     </button>
@@ -26,6 +32,7 @@ function DataCell({ label, children, numeric = false }: { label: string; childre
 export type VaultRowProps = {
   name: string;
   timer: string;          // "00:00:32"
+  timerDuration?: number;
   pfp: string;
   price?: string;
   baseAsset: string;      // "BTC"
@@ -36,6 +43,10 @@ export type VaultRowProps = {
   onTrade?: () => void;
   status?: string;
   icoDate?: string;
+  icoTreasuryAddress?: string;
+  icoAsset?: string;
+  icoThreshold?: number;
+  icoProgress?: number;
   buttonText?: string;
   airdropAsset?: string;
   airdropAssetLogo?: string;
@@ -44,7 +55,7 @@ export type VaultRowProps = {
 };
 
 export function VaultRow(props: VaultRowProps) {
-  const { name, timer, pfp, price, baseAsset, treasury, potentialWin, apy, endgame, onTrade, status, icoDate, buttonText, airdropAsset, airdropAssetLogo, vaultAssetLogo, tradeFee } = props;
+  const { name, timer, timerDuration, pfp, price, baseAsset, treasury, potentialWin, apy, endgame, onTrade, status, icoDate, icoTreasuryAddress, icoAsset, icoThreshold, icoProgress, buttonText, airdropAsset, airdropAssetLogo, vaultAssetLogo, tradeFee } = props;
 
   const getTokenImage = (tokenSymbol: string) => {
     const tokenImages: { [key: string]: string } = {
@@ -76,6 +87,11 @@ export function VaultRow(props: VaultRowProps) {
                 Pre-ICO
               </div>
             )}
+            {status === 'ico' && (
+              <div className="inline-flex items-center gap-2 rounded-[8px] bg-green-500/20 backdrop-blur-[10px] ring-1 ring-green-400/30 px-2 py-0.5 text-xs text-green-300 font-semibold">
+                ICO
+              </div>
+            )}
           </div>
           {status === 'pre_ico' && icoDate ? (
             <div className="mt-2 flex items-center gap-2 text-sm text-white/90">
@@ -91,6 +107,8 @@ export function VaultRow(props: VaultRowProps) {
                 📅
               </a>
             </div>
+          ) : status === 'ico' ? (
+            <div className="mt-1 inline-flex items-center gap-2 text-sm md:text-base text-green-400 tabular-nums">{timer}</div>
           ) : (
             <div className="mt-1 inline-flex items-center gap-2 rounded-[8px] bg-white/10 backdrop-blur-[10px] ring-1 ring-white/15 px-2 py-0.5 text-sm md:text-base text-white/90 tabular-nums">{timer}</div>
           )}
@@ -112,10 +130,49 @@ export function VaultRow(props: VaultRowProps) {
             </div>
           </DataCell>
           <DataCell label="BID:WIN" numeric>{potentialWin}</DataCell>
-          <DataCell label="Timer">{timer.includes('h') ? timer : timer.includes('m') ? timer : `${Math.floor(parseInt(timer) / 3600)}h`}</DataCell>
+          <DataCell label="Timer">{formatTimerLength(timerDuration || 3600)}</DataCell>
           <DataCell label="Lifespan">{endgame}</DataCell>
           <DataCell label="Trade Fee">
             <div className="text-white/90">{tradeFee || "5%"}</div>
+          </DataCell>
+        </>
+      ) : status === 'ico' ? (
+        <>
+          <DataCell label="Vault Asset">
+            <div className="flex items-center justify-center gap-2">
+              <img src={vaultAssetLogo || getTokenImage(baseAsset)} alt={baseAsset} className="h-4 w-4" />
+              <span>{baseAsset}</span>
+            </div>
+          </DataCell>
+          <DataCell label="Airdrop Asset">
+            <div className="flex items-center justify-center gap-2">
+              <img src={airdropAssetLogo || getTokenImage(airdropAsset || "REVS")} alt={airdropAsset || "REVS"} className="h-4 w-4" />
+              <span>{airdropAsset || "REVS"}</span>
+            </div>
+          </DataCell>
+          <DataCell label="BID:WIN" numeric>{potentialWin}</DataCell>
+          <DataCell label="Timer">{formatTimerLength(timerDuration || 3600)}</DataCell>
+          <DataCell label="Lifespan">{endgame}</DataCell>
+          <DataCell label="Progress">
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-16 bg-white/20 h-2 relative overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-green-500 to-emerald-400 h-2 transition-all duration-300"
+                  style={{ 
+                    width: `${Math.min(((icoProgress || 0) / Math.max(icoThreshold || 1000, icoProgress || 0)) * 100, 100)}%` 
+                  }}
+                ></div>
+                <div 
+                  className="absolute top-0 h-2 w-0.5 bg-green-400"
+                  style={{ 
+                    left: `${Math.min((10000 / Math.max(icoThreshold || 1000, icoProgress || 0)) * 100, 100)}%` 
+                  }}
+                ></div>
+              </div>
+              <div className="text-xs text-white/70 text-center">
+                ${icoProgress || 0}
+              </div>
+            </div>
           </DataCell>
         </>
       ) : (
@@ -135,7 +192,7 @@ export function VaultRow(props: VaultRowProps) {
         </>
       )}
       <div className="justify-self-end self-center whitespace-nowrap">
-        <TradeButton onClick={onTrade} label="View Vault" />
+        <TradeButton onClick={onTrade} label={buttonText || "View Vault"} />
       </div>
     </div>
   );

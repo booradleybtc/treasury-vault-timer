@@ -9,6 +9,7 @@ import { VaultFilters } from "@/components/darwin/VaultFilters";
 import { SiteFooter } from "@/components/darwin/SiteFooter";
 import { TallVaultCard } from "@/components/darwin/TallVaultCard";
 import { StatusAwareVaultCard } from "@/components/darwin/StatusAwareVaultCard";
+import { VaultDetailOverlay } from "@/components/darwin/VaultDetailOverlay";
 
 interface VaultConfig {
   id: string;
@@ -68,6 +69,10 @@ export default function Page() {
   const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [selectedVault, setSelectedVault] = useState<VaultConfig | null>(null);
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+  const [visibleVaults, setVisibleVaults] = useState(10); // Limit initial render for performance
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com';
 
@@ -83,6 +88,16 @@ export default function Page() {
       window.removeEventListener('showHowItWorks', handleShowHowItWorks);
     };
   }, []);
+
+  // Featured card rotation every 5 seconds
+  useEffect(() => {
+    if (vaults.length > 1) {
+      const timer = setInterval(() => {
+        setFeaturedIndex((prev) => (prev + 1) % vaults.length);
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [vaults.length]);
 
   // Real-time timer updates
   useEffect(() => {
@@ -183,7 +198,24 @@ export default function Page() {
     }
   };
 
-  const featuredVault = vaults.find(vault => (vault.status as any) === 'active' || (vault.status as any) === 'pre_ico') || vaults[0];
+  const featuredVault = vaults[featuredIndex] || vaults[0];
+
+  // Handle vault view actions
+  const handleVaultView = (vault: VaultConfig) => {
+    if (vault.status === 'active') {
+      // For live vaults, navigate to separate page
+      router.push(`/vault/${vault.id}`);
+    } else {
+      // For non-live vaults, show overlay
+      setSelectedVault(vault);
+      setIsOverlayOpen(true);
+    }
+  };
+
+  const closeOverlay = () => {
+    setIsOverlayOpen(false);
+    setSelectedVault(null);
+  };
 
   // Format timer for display
   const formatTimer = (timeLeft: number) => {
@@ -263,17 +295,22 @@ export default function Page() {
             <h2 className="text-lg font-semibold tracking-tight text-white">Darwin Vaults</h2>
           </div>
           
-          {/* Mobile: Pill-shaped filter buttons */}
+          {/* Mobile: Filter buttons with glowing underline */}
           <div className="flex flex-wrap gap-2">
-            {["All", "Live Vaults", "ICO in Progress", "ICO Now", "Countdown", "Extinct Vaults"].map((option) => (
+            {["All", "Live Vaults", "ICO Live", "Pre-ICO", "Pre-Launch", "Extinct"].map((option) => (
               <button
                 key={option}
                 onClick={() => setFilter(option)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                className={`px-3 py-1.5 text-xs font-medium transition-all duration-200 relative ${
                   filter === option
-                    ? 'bg-emerald-500 text-black'
-                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                    ? 'text-white border-b-2 border-emerald-500'
+                    : 'text-white/70 hover:text-white hover:border-b-2 hover:border-white/30'
                 }`}
+                style={{
+                  textShadow: filter === option ? '0 0 12px rgba(52,211,153,0.8)' : 'none',
+                  backgroundColor: 'transparent',
+                  boxShadow: 'none'
+                }}
               >
                 {option}
               </button>
@@ -288,8 +325,8 @@ export default function Page() {
           <StatusAwareVaultCard
             vault={featuredVault}
             variant="featured"
-            onClickTitle={() => router.push(`/vault/${featuredVault.id}`)}
-            onTrade={() => router.push(`/vault/${featuredVault.id}`)}
+            onClickTitle={() => handleVaultView(featuredVault)}
+            onTrade={() => handleVaultView(featuredVault)}
           />
         )}
       </section>
@@ -299,26 +336,29 @@ export default function Page() {
         <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
             <h2 className="text-lg font-semibold tracking-tight text-white">Darwin Vaults</h2>
-          <VaultFilters active={filter} onChange={setFilter} />
-          <div className="text-white/70 text-sm">{filter === 'ICO in Progress' ? 'Pre‑ICO' : ''}</div>
+          {/* Desktop: Filter buttons with glowing underline */}
+          <div className="flex flex-wrap gap-2">
+            {["All", "Live Vaults", "ICO Live", "Pre-ICO", "Pre-Launch", "Extinct"].map((option) => (
+              <button
+                key={option}
+                onClick={() => setFilter(option)}
+                className={`px-3 py-1.5 text-xs font-medium transition-all duration-200 relative ${
+                  filter === option
+                    ? 'text-white border-b-2 border-emerald-500'
+                    : 'text-white/70 hover:text-white hover:border-b-2 hover:border-white/30'
+                }`}
+                style={{
+                  textShadow: filter === option ? '0 0 12px rgba(52,211,153,0.8)' : 'none',
+                  backgroundColor: 'transparent',
+                  boxShadow: 'none'
+                }}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <select
-                className="rounded-none bg-white/10 text-white/90 text-sm pl-3 pr-8 py-2 ring-1 ring-white/10 appearance-none h-[36px]"
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-              >
-                {(["Time Remaining","Largest Treasury","Highest APY","Highest BID:WIN","Highest Volume","Nearest Endgame","Trade Fee"]
-                  .filter(opt => !["ICO in Progress","Extinct Vaults"].includes(filter) || ["Largest Treasury","Trade Fee"].includes(opt))
-                  .map(opt => (<option key={opt}>{opt}</option>)))}
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-white/60">
-                  <path d="M6 8L2 4h8L6 8z"/>
-                </svg>
-              </div>
-            </div>
             <div className="flex rounded-none bg-white/10 p-1 ring-1 ring-white/10 h-[36px]">
               <button
                 onClick={() => setViewMode('list')}
@@ -347,36 +387,80 @@ export default function Page() {
           <StatusAwareVaultCard
             vault={featuredVault}
             variant="featured"
-            onClickTitle={() => router.push(`/vault/${featuredVault.id}`)}
-            onTrade={() => router.push(`/vault/${featuredVault.id}`)}
+            onClickTitle={() => handleVaultView(featuredVault)}
+            onTrade={() => handleVaultView(featuredVault)}
           />
         )}
       </section>
 
-
-      {/* Desktop Vault List - Hidden on Mobile */}
-      <div className={`mx-auto max-w-7xl px-4 hidden lg:block ${viewMode==='grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4' : 'space-y-3 sm:space-y-4'}`}>
+      {/* Mobile Vault List */}
+      <div className="px-4 mb-6 lg:hidden space-y-4">
         {vaults
           .filter(v => {
             if (filter === 'All') return true;
             if (filter === 'Live Vaults') return (v.status as any) === 'active';
-            if (filter === 'ICO in Progress') return (v.status as any) === 'ico';
-            if (filter === 'ICO Now') return (v.status as any) === 'ico';
-            if (filter === 'Countdown') return (v.status as any) === 'countdown';
+            if (filter === 'ICO Live') return (v.status as any) === 'ico';
             if (filter === 'Pre-ICO') return (v.status as any) === 'pre_ico' || (v.status as any) === 'draft';
-            if (filter === 'Extinct Vaults') return (v.status as any) === 'extinct' || (v.status as any) === 'ended';
+            if (filter === 'Pre-Launch') return (v.status as any) === 'pre_launch' || (v.status as any) === 'countdown';
+            if (filter === 'Extinct') return (v.status as any) === 'extinct' || (v.status as any) === 'ended';
             return true;
           })
+          .slice(0, visibleVaults)
+          .map((vault) => (
+          <StatusAwareVaultCard
+            key={vault.id}
+            vault={vault}
+            variant="row"
+            onTrade={() => handleVaultView(vault)}
+            onClickTitle={() => handleVaultView(vault)}
+          />
+        ))}
+      </div>
+
+
+      {/* Desktop Vault List - Hidden on Mobile */}
+      <div className={`mx-auto max-w-7xl px-4 hidden lg:block ${viewMode==='grid' ? 'grid grid-cols-3 gap-4' : 'space-y-3 sm:space-y-4'}`} style={{ display: viewMode === 'grid' ? 'grid' : 'block' }}>
+        {vaults
+          .filter(v => {
+            if (filter === 'All') return true;
+            if (filter === 'Live Vaults') return (v.status as any) === 'active';
+            if (filter === 'ICO Live') return (v.status as any) === 'ico';
+            if (filter === 'Pre-ICO') return (v.status as any) === 'pre_ico' || (v.status as any) === 'draft';
+            if (filter === 'Pre-Launch') return (v.status as any) === 'pre_launch' || (v.status as any) === 'countdown';
+            if (filter === 'Extinct') return (v.status as any) === 'extinct' || (v.status as any) === 'ended';
+            return true;
+          })
+          .slice(0, visibleVaults)
           .map((vault) => (
           <StatusAwareVaultCard
             key={vault.id}
             vault={vault}
             variant={viewMode === 'list' ? 'row' : 'tall'}
-            onTrade={() => router.push(`/vault/${vault.id}`)}
-            onClickTitle={() => router.push(`/vault/${vault.id}`)}
+            onTrade={() => handleVaultView(vault)}
+            onClickTitle={() => handleVaultView(vault)}
           />
         ))}
       </div>
+
+      {/* Load More Button */}
+      {vaults.filter(v => {
+        if (filter === 'All') return true;
+        if (filter === 'Live Vaults') return (v.status as any) === 'active';
+        if (filter === 'ICO Live') return (v.status as any) === 'ico';
+        if (filter === 'Pre-ICO') return (v.status as any) === 'pre_ico' || (v.status as any) === 'draft';
+        if (filter === 'Pre-Launch') return (v.status as any) === 'pre_launch' || (v.status as any) === 'countdown';
+        if (filter === 'Extinct') return (v.status as any) === 'extinct' || (v.status as any) === 'ended';
+        return true;
+      }).length > visibleVaults && (
+        <div className="text-center mt-8">
+          <button
+            onClick={() => setVisibleVaults(prev => prev + 10)}
+            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-400 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-500 transition-all duration-200"
+          >
+            Load More Vaults
+          </button>
+        </div>
+      )}
 
       <SiteFooter />
 
@@ -391,6 +475,13 @@ export default function Page() {
           </div>
         </div>
       )}
+      
+      {/* Vault Detail Overlay */}
+      <VaultDetailOverlay 
+        vault={selectedVault}
+        isOpen={isOverlayOpen}
+        onClose={closeOverlay}
+      />
     </div>
   );
 }
