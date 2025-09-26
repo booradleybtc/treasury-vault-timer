@@ -362,13 +362,35 @@ let globalTimer = {
 const ICO_THRESHOLD_USD = 10000; // $10,000 USD threshold for evolution
 const PENDING_TIMEOUT_HOURS = 48; // 48 hours before auto-refund
 
+// Vault status types
+const VAULT_STATUS = {
+  PRE_ICO: 'pre_ico',
+  PRE_ICO_SCHEDULED: 'pre_ico_scheduled', 
+  ICO: 'ico',
+  PENDING: 'pending',
+  PRELAUNCH: 'prelaunch', // New status for after Stage 2, before launch date
+  ACTIVE: 'active',
+  REFUND_REQUIRED: 'refund_required'
+};
+
+// Whitelist exclusion check
+async function isAddressWhitelisted(vaultId, address) {
+  try {
+    const whitelistedAddresses = await db.getWhitelistedAddresses(vaultId);
+    return whitelistedAddresses.some(wa => wa.address === address);
+  } catch (error) {
+    console.error('❌ Error checking whitelist:', error);
+    return false;
+  }
+}
+
 // ICO monitoring functions
 async function checkICOThresholds() {
   try {
     const vaults = await db.getAllVaults();
     
     for (const vault of vaults) {
-      if (vault.status === 'ico') {
+      if (vault.status === VAULT_STATUS.ICO) {
         // Check if ICO has ended (24 hours passed)
         const icoEndTime = new Date(vault.meta?.icoEndsAt);
         const now = new Date();
@@ -380,7 +402,7 @@ async function checkICOThresholds() {
           if (totalVolumeUSD >= ICO_THRESHOLD_USD) {
             // Threshold met - move to pending for Stage 2
             await db.updateVault(vault.id, {
-              status: 'pending',
+              status: VAULT_STATUS.PENDING,
               updatedAt: new Date().toISOString()
             });
             
@@ -388,14 +410,14 @@ async function checkICOThresholds() {
           } else {
             // Threshold not met - mark for refund
             await db.updateVault(vault.id, {
-              status: 'refund_required',
+              status: VAULT_STATUS.REFUND_REQUIRED,
               updatedAt: new Date().toISOString()
             });
             
             console.log(`❌ Vault ${vault.id} did not meet ICO threshold ($${totalVolumeUSD.toLocaleString()}) - marked for refund`);
           }
         }
-      } else if (vault.status === 'pending') {
+      } else if (vault.status === VAULT_STATUS.PENDING) {
         // Check if pending timeout has been reached
         const pendingSince = new Date(vault.updatedAt);
         const now = new Date();
@@ -404,7 +426,7 @@ async function checkICOThresholds() {
         if (hoursPending >= PENDING_TIMEOUT_HOURS) {
           // Timeout reached - mark for refund
           await db.updateVault(vault.id, {
-            status: 'refund_required',
+            status: VAULT_STATUS.REFUND_REQUIRED,
             updatedAt: new Date().toISOString()
           });
           
@@ -420,11 +442,146 @@ async function checkICOThresholds() {
 // Check ICO thresholds every 5 minutes
 setInterval(checkICOThresholds, 5 * 60 * 1000);
 
+// Treasury wallet monitoring for ICO threshold
+async function checkTreasuryBalances() {
+  try {
+    const vaults = await db.getAllVaults();
+    
+    for (const vault of vaults) {
+      if (vault.status === VAULT_STATUS.ICO && vault.treasuryWallet) {
+        try {
+          // Get treasury wallet balance
+          const balance = await connection.getBalance(new PublicKey(vault.treasuryWallet));
+          const balanceSOL = balance / LAMPORTS_PER_SOL;
+          
+          // Get SOL price (simplified - you might want to use a price API)
+          const solPrice = 150; // Placeholder - should fetch from price API
+          const balanceUSD = balanceSOL * solPrice;
+          
+          // Update vault total volume if it's higher
+          if (balanceUSD > (vault.totalVolume || 0)) {
+            await db.updateVault(vault.id, {
+              totalVolume: balanceUSD,
+              updatedAt: new Date().toISOString()
+            });
+            
+            console.log(`💰 Vault ${vault.id} treasury balance: ${balanceSOL.toFixed(4)} SOL ($${balanceUSD.toFixed(2)})`);
+          }
+        } catch (error) {
+          console.error(`❌ Error checking treasury balance for vault ${vault.id}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error checking treasury balances:', error);
+  }
+}
+
+// Check treasury balances every 2 minutes during ICO
+setInterval(checkTreasuryBalances, 2 * 60 * 1000);
+
+// Prelaunch monitoring - check if vaults should go live
+async function checkPrelaunchVaults() {
+  try {
+    const vaults = await db.getAllVaults();
+    
+    for (const vault of vaults) {
+      if (vault.status === VAULT_STATUS.PRELAUNCH) {
+        const launchDate = new Date(vault.meta?.stage2?.vaultLaunchDate);
+        const now = new Date();
+        
+        if (now >= launchDate) {
+          // Launch date reached - activate vault
+          await db.updateVault(vault.id, {
+            status: VAULT_STATUS.ACTIVE,
+            updatedAt: new Date().toISOString()
+          });
+          
+          console.log(`🚀 Vault ${vault.id} launched! Timer is now active.`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error checking prelaunch vaults:', error);
+  }
+}
+
+// Check prelaunch vaults every minute
+setInterval(checkPrelaunchVaults, 60 * 1000);
+
+// Refund system API endpoints
+app.get('/api/admin/vaults/refund-required', async (req, res) => {
+  try {
+    const vaults = await db.getAllVaults();
+    const refundVaults = vaults.filter(vault => vault.status === VAULT_STATUS.REFUND_REQUIRED);
+    
+    res.json({ 
+      refundVaults,
+      totalRefunds: refundVaults.length
+    });
+  } catch (error) {
+    console.error('❌ Error fetching refund required vaults:', error);
+    res.status(500).json({ error: 'Failed to fetch refund required vaults' });
+  }
+});
+
+app.post('/api/admin/vaults/:id/process-refund', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { refundTxSignature, notes } = req.body;
+    
+    console.log(`💰 Processing refund for vault: ${id}`);
+    
+    // Get vault data
+    const vault = await db.getVaultById(id);
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    if (vault.status !== VAULT_STATUS.REFUND_REQUIRED) {
+      return res.status(400).json({ error: 'Vault is not marked for refund' });
+    }
+    
+    // Update vault with refund information
+    const updatedMeta = {
+      ...vault.meta,
+      refund: {
+        processedAt: new Date().toISOString(),
+        refundTxSignature,
+        notes,
+        amountUSD: vault.totalVolume || 0
+      }
+    };
+    
+    await db.updateVault(id, {
+      status: 'refunded',
+      meta: JSON.stringify(updatedMeta),
+      updatedAt: new Date().toISOString()
+    });
+    
+    console.log(`✅ Refund processed for vault: ${id}`);
+    res.json({ 
+      success: true, 
+      message: `Refund processed for vault ${id}`,
+      refund: {
+        vaultId: id,
+        amountUSD: vault.totalVolume || 0,
+        refundTxSignature,
+        processedAt: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error processing refund:', error);
+    res.status(500).json({ error: 'Failed to process refund' });
+  }
+});
+
 // API endpoint to get pending vaults for admin dashboard
 app.get('/api/admin/vaults/pending', async (req, res) => {
   try {
     const vaults = await db.getAllVaults();
-    const pendingVaults = vaults.filter(vault => vault.status === 'pending');
+    const pendingVaults = vaults.filter(vault => vault.status === VAULT_STATUS.PENDING);
     
     // Add time remaining for pending timeout
     const pendingVaultsWithTimeout = pendingVaults.map(vault => {
@@ -1013,9 +1170,9 @@ app.post('/api/admin/vaults/:id/stage2', async (req, res) => {
       }
     };
     
-    // Update vault status to 'active' and set launch date
+    // Update vault status to 'prelaunch' and set launch date
     await db.updateVault(id, {
-      status: 'active',
+      status: VAULT_STATUS.PRELAUNCH,
       meta: JSON.stringify(updatedMeta),
       tokenMint: tokenAddress,
       distributionWallet: distributionWallet,
@@ -1040,7 +1197,7 @@ app.post('/api/admin/vaults/:id/stage2', async (req, res) => {
       message: `Stage 2 setup completed for vault ${id}`,
       vault: {
         id,
-        status: 'active',
+        status: VAULT_STATUS.PRELAUNCH,
         tokenMint: tokenAddress,
         distributionWallet,
         startDate: vaultLaunchDate

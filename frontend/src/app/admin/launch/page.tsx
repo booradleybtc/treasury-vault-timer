@@ -14,7 +14,6 @@ export default function LaunchWizardPage() {
     treasuryWallet: '',
     icoAsset: 'So11111111111111111111111111111111111111112', // SOL address
     icoProposedAt: '',
-    vaultLaunchDate: '', // When vault goes live after Stage 2
     supplyIntended: '',
     bidMultiplier: 100,
     vaultTokenSupply: 1000000,
@@ -88,7 +87,6 @@ export default function LaunchWizardPage() {
           bannerUrl: bannerUrl,
           icoAsset: formData.icoAsset,
           icoProposedAt: startDate,
-          vaultLaunchDate: formData.vaultLaunchDate,
           supplyIntended: formData.supplyIntended,
           bidMultiplier: Number(formData.bidMultiplier),
           vaultTokenSupply: Number(formData.vaultTokenSupply),
@@ -273,20 +271,6 @@ export default function LaunchWizardPage() {
                   required
                   className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
                 />
-              </div>
-              <div>
-                <label className="block text-sm text-white/80 mb-2">Vault Launch Date (After Stage 2) *</label>
-                <input
-                  type="datetime-local"
-                  name="vaultLaunchDate"
-                  value={(formData as any).vaultLaunchDate || ''}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-white/10 text-white px-3 py-2 ring-1 ring-white/10"
-                />
-                <p className="text-xs text-white/60 mt-1">
-                  When the vault should go live after Stage 2 completion
-                </p>
               </div>
             </div>
           </div>

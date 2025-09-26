@@ -7,6 +7,7 @@ export default function AdminIndex() {
   const router = useRouter();
   const [vaults, setVaults] = useState<any[]>([]);
   const [pendingVaults, setPendingVaults] = useState<any[]>([]);
+  const [refundVaults, setRefundVaults] = useState<any[]>([]);
   const [stage, setStage] = useState<'all'|'pre_ico'|'ico'|'countdown'|'active'|'extinct'>('all');
   const [deletingVault, setDeletingVault] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -29,8 +30,17 @@ export default function AdminIndex() {
       } catch {}
     };
     
+    const loadRefunds = async () => {
+      try {
+        const res = await fetch(`${BACKEND}/api/admin/vaults/refund-required`);
+        const js = await res.json();
+        setRefundVaults(js.refundVaults || []);
+      } catch {}
+    };
+    
     load();
     loadPending();
+    loadRefunds();
   }, [BACKEND]);
 
   // Reset delete state after 5 seconds of inactivity
@@ -129,6 +139,50 @@ export default function AdminIndex() {
                         className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 text-sm font-semibold"
                       >
                         Complete Stage 2
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Refund Required Section */}
+        {refundVaults.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-red-500/10 ring-1 ring-red-500/20 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-red-300 font-semibold flex items-center gap-2">
+                  💰 Refunds Required ({refundVaults.length} vault{refundVaults.length !== 1 ? 's' : ''})
+                </div>
+                <div className="text-red-400 text-sm">
+                  Manual refund processing required
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                {refundVaults.map(v => (
+                  <div key={v.id} className="flex items-center justify-between bg-red-500/5 ring-1 ring-red-500/20 p-4">
+                    <div className="text-white flex-1">
+                      <div className="font-semibold text-lg">{v.name}</div>
+                      <div className="text-xs text-white/60 mb-1">{v.id}</div>
+                      <div className="text-sm text-white/80">
+                        <span className="mr-4">Amount: ${(v.totalVolume || 0).toLocaleString()}</span>
+                        <span className="mr-4">Treasury: {v.treasuryWallet}</span>
+                        <span className="text-red-400">
+                          Status: {v.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-300">
+                        REFUND REQUIRED
+                      </span>
+                      <button 
+                        onClick={() => router.push(`/admin/refund/${v.id}`)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-semibold"
+                      >
+                        Process Refund
                       </button>
                     </div>
                   </div>
