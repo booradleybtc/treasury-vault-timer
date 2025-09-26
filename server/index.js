@@ -1246,6 +1246,9 @@ app.post('/api/admin/vaults/:id/force-ico-end', async (req, res) => {
       return res.status(400).json({ error: 'Vault is not in ICO status' });
     }
     
+    // Cancel any existing ICO schedule
+    cancelICOSchedule(id);
+    
     // Force ICO to end and check threshold
     const totalVolumeUSD = vault.totalVolume || 0;
     
