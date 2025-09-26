@@ -36,7 +36,8 @@ class SPLTokenService {
       );
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(`Jupiter API returned ${response.status} for token ${address}, returning fallback metadata`);
+        return this.getFallbackTokenMetadata(address);
       }
 
       const tokenList: SPLTokenMetadata[] = await response.json();
@@ -50,11 +51,35 @@ class SPLTokenService {
         return token;
       }
 
-      return null;
+      // If not found, return fallback metadata
+      return this.getFallbackTokenMetadata(address);
     } catch (error) {
       console.error('Error fetching token metadata:', error);
-      return null;
+      return this.getFallbackTokenMetadata(address);
     }
+  }
+
+  /**
+   * Get fallback token metadata when API is unavailable
+   */
+  private getFallbackTokenMetadata(address: string): SPLTokenMetadata {
+    // Check if it's a known popular token
+    const fallbackTokens = this.getFallbackPopularTokens();
+    const knownToken = fallbackTokens.find(t => t.address === address);
+    
+    if (knownToken) {
+      return knownToken;
+    }
+
+    // Return generic token metadata
+    return {
+      address,
+      symbol: 'TOKEN',
+      name: 'Unknown Token',
+      decimals: 9,
+      verified: false,
+      logoURI: '/images/token.png'
+    };
   }
 
   /**
@@ -117,7 +142,8 @@ class SPLTokenService {
       );
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(`Jupiter API returned ${response.status}, using fallback tokens`);
+        return this.getFallbackPopularTokens();
       }
 
       const tokenList: SPLTokenMetadata[] = await response.json();
@@ -136,11 +162,66 @@ class SPLTokenService {
         'A8BR1VBFhVJCqUV5fo2oHyCE6c3EQ3BQ4nJdW8W3cbX1', // WIF
       ];
 
-      return tokenList.filter(token => popularAddresses.includes(token.address));
+      const popularTokens = tokenList.filter(token => popularAddresses.includes(token.address));
+      
+      // If we don't have enough popular tokens, supplement with fallbacks
+      if (popularTokens.length < 5) {
+        return [...popularTokens, ...this.getFallbackPopularTokens()];
+      }
+
+      return popularTokens;
     } catch (error) {
       console.error('Error fetching popular tokens:', error);
-      return [];
+      return this.getFallbackPopularTokens();
     }
+  }
+
+  /**
+   * Fallback popular tokens when Jupiter API is unavailable
+   */
+  private getFallbackPopularTokens(): SPLTokenMetadata[] {
+    return [
+      {
+        address: 'So11111111111111111111111111111111111111112',
+        symbol: 'SOL',
+        name: 'Solana',
+        decimals: 9,
+        verified: true,
+        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'
+      },
+      {
+        address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        symbol: 'USDC',
+        name: 'USD Coin',
+        decimals: 6,
+        verified: true,
+        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png'
+      },
+      {
+        address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+        symbol: 'USDT',
+        name: 'Tether USD',
+        decimals: 6,
+        verified: true,
+        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/logo.png'
+      },
+      {
+        address: '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs',
+        symbol: 'ETH',
+        name: 'Ether (Portal)',
+        decimals: 8,
+        verified: true,
+        logoURI: 'https://raw.githubusercontent.com/wormhole-foundation/wormhole-token-list/main/assets/ETH_wh.png'
+      },
+      {
+        address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+        symbol: 'BONK',
+        name: 'Bonk',
+        decimals: 5,
+        verified: true,
+        logoURI: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I?ext=png'
+      }
+    ];
   }
 
   /**

@@ -153,38 +153,65 @@ class Database {
           this.db.serialize(() => {
             this.db.run('BEGIN');
             this.db.run(createVaultsNew);
-            this.db.run(
-              `INSERT INTO vaults_new (
-                 id, name, description, token_mint, distribution_wallet, treasury_wallet,
-                 dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
-                 min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
-                 meta, custom_token_data, status, timer_started_at, current_timer_ends_at,
-                 last_purchase_signature, total_purchases, total_volume, created_at, updated_at
-               )
-               SELECT 
-                 id, name, description, token_mint, distribution_wallet, treasury_wallet,
-                 dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
-                 min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
-                 COALESCE(meta, '{}') as meta, 
-                 COALESCE(custom_token_data, NULL) as custom_token_data, 
-                 COALESCE(status, 'pre_ico') as status,
-                 COALESCE(timer_started_at, NULL) as timer_started_at,
-                 COALESCE(current_timer_ends_at, NULL) as current_timer_ends_at,
-                 COALESCE(last_purchase_signature, NULL) as last_purchase_signature,
-                 COALESCE(total_purchases, 0) as total_purchases,
-                 COALESCE(total_volume, 0) as total_volume,
-                 created_at, updated_at
-               FROM vaults`,
-            );
-            this.db.run('DROP TABLE vaults');
-            this.db.run('ALTER TABLE vaults_new RENAME TO vaults');
-            this.db.run('COMMIT', (commitErr) => {
-              if (commitErr) {
-                console.error('❌ Migration commit failed:', commitErr);
-                return reject(commitErr);
+            // Check which columns exist in the old table
+            this.db.all("PRAGMA table_info(vaults)", [], (err, oldRows) => {
+              if (err) {
+                console.error('Error getting old table info:', err);
+                return;
               }
-              console.log('✅ SQLite migration complete');
-              resolve();
+              
+              const oldColumns = oldRows.map(row => row.name);
+              const hasTimerFields = oldColumns.includes('timer_started_at');
+              
+              // Build dynamic INSERT statement based on available columns
+              const insertColumns = [
+                'id', 'name', 'description', 'token_mint', 'distribution_wallet', 'treasury_wallet',
+                'dev_wallet', 'start_date', 'endgame_date', 'timer_duration', 'distribution_interval',
+                'min_hold_amount', 'tax_split_dev', 'tax_split_holders', 'vault_asset', 'airdrop_asset',
+                'meta', 'custom_token_data', 'status', 'created_at', 'updated_at'
+              ];
+              
+              const selectColumns = [
+                'id', 'name', 'description', 'token_mint', 'distribution_wallet', 'treasury_wallet',
+                'dev_wallet', 'start_date', 'endgame_date', 'timer_duration', 'distribution_interval',
+                'min_hold_amount', 'tax_split_dev', 'tax_split_holders', 'vault_asset', 'airdrop_asset',
+                "COALESCE(meta, '{}') as meta",
+                'COALESCE(custom_token_data, NULL) as custom_token_data',
+                "COALESCE(status, 'pre_ico') as status",
+                'created_at', 'updated_at'
+              ];
+              
+              // Add timer fields if they exist in the old table
+              if (hasTimerFields) {
+                insertColumns.splice(-2, 0, 'timer_started_at', 'current_timer_ends_at', 'last_purchase_signature', 'total_purchases', 'total_volume');
+                selectColumns.splice(-2, 0, 'COALESCE(timer_started_at, NULL) as timer_started_at', 'COALESCE(current_timer_ends_at, NULL) as current_timer_ends_at', 'COALESCE(last_purchase_signature, NULL) as last_purchase_signature', 'COALESCE(total_purchases, 0) as total_purchases', 'COALESCE(total_volume, 0) as total_volume');
+              } else {
+                // Add default values for new timer fields
+                insertColumns.splice(-2, 0, 'timer_started_at', 'current_timer_ends_at', 'last_purchase_signature', 'total_purchases', 'total_volume');
+                selectColumns.splice(-2, 0, 'NULL as timer_started_at', 'NULL as current_timer_ends_at', 'NULL as last_purchase_signature', '0 as total_purchases', '0 as total_volume');
+              }
+              
+              const insertSql = `INSERT INTO vaults_new (${insertColumns.join(', ')})
+                                SELECT ${selectColumns.join(', ')} FROM vaults`;
+              
+              this.db.run(insertSql, (insertErr) => {
+                if (insertErr) {
+                  console.error('Error inserting data:', insertErr);
+                  this.db.run('ROLLBACK');
+                  return reject(insertErr);
+                }
+                
+                this.db.run('DROP TABLE vaults');
+                this.db.run('ALTER TABLE vaults_new RENAME TO vaults');
+                this.db.run('COMMIT', (commitErr) => {
+                  if (commitErr) {
+                    console.error('❌ Migration commit failed:', commitErr);
+                    return reject(commitErr);
+                  }
+                  console.log('✅ SQLite migration complete');
+                  resolve();
+                });
+              });
             });
           });
         });
