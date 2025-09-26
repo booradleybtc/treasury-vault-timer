@@ -178,57 +178,44 @@ async function checkVaultStatusTransitions() {
       let newStatus = null;
       
       // Check if pre_ico should transition to ico
-      if (vault.status === 'pre_ico' && meta.icoProposedAt) {
+      if (vault.status === VAULT_STATUS.PRE_ICO && meta.icoProposedAt) {
         const icoStartTime = new Date(meta.icoProposedAt);
         if (now >= icoStartTime) {
-          newStatus = 'ico';
+          newStatus = VAULT_STATUS.ICO;
           shouldUpdate = true;
           console.log(`🔄 Auto-transitioning vault ${vault.id} from pre_ico to ico`);
         }
       }
       
-      // Check if ico should transition to prelaunch (meets $10k threshold)
-      if (vault.status === 'ico' && meta.icoEndsAt) {
-        const icoEndTime = new Date(meta.icoEndsAt);
-        if (now >= icoEndTime) {
-          // Check if ICO met the $10,000 threshold
-          const totalVolume = vault.totalVolume || 0;
-          const thresholdUsd = meta.icoThresholdUsd || 10000;
-          
-          if (totalVolume >= thresholdUsd) {
-            newStatus = 'prelaunch';
-            console.log(`🔄 Auto-transitioning vault ${vault.id} from ico to prelaunch (met $${totalVolume} threshold)`);
-          } else {
-            newStatus = 'extinction';
-            console.log(`🔄 Auto-transitioning vault ${vault.id} from ico to extinction (didn't meet $${thresholdUsd} threshold)`);
-          }
+      // ICO transitions are now handled by the scheduling system
+      // No need to check ico -> pending/refund here anymore
+      
+      // Check if prelaunch should transition to active (after launch date)
+      if (vault.status === VAULT_STATUS.PRELAUNCH && meta.stage2?.vaultLaunchDate) {
+        const launchDate = new Date(meta.stage2.vaultLaunchDate);
+        if (now >= launchDate) {
+          newStatus = VAULT_STATUS.ACTIVE;
           shouldUpdate = true;
+          console.log(`🔄 Auto-transitioning vault ${vault.id} from prelaunch to active`);
         }
       }
       
-      // Check if prelaunch should transition to vault_live (after prelaunch period)
-      if (vault.status === 'prelaunch' && meta.prelaunchEndsAt) {
-        const prelaunchEndTime = new Date(meta.prelaunchEndsAt);
-        if (now >= prelaunchEndTime) {
-          newStatus = 'vault_live';
-          shouldUpdate = true;
-          console.log(`🔄 Auto-transitioning vault ${vault.id} from prelaunch to vault_live`);
-        }
-      }
-      
-      // Check if vault should transition to extinction (end date reached)
-      if (vault.status === 'vault_live' && vault.endgameDate) {
+      // Check if vault should transition to endgame (end date reached)
+      if (vault.status === VAULT_STATUS.ACTIVE && vault.endgameDate) {
         const endDate = new Date(vault.endgameDate);
         if (now >= endDate) {
-          newStatus = 'extinction';
+          newStatus = VAULT_STATUS.ENDGAME_PROCESSING;
           shouldUpdate = true;
-          console.log(`🔄 Auto-transitioning vault ${vault.id} from vault_live to extinction (end date reached)`);
+          console.log(`🔄 Auto-transitioning vault ${vault.id} from active to endgame_processing (end date reached)`);
         }
       }
       
       // Update status if needed
       if (shouldUpdate && newStatus) {
-        await db.updateVaultStatus(vault.id, newStatus);
+        await db.updateVault(vault.id, {
+          status: newStatus,
+          updatedAt: now.toISOString()
+        });
         
         // Emit real-time update to connected clients
         io.emit('vaultStatusUpdated', { 
@@ -365,6 +352,9 @@ let globalTimer = {
 const ICO_THRESHOLD_USD = 10000; // $10,000 USD threshold for evolution
 const PENDING_TIMEOUT_HOURS = 48; // 48 hours before auto-refund
 
+// ICO scheduling system - production-ready server-side scheduling
+const icoSchedules = new Map(); // Map of vaultId -> { timeoutId, startTime, endTime }
+
 // Vault status types
 const VAULT_STATUS = {
   PRE_ICO: 'pre_ico',
@@ -379,6 +369,175 @@ const VAULT_STATUS = {
   COMPLETED: 'completed' // Vault fully processed
 };
 
+// Schedule ICO end for a vault (24 hours from now)
+function scheduleICOEnd(vaultId) {
+  try {
+    // Clear any existing schedule
+    if (icoSchedules.has(vaultId)) {
+      clearTimeout(icoSchedules.get(vaultId).timeoutId);
+    }
+    
+    const startTime = new Date();
+    const endTime = new Date(startTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
+    
+    // Schedule the ICO end
+    const timeoutId = setTimeout(async () => {
+      await handleICOEnd(vaultId);
+    }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+    
+    // Store schedule info
+    icoSchedules.set(vaultId, {
+      timeoutId,
+      startTime,
+      endTime,
+      vaultId
+    });
+    
+    console.log(`⏰ ICO scheduled for vault ${vaultId} - ends at ${endTime.toISOString()}`);
+    
+    // Emit ICO start event
+    io.emit('ico-started', {
+      vaultId,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      duration: 24 * 60 * 60 * 1000 // 24 hours in ms
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error scheduling ICO end for vault ${vaultId}:`, error);
+  }
+}
+
+// Handle ICO end - check threshold and transition vault
+async function handleICOEnd(vaultId) {
+  try {
+    console.log(`⏰ ICO period ended for vault ${vaultId} - checking threshold...`);
+    
+    // Get current vault data
+    const vault = await db.getVaultById(vaultId);
+    if (!vault) {
+      console.error(`❌ Vault ${vaultId} not found during ICO end`);
+      return;
+    }
+    
+    // Check if threshold was met
+    const totalVolumeUSD = vault.totalVolume || 0;
+    
+    if (totalVolumeUSD >= ICO_THRESHOLD_USD) {
+      // Threshold met - move to pending for Stage 2
+      await db.updateVault(vaultId, {
+        status: VAULT_STATUS.PENDING,
+        updatedAt: new Date().toISOString()
+      });
+      
+      console.log(`🎉 Vault ${vaultId} met ICO threshold ($${totalVolumeUSD.toLocaleString()}) - moved to pending for Stage 2`);
+      
+      // Emit success event
+      io.emit('ico-completed', {
+        vaultId,
+        status: VAULT_STATUS.PENDING,
+        totalVolume: totalVolumeUSD,
+        thresholdMet: true
+      });
+      
+    } else {
+      // Threshold not met - mark for refund
+      await db.updateVault(vaultId, {
+        status: VAULT_STATUS.REFUND_REQUIRED,
+        updatedAt: new Date().toISOString()
+      });
+      
+      console.log(`❌ Vault ${vaultId} did not meet ICO threshold ($${totalVolumeUSD.toLocaleString()}) - marked for refund`);
+      
+      // Emit failure event
+      io.emit('ico-failed', {
+        vaultId,
+        status: VAULT_STATUS.REFUND_REQUIRED,
+        totalVolume: totalVolumeUSD,
+        thresholdMet: false
+      });
+    }
+    
+    // Clean up schedule
+    icoSchedules.delete(vaultId);
+    
+  } catch (error) {
+    console.error(`❌ Error handling ICO end for vault ${vaultId}:`, error);
+  }
+}
+
+// Get ICO status for a vault
+function getICOStatus(vaultId) {
+  const schedule = icoSchedules.get(vaultId);
+  if (!schedule) {
+    return { isActive: false, message: 'No ICO scheduled' };
+  }
+  
+  const now = new Date();
+  const timeLeft = Math.max(0, schedule.endTime - now);
+  const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+  const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const secondsLeft = Math.floor((timeLeft % (1000 * 60)) / 1000);
+  
+  return {
+    isActive: true,
+    startTime: schedule.startTime,
+    endTime: schedule.endTime,
+    timeLeft,
+    hoursLeft,
+    minutesLeft,
+    secondsLeft,
+    progress: Math.min(100, ((now - schedule.startTime) / (24 * 60 * 60 * 1000)) * 100)
+  };
+}
+
+// Cancel ICO schedule for a vault
+function cancelICOSchedule(vaultId) {
+  const schedule = icoSchedules.get(vaultId);
+  if (schedule) {
+    clearTimeout(schedule.timeoutId);
+    icoSchedules.delete(vaultId);
+    console.log(`⏹️ ICO schedule cancelled for vault ${vaultId}`);
+  }
+}
+
+// Initialize ICO schedules for existing vaults on server start
+async function initializeICOSchedules() {
+  try {
+    const vaults = await db.getAllVaults();
+    
+    for (const vault of vaults) {
+      if (vault.status === VAULT_STATUS.ICO) {
+        // Check if ICO should still be active
+        const icoEndTime = new Date(vault.meta?.icoEndsAt);
+        const now = new Date();
+        
+        if (now < icoEndTime) {
+          // ICO is still active - reschedule
+          const timeLeft = icoEndTime - now;
+          const timeoutId = setTimeout(async () => {
+            await handleICOEnd(vault.id);
+          }, timeLeft);
+          
+          icoSchedules.set(vault.id, {
+            timeoutId,
+            startTime: new Date(icoEndTime.getTime() - (24 * 60 * 60 * 1000)),
+            endTime: icoEndTime,
+            vaultId: vault.id
+          });
+          
+          console.log(`🔄 Rescheduled ICO for vault ${vault.id} - ${Math.floor(timeLeft / (1000 * 60 * 60))} hours remaining`);
+        } else {
+          // ICO should have ended - handle it now
+          await handleICOEnd(vault.id);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error initializing ICO schedules:', error);
+  }
+}
+
 // Whitelist exclusion check
 async function isAddressWhitelisted(vaultId, address) {
   try {
@@ -390,40 +549,13 @@ async function isAddressWhitelisted(vaultId, address) {
   }
 }
 
-// ICO monitoring functions
-async function checkICOThresholds() {
+// Pending timeout monitoring (still needed for 48-hour timeout)
+async function checkPendingTimeouts() {
   try {
     const vaults = await db.getAllVaults();
     
     for (const vault of vaults) {
-      if (vault.status === VAULT_STATUS.ICO) {
-        // Check if ICO has ended (24 hours passed)
-        const icoEndTime = new Date(vault.meta?.icoEndsAt);
-        const now = new Date();
-        
-        if (now >= icoEndTime) {
-          // ICO period ended, check if threshold was met
-          const totalVolumeUSD = vault.totalVolume || 0;
-          
-          if (totalVolumeUSD >= ICO_THRESHOLD_USD) {
-            // Threshold met - move to pending for Stage 2
-            await db.updateVault(vault.id, {
-              status: VAULT_STATUS.PENDING,
-              updatedAt: new Date().toISOString()
-            });
-            
-            console.log(`🎉 Vault ${vault.id} met ICO threshold ($${totalVolumeUSD.toLocaleString()}) - moved to pending for Stage 2`);
-          } else {
-            // Threshold not met - mark for refund
-            await db.updateVault(vault.id, {
-              status: VAULT_STATUS.REFUND_REQUIRED,
-              updatedAt: new Date().toISOString()
-            });
-            
-            console.log(`❌ Vault ${vault.id} did not meet ICO threshold ($${totalVolumeUSD.toLocaleString()}) - marked for refund`);
-          }
-        }
-      } else if (vault.status === VAULT_STATUS.PENDING) {
+      if (vault.status === VAULT_STATUS.PENDING) {
         // Check if pending timeout has been reached
         const pendingSince = new Date(vault.updatedAt);
         const now = new Date();
@@ -441,12 +573,12 @@ async function checkICOThresholds() {
       }
     }
   } catch (error) {
-    console.error('❌ Error checking ICO thresholds:', error);
+    console.error('❌ Error checking pending timeouts:', error);
   }
 }
 
-// Check ICO thresholds every 5 minutes
-setInterval(checkICOThresholds, 5 * 60 * 1000);
+// Check pending timeouts every 5 minutes
+setInterval(checkPendingTimeouts, 5 * 60 * 1000);
 
 // Multi-asset treasury wallet monitoring for ICO threshold
 async function checkTreasuryBalances() {
@@ -2121,6 +2253,12 @@ app.post('/api/admin/vaults', async (req, res) => {
         // Update existing vault instead of creating new one
         console.log('📝 Updating existing vault:', vaultConfig.id);
         const updatedVault = await db.updateVault(vaultConfig.id, vaultConfig);
+        
+        // If vault is being set to ICO status, schedule the ICO end
+        if (vaultConfig.status === VAULT_STATUS.ICO) {
+          scheduleICOEnd(vaultConfig.id);
+        }
+        
         res.json({ 
           success: true, 
           message: 'Vault updated successfully',
@@ -2134,6 +2272,12 @@ app.post('/api/admin/vaults', async (req, res) => {
     }
     
     const vault = await db.createVault(vaultConfig);
+    
+    // If vault is created with ICO status, schedule the ICO end
+    if (vaultConfig.status === VAULT_STATUS.ICO) {
+      scheduleICOEnd(vaultConfig.id);
+    }
+    
     res.json({ 
       success: true, 
       message: 'Vault created successfully',
@@ -2154,7 +2298,19 @@ app.patch('/api/admin/vaults/:id/status', async (req, res) => {
     console.log(`📝 Updating vault ${id} status to:`, status);
     
     // Update vault status in database
-    await db.updateVaultStatus(id, status);
+    await db.updateVault(id, {
+      status: status,
+      updatedAt: new Date().toISOString()
+    });
+    
+    // Handle ICO scheduling
+    if (status === VAULT_STATUS.ICO) {
+      // Start ICO - schedule the 24-hour countdown
+      scheduleICOEnd(id);
+    } else if (status !== VAULT_STATUS.ICO) {
+      // Stop ICO if vault is moved to a different status
+      cancelICOSchedule(id);
+    }
     
     // Emit real-time update
     io.emit('vaultStatusUpdated', { vaultId: id, status });
@@ -2954,9 +3110,49 @@ const stopMonitoring = () => {
   }
 };
 
+// API endpoint to get ICO status for a vault
+app.get('/api/admin/vaults/:id/ico-status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const icoStatus = getICOStatus(id);
+    
+    res.json({
+      vaultId: id,
+      icoStatus
+    });
+  } catch (error) {
+    console.error('❌ Error getting ICO status:', error);
+    res.status(500).json({ error: 'Failed to get ICO status' });
+  }
+});
+
+// API endpoint to get all active ICO schedules
+app.get('/api/admin/ico-schedules', async (req, res) => {
+  try {
+    const schedules = [];
+    
+    for (const [vaultId, schedule] of icoSchedules) {
+      const status = getICOStatus(vaultId);
+      schedules.push({
+        vaultId,
+        ...status,
+        schedule
+      });
+    }
+    
+    res.json({
+      totalSchedules: schedules.length,
+      schedules
+    });
+  } catch (error) {
+    console.error('❌ Error getting ICO schedules:', error);
+    res.status(500).json({ error: 'Failed to get ICO schedules' });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Monitoring RAY token: ${REVS_TOKEN_ADDRESS}`);
   console.log(`⏰ Global timer started at ${globalTimer.timeLeft} seconds`);
@@ -2973,4 +3169,8 @@ server.listen(PORT, () => {
   console.log('📊 Initializing token data and wallet balances...');
   fetchTokenPrice();
   fetchWalletBalances();
+  
+  // Initialize ICO schedules for existing vaults
+  console.log('⏰ Initializing ICO schedules...');
+  await initializeICOSchedules();
 });
