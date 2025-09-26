@@ -43,6 +43,7 @@ const io = new Server(server, {
 app.use(cors({ 
   origin: [
     'http://localhost:3000',
+    'http://localhost:3002',
     'http://localhost:5173', 
     'https://treasury-vault-timer-backend.onrender.com',
     'https://*.onrender.com',
@@ -154,6 +155,56 @@ function initializeLaunchTimes() {
   }
 }
 initializeLaunchTimes();
+
+// Function to check and update ICO status transitions
+async function checkICOStatusTransitions() {
+  try {
+    const now = new Date();
+    const vaults = await db.getAllVaults();
+    
+    for (const vault of vaults) {
+      const meta = vault.meta || {};
+      let shouldUpdate = false;
+      let newStatus = null;
+      
+      // Check if pre_ico should transition to ico
+      if (vault.status === 'pre_ico' && meta.icoProposedAt) {
+        const icoStartTime = new Date(meta.icoProposedAt);
+        if (now >= icoStartTime) {
+          newStatus = 'ico';
+          shouldUpdate = true;
+          console.log(`🔄 Auto-transitioning vault ${vault.id} from pre_ico to ico`);
+        }
+      }
+      
+      // Check if ico should transition to ico_pending
+      if (vault.status === 'ico' && meta.icoEndsAt) {
+        const icoEndTime = new Date(meta.icoEndsAt);
+        if (now >= icoEndTime) {
+          newStatus = 'ico_pending';
+          shouldUpdate = true;
+          console.log(`🔄 Auto-transitioning vault ${vault.id} from ico to ico_pending`);
+        }
+      }
+      
+      // Update status if needed
+      if (shouldUpdate && newStatus) {
+        await db.updateVaultStatus(vault.id, newStatus);
+        
+        // Emit real-time update to connected clients
+        io.emit('vaultStatusUpdated', { 
+          vaultId: vault.id, 
+          status: newStatus,
+          timestamp: now.toISOString()
+        });
+        
+        console.log(`✅ Vault ${vault.id} status updated to ${newStatus}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error checking ICO status transitions:', error);
+  }
+}
 
 // Function to scan for eligible REVS holders
 async function scanEligibleHolders() {
@@ -441,6 +492,11 @@ setInterval(() => {
   scanEligibleHolders();
   trackTotalAirdroppedSOL();
 }, 600000); // 10 minutes
+
+// Check for ICO status transitions every minute
+setInterval(() => {
+  checkICOStatusTransitions();
+}, 60000); // 1 minute
 
 // Admin controls (dev only)
 const isAdmin = (socket) => {
@@ -750,41 +806,15 @@ app.post('/api/admin/upload', upload.single('file'), (req, res) => {
     res.status(500).json({ error: 'Upload failed' });
   }
 });
-app.get('/api/admin/vaults', (req, res) => {
+app.get('/api/admin/vaults', async (req, res) => {
   try {
-    // Mock vault data - in production, this would come from a database
-    const vaults = [
-      {
-        id: 'revs-vault-001',
-        name: 'REVS Treasury Vault',
-        description: 'Test vault using REVS token for dynamic treasury mechanics',
-        tokenMint: '9VxExA1iRPbuLLdSJ2rBxsyLReT4aqzZBMaBaY1p',
-        distributionWallet: '72hnXr9PsMjp8WsnFyZjmm5vzHqbfouqtHBgLYdDZE',
-        treasuryWallet: 'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH',
-        devWallet: '6voYG6Us...ZtLMytKW',
-        startDate: '2025-09-15T12:00:00Z',
-        endgameDate: '2025-12-24T12:00:00Z',
-        timerDuration: 3600, // 1 hour
-        distributionInterval: 300, // 5 minutes
-        minHoldAmount: 200000,
-        taxSplit: { dev: 50, holders: 50 },
-        status: 'active',
-        // New fields
-        vaultAsset: 'SOL',
-        airdropAsset: 'REVS',
-        timerStartedAt: '2025-09-18T15:30:00Z',
-        currentTimerEndsAt: '2025-09-18T16:30:00Z',
-        whitelistedAddresses: [
-          '72hnXr9PsMjp8WsnFyZjmm5vzHhTqbfouqtHBgLYdDZE', // Distribution wallet
-          'i35RYnCTa7xjs7U1hByCDFE37HwLNuZsUNHmmT4cYUH'  // Treasury wallet
-        ],
-        lastPurchaseSignature: '3JQijH41SGrSbGG9v4fSd6iREVbV1Fa1XQJkMjvfhAobVd9fPeRwiFzPfZrFo2hsqtxpzmoonJKVazWnkpznmFGS',
-        totalPurchases: 47,
-        totalVolume: 125000,
-        createdAt: '2025-09-15T10:00:00Z',
-        updatedAt: '2025-09-18T15:30:00Z'
-      }
-    ];
+    const vaults = await db.getAllVaults();
+    
+    // Enhance vaults with whitelisted addresses
+    for (const vault of vaults) {
+      vault.whitelistedAddresses = await db.getWhitelistedAddresses(vault.id);
+    }
+    
     res.json({ vaults });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch vaults' });
@@ -821,6 +851,7 @@ app.post('/api/admin/vaults', async (req, res) => {
   try {
     const vaultConfig = req.body;
     console.log('📝 Creating new vault:', vaultConfig);
+    
     // Derive ICO end if proposed provided
     if (vaultConfig?.icoProposedAt && !vaultConfig.icoEndsAt) {
       const start = new Date(vaultConfig.icoProposedAt).getTime();
@@ -828,6 +859,26 @@ app.post('/api/admin/vaults', async (req, res) => {
         vaultConfig.icoEndsAt = new Date(start + 24 * 60 * 60 * 1000).toISOString();
       }
     }
+    
+    // Check if vault already exists
+    try {
+      const existingVault = await db.getVault(vaultConfig.id);
+      if (existingVault) {
+        // Update existing vault instead of creating new one
+        console.log('📝 Updating existing vault:', vaultConfig.id);
+        const updatedVault = await db.updateVault(vaultConfig.id, vaultConfig);
+        res.json({ 
+          success: true, 
+          message: 'Vault updated successfully',
+          vault: updatedVault
+        });
+        return;
+      }
+    } catch (getError) {
+      // Vault doesn't exist, proceed with creation
+      console.log('📝 Vault does not exist, creating new one');
+    }
+    
     const vault = await db.createVault(vaultConfig);
     res.json({ 
       success: true, 
@@ -863,6 +914,30 @@ app.patch('/api/admin/vaults/:id/status', async (req, res) => {
   } catch (error) {
     console.error('Error updating vault status:', error);
     res.status(500).json({ error: 'Failed to update vault status' });
+  }
+});
+
+// Delete vault
+app.delete('/api/admin/vaults/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log(`🗑️ Deleting vault ${id}`);
+    
+    // Delete vault from database (this will also cascade delete whitelisted addresses)
+    await db.deleteVault(id);
+    
+    // Emit real-time update
+    io.emit('vaultDeleted', { vaultId: id });
+    
+    res.json({ 
+      success: true, 
+      message: `Vault ${id} deleted successfully`,
+      vaultId: id
+    });
+  } catch (error) {
+    console.error('Error deleting vault:', error);
+    res.status(500).json({ error: 'Failed to delete vault' });
   }
 });
 
@@ -918,6 +993,38 @@ app.put('/api/admin/vaults/:id/whitelisted-addresses', async (req, res) => {
 });
 
 // Update vault name and description
+// General vault update endpoint
+app.put('/api/admin/vaults/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    // Update vault in database
+    const vault = await db.getVault(id);
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    // Update the vault with new data
+    const updatedVault = {
+      ...vault,
+      ...updateData,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Save to database
+    await db.updateVault(id, updatedVault);
+    
+    // Emit update to connected clients
+    io.emit('vaultConfigUpdated', { vaultId: id, type: 'vaultUpdated', vault: updatedVault });
+    
+    res.json({ success: true, message: 'Vault updated successfully', vault: updatedVault });
+  } catch (error) {
+    console.error('Error updating vault:', error);
+    res.status(500).json({ error: 'Failed to update vault' });
+  }
+});
+
 app.put('/api/admin/vaults/:id/details', async (req, res) => {
   try {
     const { id } = req.params;

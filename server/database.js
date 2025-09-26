@@ -51,6 +51,7 @@ class Database {
         vault_asset TEXT,
         airdrop_asset TEXT,
         meta TEXT,
+        custom_token_data TEXT,
         status TEXT NOT NULL DEFAULT 'draft',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
@@ -95,7 +96,9 @@ class Database {
             return resolve();
           }
           const hasMeta = Array.isArray(rows) && rows.some((r) => r.name === 'meta');
-          if (hasMeta) {
+          const hasCustomTokenData = Array.isArray(rows) && rows.some((r) => r.name === 'custom_token_data');
+          
+          if (hasMeta && hasCustomTokenData) {
             return resolve();
           }
 
@@ -120,6 +123,7 @@ class Database {
               vault_asset TEXT,
               airdrop_asset TEXT,
               meta TEXT,
+              custom_token_data TEXT,
               status TEXT NOT NULL DEFAULT 'draft',
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
@@ -134,13 +138,13 @@ class Database {
                  id, name, description, token_mint, distribution_wallet, treasury_wallet,
                  dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
                  min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
-                 meta, status, created_at, updated_at
+                 meta, custom_token_data, status, created_at, updated_at
                )
                SELECT 
                  id, name, description, token_mint, distribution_wallet, treasury_wallet,
                  dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
                  min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
-                 '{}' as meta, status, created_at, updated_at
+                 COALESCE(meta, '{}') as meta, NULL as custom_token_data, status, created_at, updated_at
                FROM vaults`,
             );
             this.db.run('DROP TABLE vaults');
@@ -167,7 +171,7 @@ class Database {
       const {
         id, name, description, tokenMint, distributionWallet, treasuryWallet,
         devWallet, startDate, endgameDate, timerDuration, distributionInterval,
-        minHoldAmount, taxSplit = { dev: null, holders: null }, vaultAsset, airdropAsset, meta = {}, status = 'draft'
+        minHoldAmount, taxSplit = { dev: null, holders: null }, vaultAsset, airdropAsset, meta = {}, customTokenData = null, status = 'draft'
       } = vaultData;
 
       const now = new Date().toISOString();
@@ -175,15 +179,15 @@ class Database {
         INSERT INTO vaults (
           id, name, description, token_mint, distribution_wallet, treasury_wallet,
           dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
-          min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset, meta,
+          min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset, meta, custom_token_data,
           status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       this.db.run(sql, [
         id, name, description, tokenMint, distributionWallet, treasuryWallet,
         devWallet, startDate, endgameDate, timerDuration, distributionInterval,
-        minHoldAmount, taxSplit.dev, taxSplit.holders, vaultAsset, airdropAsset, JSON.stringify(meta || {}),
+        minHoldAmount, taxSplit.dev, taxSplit.holders, vaultAsset, airdropAsset, JSON.stringify(meta || {}), JSON.stringify(customTokenData || null),
         status, now, now
       ], function(err) {
         if (err) {
@@ -227,7 +231,7 @@ class Database {
 
   async updateVault(id, updates) {
     return new Promise((resolve, reject) => {
-      const allowedFields = ['name', 'description', 'status', 'token_mint', 'distribution_wallet', 'treasury_wallet', 'dev_wallet', 'start_date', 'endgame_date', 'timer_duration', 'distribution_interval', 'min_hold_amount', 'tax_split_dev', 'tax_split_holders', 'vault_asset', 'airdrop_asset', 'meta'];
+      const allowedFields = ['name', 'description', 'status', 'token_mint', 'distribution_wallet', 'treasury_wallet', 'dev_wallet', 'start_date', 'endgame_date', 'timer_duration', 'distribution_interval', 'min_hold_amount', 'tax_split_dev', 'tax_split_holders', 'vault_asset', 'airdrop_asset', 'meta', 'custom_token_data'];
       const updateFields = [];
       const values = [];
 
@@ -259,6 +263,13 @@ class Database {
           if (allowedFields.includes('meta')) {
             updateFields.push('meta = ?');
             values.push(JSON.stringify(updates.meta || {}));
+          }
+          return;
+        }
+        if (key === 'customTokenData') {
+          if (allowedFields.includes('custom_token_data')) {
+            updateFields.push('custom_token_data = ?');
+            values.push(JSON.stringify(updates.customTokenData || null));
           }
           return;
         }
@@ -397,6 +408,7 @@ class Database {
       name: row.name,
       description: row.description,
       meta: row.meta ? JSON.parse(row.meta) : {},
+      customTokenData: row.custom_token_data ? JSON.parse(row.custom_token_data) : null,
       tokenMint: row.token_mint,
       distributionWallet: row.distribution_wallet,
       treasuryWallet: row.treasury_wallet,
