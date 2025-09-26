@@ -61,7 +61,12 @@ class Database {
         airdrop_asset TEXT,
         meta TEXT,
         custom_token_data TEXT,
-        status TEXT NOT NULL DEFAULT 'draft',
+        status TEXT NOT NULL DEFAULT 'pre_ico',
+        timer_started_at TEXT,
+        current_timer_ends_at TEXT,
+        last_purchase_signature TEXT,
+        total_purchases INTEGER DEFAULT 0,
+        total_volume REAL DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -106,8 +111,9 @@ class Database {
           }
           const hasMeta = Array.isArray(rows) && rows.some((r) => r.name === 'meta');
           const hasCustomTokenData = Array.isArray(rows) && rows.some((r) => r.name === 'custom_token_data');
+          const hasTimerFields = Array.isArray(rows) && rows.some((r) => r.name === 'timer_started_at');
           
-          if (hasMeta && hasCustomTokenData) {
+          if (hasMeta && hasCustomTokenData && hasTimerFields) {
             return resolve();
           }
 
@@ -133,7 +139,12 @@ class Database {
               airdrop_asset TEXT,
               meta TEXT,
               custom_token_data TEXT,
-              status TEXT NOT NULL DEFAULT 'draft',
+              status TEXT NOT NULL DEFAULT 'pre_ico',
+              timer_started_at TEXT,
+              current_timer_ends_at TEXT,
+              last_purchase_signature TEXT,
+              total_purchases INTEGER DEFAULT 0,
+              total_volume REAL DEFAULT 0,
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             )
@@ -147,13 +158,22 @@ class Database {
                  id, name, description, token_mint, distribution_wallet, treasury_wallet,
                  dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
                  min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
-                 meta, custom_token_data, status, created_at, updated_at
+                 meta, custom_token_data, status, timer_started_at, current_timer_ends_at,
+                 last_purchase_signature, total_purchases, total_volume, created_at, updated_at
                )
                SELECT 
                  id, name, description, token_mint, distribution_wallet, treasury_wallet,
                  dev_wallet, start_date, endgame_date, timer_duration, distribution_interval,
                  min_hold_amount, tax_split_dev, tax_split_holders, vault_asset, airdrop_asset,
-                 COALESCE(meta, '{}') as meta, NULL as custom_token_data, status, created_at, updated_at
+                 COALESCE(meta, '{}') as meta, 
+                 COALESCE(custom_token_data, NULL) as custom_token_data, 
+                 COALESCE(status, 'pre_ico') as status,
+                 COALESCE(timer_started_at, NULL) as timer_started_at,
+                 COALESCE(current_timer_ends_at, NULL) as current_timer_ends_at,
+                 COALESCE(last_purchase_signature, NULL) as last_purchase_signature,
+                 COALESCE(total_purchases, 0) as total_purchases,
+                 COALESCE(total_volume, 0) as total_volume,
+                 created_at, updated_at
                FROM vaults`,
             );
             this.db.run('DROP TABLE vaults');
@@ -434,6 +454,11 @@ class Database {
       vaultAsset: row.vault_asset,
       airdropAsset: row.airdrop_asset,
       status: row.status,
+      timerStartedAt: row.timer_started_at,
+      currentTimerEndsAt: row.current_timer_ends_at,
+      lastPurchaseSignature: row.last_purchase_signature,
+      totalPurchases: row.total_purchases || 0,
+      totalVolume: row.total_volume || 0,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     };

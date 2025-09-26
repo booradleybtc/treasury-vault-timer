@@ -72,12 +72,16 @@ The system automatically:
 #### Status Flow:
 1. `pre_ico` - Vault created, awaiting ICO start
 2. `ico` - ICO active, accepting purchases
-3. `ico_pending` - ICO ended, processing results
-4. `active` - Vault fully operational
+3. `prelaunch` - ICO met $10k threshold, in prelaunch phase
+4. `vault_live` - Vault fully operational with live timer
+5. `extinction` - Vault ended (timer expired or end date reached)
 
 #### Automated Transitions:
 - Pre-ICO → ICO (based on `icoProposedAt` timestamp)
-- ICO → ICO Pending (based on `icoEndsAt` timestamp)
+- ICO → Prelaunch (if meets $10k threshold when ICO ends)
+- ICO → Extinction (if doesn't meet $10k threshold when ICO ends)
+- Prelaunch → Vault Live (after prelaunch period)
+- Vault Live → Extinction (when end date reached)
 - Timer resets on legitimate purchases
 - Persistent state across server restarts
 

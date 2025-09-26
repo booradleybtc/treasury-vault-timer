@@ -156,8 +156,8 @@ function initializeLaunchTimes() {
 }
 initializeLaunchTimes();
 
-// Function to check and update ICO status transitions
-async function checkICOStatusTransitions() {
+// Function to check and update vault status transitions
+async function checkVaultStatusTransitions() {
   try {
     const now = new Date();
     const vaults = await db.getAllVaults();
@@ -177,13 +177,42 @@ async function checkICOStatusTransitions() {
         }
       }
       
-      // Check if ico should transition to ico_pending
+      // Check if ico should transition to prelaunch (meets $10k threshold)
       if (vault.status === 'ico' && meta.icoEndsAt) {
         const icoEndTime = new Date(meta.icoEndsAt);
         if (now >= icoEndTime) {
-          newStatus = 'ico_pending';
+          // Check if ICO met the $10,000 threshold
+          const totalVolume = vault.totalVolume || 0;
+          const thresholdUsd = meta.icoThresholdUsd || 10000;
+          
+          if (totalVolume >= thresholdUsd) {
+            newStatus = 'prelaunch';
+            console.log(`🔄 Auto-transitioning vault ${vault.id} from ico to prelaunch (met $${totalVolume} threshold)`);
+          } else {
+            newStatus = 'extinction';
+            console.log(`🔄 Auto-transitioning vault ${vault.id} from ico to extinction (didn't meet $${thresholdUsd} threshold)`);
+          }
           shouldUpdate = true;
-          console.log(`🔄 Auto-transitioning vault ${vault.id} from ico to ico_pending`);
+        }
+      }
+      
+      // Check if prelaunch should transition to vault_live (after prelaunch period)
+      if (vault.status === 'prelaunch' && meta.prelaunchEndsAt) {
+        const prelaunchEndTime = new Date(meta.prelaunchEndsAt);
+        if (now >= prelaunchEndTime) {
+          newStatus = 'vault_live';
+          shouldUpdate = true;
+          console.log(`🔄 Auto-transitioning vault ${vault.id} from prelaunch to vault_live`);
+        }
+      }
+      
+      // Check if vault should transition to extinction (end date reached)
+      if (vault.status === 'vault_live' && vault.endgameDate) {
+        const endDate = new Date(vault.endgameDate);
+        if (now >= endDate) {
+          newStatus = 'extinction';
+          shouldUpdate = true;
+          console.log(`🔄 Auto-transitioning vault ${vault.id} from vault_live to extinction (end date reached)`);
         }
       }
       
@@ -202,7 +231,7 @@ async function checkICOStatusTransitions() {
       }
     }
   } catch (error) {
-    console.error('Error checking ICO status transitions:', error);
+    console.error('Error checking vault status transitions:', error);
   }
 }
 
@@ -493,9 +522,9 @@ setInterval(() => {
   trackTotalAirdroppedSOL();
 }, 600000); // 10 minutes
 
-// Check for ICO status transitions every minute
+// Check for vault status transitions every minute
 setInterval(() => {
-  checkICOStatusTransitions();
+  checkVaultStatusTransitions();
 }, 60000); // 1 minute
 
 // Admin controls (dev only)
