@@ -18,60 +18,54 @@ export default function AdminIndex() {
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
   useEffect(() => {
-    const load = async () => {
+    const loadAllData = async () => {
       try {
-        const res = await fetch(`${BACKEND}/api/admin/vaults`);
-        const js = await res.json();
-        setVaults(js.vaults || []);
-      } catch {}
+        // Load all data in parallel instead of sequential calls
+        const [vaultsRes, pendingRes, winnersRes, endgameRes, refundsRes, monitoringRes] = await Promise.allSettled([
+          fetch(`${BACKEND}/api/admin/vaults`),
+          fetch(`${BACKEND}/api/admin/vaults/pending`),
+          fetch(`${BACKEND}/api/admin/vaults/winner-confirmation`),
+          fetch(`${BACKEND}/api/admin/vaults/endgame-processing`),
+          fetch(`${BACKEND}/api/admin/vaults/refund-required`),
+          fetch(`${BACKEND}/api/admin/vaults/monitoring-overview`)
+        ]);
+
+        // Process results
+        if (vaultsRes.status === 'fulfilled') {
+          const js = await vaultsRes.value.json();
+          setVaults(js.vaults || []);
+        }
+        
+        if (pendingRes.status === 'fulfilled') {
+          const js = await pendingRes.value.json();
+          setPendingVaults(js.pendingVaults || []);
+        }
+        
+        if (winnersRes.status === 'fulfilled') {
+          const js = await winnersRes.value.json();
+          setWinnerVaults(js.winnerVaults || []);
+        }
+        
+        if (endgameRes.status === 'fulfilled') {
+          const js = await endgameRes.value.json();
+          setEndgameVaults(js.endgameVaults || []);
+        }
+        
+        if (refundsRes.status === 'fulfilled') {
+          const js = await refundsRes.value.json();
+          setRefundVaults(js.refundVaults || []);
+        }
+        
+        if (monitoringRes.status === 'fulfilled') {
+          const js = await monitoringRes.value.json();
+          setMonitoringVaults(js.vaults || []);
+        }
+      } catch (error) {
+        console.error('Error loading admin data:', error);
+      }
     };
     
-    const loadPending = async () => {
-      try {
-        const res = await fetch(`${BACKEND}/api/admin/vaults/pending`);
-        const js = await res.json();
-        setPendingVaults(js.pendingVaults || []);
-      } catch {}
-    };
-    
-    const loadWinners = async () => {
-      try {
-        const res = await fetch(`${BACKEND}/api/admin/vaults/winner-confirmation`);
-        const js = await res.json();
-        setWinnerVaults(js.winnerVaults || []);
-      } catch {}
-    };
-    
-    const loadEndgame = async () => {
-      try {
-        const res = await fetch(`${BACKEND}/api/admin/vaults/endgame-processing`);
-        const js = await res.json();
-        setEndgameVaults(js.endgameVaults || []);
-      } catch {}
-    };
-    
-    const loadRefunds = async () => {
-      try {
-        const res = await fetch(`${BACKEND}/api/admin/vaults/refund-required`);
-        const js = await res.json();
-        setRefundVaults(js.refundVaults || []);
-      } catch {}
-    };
-    
-    const loadMonitoring = async () => {
-      try {
-        const res = await fetch(`${BACKEND}/api/admin/vaults/monitoring-overview`);
-        const js = await res.json();
-        setMonitoringVaults(js.vaults || []);
-      } catch {}
-    };
-    
-    load();
-    loadPending();
-    loadWinners();
-    loadEndgame();
-    loadRefunds();
-    loadMonitoring();
+    loadAllData();
   }, [BACKEND]);
 
   // Reset delete state after 5 seconds of inactivity
@@ -684,11 +678,17 @@ export default function AdminIndex() {
               <div>
                 <h3 className="text-white font-semibold mb-4 text-lg">Featured Card</h3>
                 <div className="max-w-4xl">
-                  <VaultCardPreview 
-                    vault={vaults.find(v => v.status === stage) || vaults[0]} 
-                    variant="featured" 
-                    className="scale-90 origin-top-left"
-                  />
+                  {vaults.length > 0 ? (
+                    <VaultCardPreview 
+                      vault={vaults.find(v => v.status === stage) || vaults[0]} 
+                      variant="featured" 
+                      className="scale-90 origin-top-left"
+                    />
+                  ) : (
+                    <div className="text-white/60 text-center py-8">
+                      No vaults available for preview
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -696,11 +696,17 @@ export default function AdminIndex() {
               <div>
                 <h3 className="text-white font-semibold mb-4 text-lg">Tall Card</h3>
                 <div className="max-w-md">
-                  <VaultCardPreview 
-                    vault={vaults.find(v => v.status === stage) || vaults[0]} 
-                    variant="tall" 
-                    className="scale-75 origin-top-left"
-                  />
+                  {vaults.length > 0 ? (
+                    <VaultCardPreview 
+                      vault={vaults.find(v => v.status === stage) || vaults[0]} 
+                      variant="tall" 
+                      className="scale-75 origin-top-left"
+                    />
+                  ) : (
+                    <div className="text-white/60 text-center py-8">
+                      No vaults available for preview
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -708,11 +714,17 @@ export default function AdminIndex() {
               <div>
                 <h3 className="text-white font-semibold mb-4 text-lg">List Card</h3>
                 <div className="max-w-2xl">
-                  <VaultCardPreview 
-                    vault={vaults.find(v => v.status === stage) || vaults[0]} 
-                    variant="row" 
-                    className="scale-90 origin-top-left"
-                  />
+                  {vaults.length > 0 ? (
+                    <VaultCardPreview 
+                      vault={vaults.find(v => v.status === stage) || vaults[0]} 
+                      variant="row" 
+                      className="scale-90 origin-top-left"
+                    />
+                  ) : (
+                    <div className="text-white/60 text-center py-8">
+                      No vaults available for preview
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -731,8 +743,9 @@ export default function AdminIndex() {
                         if (vault) router.push(`/vault/${vault.id}`);
                       }}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+                      disabled={vaults.length === 0}
                     >
-                      View Dedicated Page
+                      {vaults.length > 0 ? 'View Dedicated Page' : 'No Vaults Available'}
                     </button>
                   </div>
                 </div>

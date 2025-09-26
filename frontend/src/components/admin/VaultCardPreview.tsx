@@ -10,6 +10,16 @@ interface VaultCardPreviewProps {
 }
 
 export function VaultCardPreview({ vault, variant, className = "" }: VaultCardPreviewProps) {
+  if (!vault) {
+    return (
+      <div className={`vault-card-preview ${className}`}>
+        <div className="text-white/60 text-center py-8">
+          No vault data available
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`vault-card-preview ${className}`}>
       <div className="scale-75 origin-top-left transform-gpu">
