@@ -152,44 +152,57 @@ export default function Page() {
 
   const loadVaults = async () => {
     try {
+      console.log('🔍 Loading vaults from:', `${BACKEND_URL}/api/admin/vaults`);
       const response = await fetch(`${BACKEND_URL}/api/admin/vaults`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors'
       });
       
+      console.log('📡 Response status:', response.status, response.statusText);
+      
       if (response.ok) {
         const data = await response.json();
-        setVaults(data.vaults);
+        console.log('✅ Data received:', data);
+        setVaults(data.vaults || []);
         setError(null);
       } else {
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
         setError(`Failed to load vaults: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      console.error('Failed to load vaults:', error);
+      console.error('💥 Failed to load vaults:', error);
       setError(`Failed to load vaults: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
+      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   };
 
   const loadDashboardData = async () => {
     try {
+      console.log('🔍 Loading dashboard from:', `${BACKEND_URL}/api/dashboard`);
       const response = await fetch(`${BACKEND_URL}/api/dashboard`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors'
       });
       
+      console.log('📡 Dashboard response status:', response.status, response.statusText);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Dashboard data received:', data);
         setDashboardData(data);
         setError(null);
       } else {
+        const errorText = await response.text();
+        console.error('❌ Dashboard API Error:', errorText);
         setError(`Failed to load dashboard data: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      console.error('💥 Failed to load dashboard data:', error);
       setError(`Failed to load dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
