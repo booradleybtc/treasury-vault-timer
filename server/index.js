@@ -510,7 +510,8 @@ async function initializeICOSchedules() {
     for (const vault of vaults) {
       if (vault.status === VAULT_STATUS.ICO) {
         // Check if ICO should still be active
-        const icoEndTime = new Date(vault.meta?.icoEndsAt);
+        const icoStartTime = new Date(vault.meta?.icoProposedAt);
+        const icoEndTime = new Date(icoStartTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours after start
         const now = new Date();
         
         if (now < icoEndTime) {
