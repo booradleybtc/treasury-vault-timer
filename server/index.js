@@ -2191,7 +2191,13 @@ app.get('/api/admin/health', async (req, res) => {
 app.post('/api/admin/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    
+    // Use Render backend URL for production, localhost for development
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://treasury-vault-timer-backend.onrender.com'
+      : `${req.protocol}://${req.get('host')}`;
+    
+    const url = `${baseUrl}/uploads/${req.file.filename}`;
     res.json({ success: true, url, filename: req.file.filename });
   } catch (e) {
     console.error('Upload error:', e);
