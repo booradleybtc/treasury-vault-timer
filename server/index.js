@@ -1387,6 +1387,39 @@ app.post('/api/admin/vaults/:id/force-timer-expire', async (req, res) => {
   }
 });
 
+app.post('/api/admin/vaults/:id/confirm-winner', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVault(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    if (vault.status !== VAULT_STATUS.WINNER_CONFIRMATION) {
+      return res.status(400).json({ error: 'Vault is not in winner confirmation status' });
+    }
+    
+    // Confirm winner and move to endgame
+    await db.updateVault(id, {
+      status: VAULT_STATUS.ENDGAME_PROCESSING,
+      updatedAt: new Date().toISOString()
+    });
+    
+    console.log(`✅ Winner confirmed for vault ${id} - moved to endgame processing`);
+    
+    res.json({ 
+      success: true, 
+      message: `Winner confirmed for vault ${id}`,
+      newStatus: VAULT_STATUS.ENDGAME_PROCESSING
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error confirming winner for vault ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to confirm winner' });
+  }
+});
+
 app.post('/api/admin/vaults/:id/force-endgame', async (req, res) => {
   try {
     const { id } = req.params;

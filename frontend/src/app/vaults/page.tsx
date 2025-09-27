@@ -161,19 +161,20 @@ export default function Page() {
       if (response.ok) {
         const data = await response.json();
         setVaults(data.vaults);
+        setError(null);
       } else {
-        setError('Failed to load vaults');
+        setError(`Failed to load vaults: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to load vaults:', error);
-      setError('Failed to load vaults');
+      setError(`Failed to load vaults: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
-      
       const response = await fetch(`${BACKEND_URL}/api/dashboard`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -190,8 +191,6 @@ export default function Page() {
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       setError(`Failed to load dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setLoading(false);
     }
   };
 

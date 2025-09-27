@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 
 export default function RefundPage({ params }: { params: { id: string } }) {
   const router = useRouter();
