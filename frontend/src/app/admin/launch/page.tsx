@@ -122,7 +122,10 @@ export default function LaunchWizardPage() {
 
       const json = await res.json();
       if (json?.vault?.id) {
-        router.push(`/admin/preview/${json.vault.id}`);
+        // Add a small delay to ensure vault is fully created
+        setTimeout(() => {
+          router.push(`/admin/preview/${json.vault.id}`);
+        }, 1000);
       } else {
         router.push('/admin/index');
       }

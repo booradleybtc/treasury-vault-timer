@@ -103,7 +103,7 @@ export default function Page() {
     }
   }, [vaults.length]);
 
-  // Real-time timer updates
+  // Real-time timer updates - reduced frequency to prevent crashes
   useEffect(() => {
     if (!dashboardData?.timer?.timeLeft && !dashboardData?.vault?.airdrop?.nextAirdropIn) return;
     
@@ -145,7 +145,7 @@ export default function Page() {
           ...updates
         };
       });
-    }, 1000);
+    }, 5000); // Reduced from 1000ms to 5000ms to prevent crashes
 
     return () => clearInterval(interval);
   }, [dashboardData?.timer?.timeLeft, dashboardData?.vault?.airdrop?.nextAirdropIn]);
