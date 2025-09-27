@@ -56,8 +56,9 @@ app.use(cors({
     'http://localhost:5173', 
     'https://treasury-vault-timer-backend.onrender.com',
     'https://treasury-vault-timer.vercel.app',
-    'https://*.onrender.com',
-    'https://*.vercel.app'
+    'https://frontend-mmnkk83lq-booradleybtcs-projects.vercel.app',
+    'https://*.vercel.app',
+    'https://*.onrender.com'
   ], 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
