@@ -201,7 +201,7 @@ export function TokenSelector({
           {selectedToken && !isOpen && (
             <div className="absolute inset-y-0 left-4 flex items-center gap-3 pointer-events-none">
               <img
-                src={splTokenService.getTokenLogo(selectedToken.address)}
+                src={selectedToken.logoURI || splTokenService.getTokenLogo(selectedToken.address)}
                 alt={selectedToken.symbol}
                 className="h-6 w-6 rounded-full object-cover"
                 onError={(e) => {
@@ -226,7 +226,7 @@ export function TokenSelector({
 
         {/* Dropdown */}
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-[999999] max-h-80 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-y-auto" style={{ zIndex: 999999, position: 'absolute' }}>
             {loading ? (
               <div className="p-4 text-center text-gray-600">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400 mx-auto mb-2"></div>
@@ -350,7 +350,7 @@ export function TokenSelector({
                     className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
                   >
                     <img
-                      src={splTokenService.getTokenLogo(token.address)}
+                      src={token.logoURI || splTokenService.getTokenLogo(token.address)}
                       alt={token.symbol}
                       className="h-8 w-8 rounded-full object-cover flex-shrink-0"
                       onError={(e) => {

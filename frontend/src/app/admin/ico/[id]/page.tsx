@@ -149,8 +149,8 @@ function ICOContent() {
           >
             ← Back
           </button>
-          <Badge className="bg-green-600 text-white">
-            ICO Active
+          <Badge className="bg-cyan-500 text-white">
+            {vault?.status === 'pre_ico' ? 'PRE-ICO' : 'ICO ACTIVE'}
           </Badge>
         </div>
 
@@ -183,8 +183,8 @@ function ICOContent() {
                 </div>
                 <div>
                   <label className="block text-sm text-white/80 mb-1">Status</label>
-                  <Badge className="bg-green-600 text-white">
-                    {vault.status}
+                  <Badge className="bg-cyan-500 text-white">
+                    {vault.status === 'pre_ico' ? 'PRE-ICO' : vault.status.toUpperCase()}
                   </Badge>
                 </div>
                 <div>

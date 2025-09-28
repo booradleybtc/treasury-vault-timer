@@ -136,7 +136,7 @@ export default function Stage2Wizard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading vault data...</div>
       </div>
     );
@@ -144,7 +144,7 @@ export default function Stage2Wizard() {
 
   if (!vault) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-red-400 text-xl">Vault not found</div>
       </div>
     );
@@ -152,7 +152,7 @@ export default function Stage2Wizard() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -172,7 +172,7 @@ export default function Stage2Wizard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+    <div className="min-h-screen bg-gray-900 p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -360,7 +360,7 @@ export default function Stage2Wizard() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-2"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2"
                 >
                   {submitting ? 'Completing Setup...' : 'Complete Stage 2 Setup'}
                 </Button>

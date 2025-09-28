@@ -97,7 +97,7 @@ function PrelaunchContent() {
     );
   }
 
-  const launchDate = vault.meta?.stage2?.vaultLaunchDate;
+  const launchDate = vault.meta?.stage2?.vaultLaunchDate || vault.startDate;
   const isLaunchTimeReached = launchDate && new Date(launchDate) <= new Date();
 
   return (
