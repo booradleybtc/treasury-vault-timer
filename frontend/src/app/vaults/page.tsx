@@ -10,6 +10,7 @@ import { SiteFooter } from "@/components/darwin/SiteFooter";
 import { TallVaultCard } from "@/components/darwin/TallVaultCard";
 import { StatusAwareVaultCard } from "@/components/darwin/StatusAwareVaultCard";
 import { VaultDetailOverlay } from "@/components/darwin/VaultDetailOverlay";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface VaultConfig {
   id: string;
@@ -57,12 +58,13 @@ interface VaultConfig {
   updatedAt: string;
 }
 
-export default function Page() {
+function VaultsPageContent() {
   const router = useRouter();
   const [vaults, setVaults] = useState<VaultConfig[]>([]);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const [filter, setFilter] = useState<string>("All");
   const [sort, setSort] = useState<string>("Time Remaining");
   const [showToast, setShowToast] = useState(false);
@@ -75,12 +77,21 @@ export default function Page() {
   const [visibleVaults, setVisibleVaults] = useState(10); // Limit initial render for performance
   const [lastFetchTime, setLastFetchTime] = useState(0);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com';
+  const BACKEND_URL = (typeof window !== 'undefined' 
+    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com')
+    : 'https://treasury-vault-timer-backend.onrender.com'
+  );
   
   // Cache duration: 5 seconds to reduce API calls
   const CACHE_DURATION = 5000;
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+    
     loadVaults();
     loadDashboardData();
     
@@ -91,7 +102,7 @@ export default function Page() {
     return () => {
       window.removeEventListener('showHowItWorks', handleShowHowItWorks);
     };
-  }, []);
+  }, [isClient]);
 
   // Add error boundary for crashes
   useEffect(() => {
@@ -275,6 +286,14 @@ export default function Page() {
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
   };
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -517,5 +536,13 @@ export default function Page() {
         onClose={closeOverlay}
       />
     </div>
+  );
+}
+
+export default function VaultsPage() {
+  return (
+    <ErrorBoundary>
+      <VaultsPageContent />
+    </ErrorBoundary>
   );
 }

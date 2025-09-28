@@ -3,17 +3,28 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { TokenSelector } from '@/components/ui/TokenSelector';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function VaultDetails() {
+function VaultDetailsContent() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
   const [vault, setVault] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<any>({});
-  const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
+  const [isClient, setIsClient] = useState(false);
+  const BACKEND = (typeof window !== 'undefined' 
+    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com')
+    : 'https://treasury-vault-timer-backend.onrender.com'
+  ).replace(/\/$/, '');
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !id) return;
+    
     const load = async () => {
       try {
         const res = await fetch(`${BACKEND}/api/vault/${id}/config`);
@@ -28,8 +39,8 @@ export default function VaultDetails() {
         console.error('Error loading vault:', error);
       }
     };
-    if (id) load();
-  }, [id, BACKEND]);
+    load();
+  }, [id, BACKEND, isClient]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -189,6 +200,22 @@ export default function VaultDetails() {
     }
     return <span className="text-white/80">{value || 'N/A'}</span>;
   };
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!vault) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading vault data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full" style={{ background: "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/upscaled_lofi_rainforest.png') center 70% / cover fixed" }}>
@@ -415,6 +442,14 @@ export default function VaultDetails() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function VaultDetails() {
+  return (
+    <ErrorBoundary>
+      <VaultDetailsContent />
+    </ErrorBoundary>
   );
 }
 

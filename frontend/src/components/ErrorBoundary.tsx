@@ -9,7 +9,7 @@ interface ErrorBoundaryState {
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
-  fallback?: React.ComponentType<{ error?: Error; resetError: () => void }>;
+  fallback?: React.ReactNode;
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -26,40 +26,19 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  resetError = () => {
-    this.setState({ hasError: false, error: undefined });
-  };
-
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        const FallbackComponent = this.props.fallback;
-        return <FallbackComponent error={this.state.error} resetError={this.resetError} />;
-      }
-
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-red-800 mb-2">Something went wrong</h2>
-              <p className="text-red-600 mb-4">
-                {this.state.error?.message || 'An unexpected error occurred'}
-              </p>
-              <div className="space-y-2">
-                <button
-                  onClick={this.resetError}
-                  className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                >
-                  Try Again
-                </button>
-                <button
-                  onClick={() => window.location.href = '/vaults'}
-                  className="w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-                >
-                  Back to Vaults
-                </button>
-              </div>
-            </div>
+      return this.props.fallback || (
+        <div className="min-h-screen flex items-center justify-center bg-gray-900">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-white mb-4">Something went wrong</h1>
+            <p className="text-gray-400 mb-4">An unexpected error occurred.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Reload Page
+            </button>
           </div>
         </div>
       );
@@ -67,12 +46,4 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
     return this.props.children;
   }
-}
-
-// Hook version for functional components
-export function useErrorHandler() {
-  return (error: Error, errorInfo?: React.ErrorInfo) => {
-    console.error('Error caught by useErrorHandler:', error, errorInfo);
-    // You can add additional error reporting here
-  };
 }
