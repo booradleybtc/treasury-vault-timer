@@ -6,6 +6,7 @@ services:
     rootDir: .
     buildCommand: cd server && npm ci
     startCommand: npm run server:start
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production

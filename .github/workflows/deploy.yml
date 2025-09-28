@@ -38,11 +38,10 @@ jobs:
           npm test || echo "No tests configured"
 
       - name: Deploy to Render
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
-          # Let Render handle the build automatically using render.yaml
+        run: |
+          echo "Render deployment is handled automatically via render.yaml"
+          echo "Service ID: ${{ secrets.RENDER_SERVICE_ID }}"
+          echo "Render will auto-deploy from GitHub webhook"
 
   # Deploy Frontend to Vercel
   deploy-frontend:
