@@ -10,6 +10,9 @@ import fs from 'fs';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import Database from './database.js';
+import VaultLifecycleEngine from './services/vaultLifecycleEngine.js';
+import MonitoringService from './services/monitoringService.js';
+import DatabaseOptimizer from './services/databaseOptimizer.js';
 
 dotenv.config();
 
@@ -23,10 +26,12 @@ const STARTED_AT = new Date().toISOString();
 // Initialize database
 const db = new Database();
 
-// Initialize default vault after database is ready
-setTimeout(async () => {
-  await db.initializeDefaultVault();
-}, 1000);
+// Initialize monitoring service
+const monitoring = new MonitoringService();
+monitoring.startCleanup();
+
+// Initialize database optimizer
+const dbOptimizer = new DatabaseOptimizer(db);
 
 // Serve static frontend (built into dist/)
 app.use(express.static(path.join(__dirname, '../dist')));
@@ -47,6 +52,12 @@ const io = new Server(server, {
     credentials: true
   }
 });
+
+// Initialize vault lifecycle engine
+const lifecycleEngine = new VaultLifecycleEngine(db, io, monitoring);
+
+// Add monitoring middleware
+app.use(monitoring.requestMiddleware());
 
 // CORS middleware for API
 app.use(cors({ 
@@ -3255,6 +3266,174 @@ app.get('/api/admin/ico-schedules', async (req, res) => {
   }
 });
 
+// Add error handling middleware
+app.use(monitoring.errorMiddleware());
+
+// ===== MONITORING API ENDPOINTS =====
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  const health = monitoring.getHealthStatus();
+  res.status(health.status === 'healthy' ? 200 : 503).json(health);
+});
+
+// Metrics endpoint
+app.get('/api/metrics', (req, res) => {
+  const metrics = monitoring.getMetrics();
+  res.json(metrics);
+});
+
+// Database stats endpoint
+app.get('/api/admin/database/stats', async (req, res) => {
+  try {
+    const stats = await dbOptimizer.getDatabaseStats();
+    res.json(stats);
+  } catch (error) {
+    monitoring.logError(error, { endpoint: '/api/admin/database/stats' });
+    res.status(500).json({ error: 'Failed to get database stats' });
+  }
+});
+
+// Database performance endpoint
+app.get('/api/admin/database/performance', async (req, res) => {
+  try {
+    const performance = await dbOptimizer.getQueryPerformance();
+    res.json(performance);
+  } catch (error) {
+    monitoring.logError(error, { endpoint: '/api/admin/database/performance' });
+    res.status(500).json({ error: 'Failed to get database performance' });
+  }
+});
+
+// Database maintenance endpoints
+app.post('/api/admin/database/vacuum', async (req, res) => {
+  try {
+    await dbOptimizer.vacuum();
+    res.json({ message: 'Database vacuum completed' });
+  } catch (error) {
+    monitoring.logError(error, { endpoint: '/api/admin/database/vacuum' });
+    res.status(500).json({ error: 'Failed to vacuum database' });
+  }
+});
+
+app.post('/api/admin/database/reindex', async (req, res) => {
+  try {
+    await dbOptimizer.reindex();
+    res.json({ message: 'Database reindex completed' });
+  } catch (error) {
+    monitoring.logError(error, { endpoint: '/api/admin/database/reindex' });
+    res.status(500).json({ error: 'Failed to reindex database' });
+  }
+});
+
+app.get('/api/admin/database/integrity', async (req, res) => {
+  try {
+    const isHealthy = await dbOptimizer.checkIntegrity();
+    res.json({ 
+      healthy: isHealthy,
+      message: isHealthy ? 'Database integrity check passed' : 'Database integrity check failed'
+    });
+  } catch (error) {
+    monitoring.logError(error, { endpoint: '/api/admin/database/integrity' });
+    res.status(500).json({ error: 'Failed to check database integrity' });
+  }
+});
+
+// ===== VAULT LIFECYCLE ENGINE API ENDPOINTS =====
+
+// Get vault lifecycle status
+app.get('/api/admin/vaults/:id/lifecycle', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vault = await db.getVault(id);
+    
+    if (!vault) {
+      return res.status(404).json({ error: 'Vault not found' });
+    }
+    
+    const lifecycleStatus = lifecycleEngine.getVaultLifecycleStatus(vault);
+    
+    res.json({
+      vaultId: id,
+      ...lifecycleStatus
+    });
+  } catch (error) {
+    console.error('❌ Error getting vault lifecycle status:', error);
+    res.status(500).json({ error: 'Failed to get vault lifecycle status' });
+  }
+});
+
+// Manual vault transition
+app.post('/api/admin/vaults/:id/transition', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newStatus, reason } = req.body;
+    
+    if (!newStatus) {
+      return res.status(400).json({ error: 'newStatus is required' });
+    }
+    
+    const result = await lifecycleEngine.manualTransition(id, newStatus, reason);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('❌ Error transitioning vault:', error);
+    res.status(500).json({ error: 'Failed to transition vault' });
+  }
+});
+
+// Get all vaults with lifecycle status
+app.get('/api/admin/vaults/lifecycle', async (req, res) => {
+  try {
+    const vaults = await db.getAllVaults();
+    const vaultsWithLifecycle = vaults.map(vault => ({
+      ...vault,
+      lifecycle: lifecycleEngine.getVaultLifecycleStatus(vault)
+    }));
+    
+    res.json({
+      totalVaults: vaultsWithLifecycle.length,
+      vaults: vaultsWithLifecycle
+    });
+  } catch (error) {
+    console.error('❌ Error getting vaults lifecycle status:', error);
+    res.status(500).json({ error: 'Failed to get vaults lifecycle status' });
+  }
+});
+
+// Control lifecycle engine
+app.post('/api/admin/lifecycle-engine/control', async (req, res) => {
+  try {
+    const { action } = req.body;
+    
+    switch (action) {
+      case 'start':
+        lifecycleEngine.start();
+        res.json({ message: 'Lifecycle engine started' });
+        break;
+      case 'stop':
+        lifecycleEngine.stop();
+        res.json({ message: 'Lifecycle engine stopped' });
+        break;
+      case 'status':
+        res.json({ 
+          isRunning: lifecycleEngine.isRunning,
+          message: lifecycleEngine.isRunning ? 'Running' : 'Stopped'
+        });
+        break;
+      default:
+        res.status(400).json({ error: 'Invalid action. Use: start, stop, or status' });
+    }
+  } catch (error) {
+    console.error('❌ Error controlling lifecycle engine:', error);
+    res.status(500).json({ error: 'Failed to control lifecycle engine' });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, async () => {
@@ -3262,6 +3441,18 @@ server.listen(PORT, async () => {
   console.log(`📡 Monitoring RAY token: ${REVS_TOKEN_ADDRESS}`);
   console.log(`⏰ Global timer started at ${globalTimer.timeLeft} seconds`);
   console.log(`🌐 Frontend served from: ${path.join(__dirname, '../dist')}`);
+
+  // Initialize default vault and start lifecycle engine
+  console.log('🏦 Initializing default vault...');
+  await db.initializeDefaultVault();
+  
+  // Optimize database for production
+  console.log('🔧 Optimizing database for production...');
+  await dbOptimizer.optimizeForProduction();
+  dbOptimizer.scheduleMaintenance();
+  
+  console.log('🔄 Starting vault lifecycle engine...');
+  lifecycleEngine.start();
 
   if (process.env.NODE_ENV === 'production') {
     console.log('🚀 PRODUCTION MODE: Auto-starting monitoring...');

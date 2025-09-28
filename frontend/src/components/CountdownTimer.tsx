@@ -1,13 +1,14 @@
+'use client'
+
 import React, { useState, useEffect } from 'react';
 import { Trophy, Gift, Activity, Clock, Target, BarChart3, Bitcoin } from 'lucide-react';
 import { io } from 'socket.io-client';
-import { pushNotificationService } from '../services/pushNotifications';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Progress } from './ui/progress';
 
 interface CountdownTimerProps {
-  tokenContract: string;
+  tokenContract?: string;
 }
 
 export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
@@ -22,7 +23,8 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
 
   // Connect to server via Socket.IO
   useEffect(() => {
-    const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    const newSocket = io(backendUrl);
 
     newSocket.on('connect', () => {
       setIsConnected(true);
@@ -86,8 +88,8 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
   useEffect(() => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       setNotificationSupported(true);
-      const sub = pushNotificationService.getSubscription();
-      setIsNotificationEnabled(!!sub);
+      // Check if notifications are enabled
+      setIsNotificationEnabled(false);
     }
   }, []);
 
@@ -107,16 +109,18 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = () => {
 
   const handleNotificationToggle = async () => {
     if (isNotificationEnabled) {
-      await pushNotificationService.unsubscribe();
       setIsNotificationEnabled(false);
       setDebugInfo(prev => [...prev, '🔕 Notifications disabled']);
     } else {
-      const success = await pushNotificationService.subscribe();
-      setIsNotificationEnabled(!!success);
-      if (success) {
-        setDebugInfo(prev => [...prev, '🔔 Notifications enabled']);
-      } else {
-        setDebugInfo(prev => [...prev, '⚠️ Failed to enable notifications']);
+      // Simple notification request
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          setIsNotificationEnabled(true);
+          setDebugInfo(prev => [...prev, '🔔 Notifications enabled']);
+        } else {
+          setDebugInfo(prev => [...prev, '⚠️ Failed to enable notifications']);
+        }
       }
     }
   };

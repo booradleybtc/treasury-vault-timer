@@ -4,44 +4,16 @@
   "description": "Real-time countdown timer that resets on Solana token purchases",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "echo 'Frontend build skipped - using backend embeds only' && cd server && npm ci",
-    "preview": "vite preview",
+    "build": "cd server && npm ci",
     "server:dev": "cd server && npm run dev",
     "server:start": "cd server && npm start",
-    "server:install": "cd server && npm install"
+    "server:install": "cd server && npm install",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:start": "cd frontend && npm start"
   },
-  "dependencies": {
-    "@jup-ag/plugin": "^1.0.1",
-    "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-progress": "^1.1.7",
-    "@radix-ui/react-slot": "^1.2.3",
-    "@radix-ui/react-tabs": "^1.1.13",
-    "@solana/wallet-adapter-base": "^0.9.23",
-    "@solana/wallet-adapter-react": "^0.15.35",
-    "@solana/wallet-adapter-react-ui": "^0.9.34",
-    "@solana/wallet-adapter-wallets": "^0.19.23",
-    "@solana/web3.js": "^1.87.6",
-    "axios": "^1.5.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.263.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "socket.io-client": "^4.7.2",
-    "tailwind-merge": "^3.3.1",
-    "web-push": "^3.6.7"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "@vitejs/plugin-react": "^4.0.3",
-    "autoprefixer": "^10.4.15",
-    "postcss": "^8.4.29",
-    "tailwindcss": "^3.3.3",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
-  },
+  "dependencies": {},
+  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
   }
