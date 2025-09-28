@@ -120,7 +120,7 @@ export default function Stage2Wizard() {
       if (response.ok) {
         setSuccess(true);
         setTimeout(() => {
-          router.push('/admin');
+          router.push(`/admin/prelaunch/${vaultId}`);
         }, 2000);
       } else {
         const errorData = await response.json();

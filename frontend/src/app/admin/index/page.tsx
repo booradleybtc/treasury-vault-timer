@@ -15,6 +15,56 @@ export default function AdminIndex() {
   const [stage, setStage] = useState<'all'|'pre_ico'|'ico'|'countdown'|'active'|'extinct'>('all');
   const [deletingVault, setDeletingVault] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  // Helper function to get the correct page URL based on vault status
+  const getVaultPageUrl = (vault: any) => {
+    switch (vault.status) {
+      case 'pre_ico_scheduled':
+      case 'pre_ico':
+        return `/admin/ico/${vault.id}`;
+      case 'ico':
+        return `/admin/ico/${vault.id}`;
+      case 'pending':
+        return `/admin/pending/${vault.id}`;
+      case 'prelaunch':
+        return `/admin/prelaunch/${vault.id}`;
+      case 'active':
+        return `/admin/active/${vault.id}`;
+      case 'winner_confirmation':
+        return `/admin/winner/${vault.id}`;
+      case 'endgame_processing':
+        return `/admin/endgame/${vault.id}`;
+      case 'refund_required':
+        return `/admin/refund/${vault.id}`;
+      default:
+        return `/admin/details/${vault.id}`;
+    }
+  };
+
+  // Helper function to get the correct button text based on vault status
+  const getVaultButtonText = (vault: any) => {
+    switch (vault.status) {
+      case 'pre_ico_scheduled':
+      case 'pre_ico':
+        return 'View ICO';
+      case 'ico':
+        return 'View ICO';
+      case 'pending':
+        return 'Complete Stage 2';
+      case 'prelaunch':
+        return 'View Prelaunch';
+      case 'active':
+        return 'View Active Vault';
+      case 'winner_confirmation':
+        return 'Process Claim';
+      case 'endgame_processing':
+        return 'Process Airdrops';
+      case 'refund_required':
+        return 'Process Refund';
+      default:
+        return 'View Details';
+    }
+  };
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
   useEffect(() => {
@@ -607,7 +657,12 @@ export default function AdminIndex() {
                       </>
                     )}
                     
-                    <button onClick={()=>router.push(`/admin/details/${v.id}`)} className="bg-white text-black px-3 py-1 text-xs hover:bg-gray-200">Details</button>
+                    <button 
+                      onClick={() => router.push(getVaultPageUrl(v))} 
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs"
+                    >
+                      {getVaultButtonText(v)}
+                    </button>
                     <button onClick={()=>router.push(`/vault/${v.id}`)} className="bg-white/10 ring-1 ring-white/20 text-white px-3 py-1 text-xs hover:bg-white/20">View</button>
                     {deletingVault === v.id ? (
                       <div className="flex gap-1">
