@@ -13,8 +13,24 @@ import { useTokenMetadata } from '@/hooks/useTokenMetadata';
 import { VaultPagePreview } from '@/components/darwin/VaultPagePreview';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-// Helper function to get token symbol from address
-const getTokenSymbol = (address: string): string => {
+// Helper function to get token symbol from address, using custom token data if available
+const getTokenSymbol = (address: string, vaultConfig?: any): string => {
+  // Check for custom token data first
+  if (vaultConfig?.meta?.customTokenData) {
+    const customData = vaultConfig.meta.customTokenData;
+    // Check if this address has custom data
+    if (customData.vaultAsset?.symbol && customData.vaultAsset.address === address) {
+      return customData.vaultAsset.symbol;
+    }
+    if (customData.airdropAsset?.symbol && customData.airdropAsset.address === address) {
+      return customData.airdropAsset.symbol;
+    }
+    if (customData.icoAsset?.symbol && customData.icoAsset.address === address) {
+      return customData.icoAsset.symbol;
+    }
+  }
+  
+  // Fallback to hardcoded symbols
   const tokenMap: { [key: string]: string } = {
     'So11111111111111111111111111111111111111112': 'SOL',
     'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
@@ -26,14 +42,30 @@ const getTokenSymbol = (address: string): string => {
   return tokenMap[address] || address.slice(0, 4) + '...';
 };
 
-// Helper function to get token image from address
-const getTokenImage = (address: string): string => {
+// Helper function to get token image from address, using custom token data if available
+const getTokenImage = (address: string, vaultConfig?: any): string => {
+  // Check for custom token data first
+  if (vaultConfig?.meta?.customTokenData) {
+    const customData = vaultConfig.meta.customTokenData;
+    // Check if this address has custom data
+    if (customData.vaultAsset?.logoURI && customData.vaultAsset.address === address) {
+      return customData.vaultAsset.logoURI;
+    }
+    if (customData.airdropAsset?.logoURI && customData.airdropAsset.address === address) {
+      return customData.airdropAsset.logoURI;
+    }
+    if (customData.icoAsset?.logoURI && customData.icoAsset.address === address) {
+      return customData.icoAsset.logoURI;
+    }
+  }
+  
+  // Fallback to hardcoded images
   const tokenImages: { [key: string]: string } = {
     'So11111111111111111111111111111111111111112': '/images/Solana_logo.png',
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/token.png', // Using generic token image since USDC.png doesn't exist
-    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/token.png', // Using generic token image since USDT.png doesn't exist
-    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/token.png', // Using generic token image since mSOL.png doesn't exist
-    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/token.png', // Using generic token image since ETH.png doesn't exist
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/images/token.png',
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': '/images/token.png',
+    'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': '/images/token.png',
+    '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': '/images/token.png',
   };
   
   return tokenImages[address] || '/images/token.png';
@@ -535,12 +567,12 @@ function VaultPageContent() {
                   <span className="text-white/70">Vault Asset</span>
                   <div className="flex items-center gap-2">
                     <img 
-                      src={getTokenImage(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')} 
-                      alt={getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')} 
+                      src={getTokenImage(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112', vaultConfig)} 
+                      alt={getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112', vaultConfig)} 
                       className="h-5 w-5 object-contain" 
                     />
                     <span className="text-white font-semibold">
-                      {getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112')}
+                      {getTokenSymbol(vaultConfig?.vaultAsset || 'So11111111111111111111111111111111111111112', vaultConfig)}
                     </span>
                   </div>
                 </div>
@@ -548,12 +580,12 @@ function VaultPageContent() {
                   <span className="text-white/70">Airdrop Asset</span>
                   <div className="flex items-center gap-2">
                     <img 
-                      src={getTokenImage(vaultConfig?.airdropAsset || '')} 
-                      alt={getTokenSymbol(vaultConfig?.airdropAsset || '')} 
+                      src={getTokenImage(vaultConfig?.airdropAsset || '', vaultConfig)} 
+                      alt={getTokenSymbol(vaultConfig?.airdropAsset || '', vaultConfig)} 
                       className="h-5 w-5 object-contain" 
                     />
                     <span className="text-white font-semibold">
-                      {getTokenSymbol(vaultConfig?.airdropAsset || '')}
+                      {getTokenSymbol(vaultConfig?.airdropAsset || '', vaultConfig)}
                     </span>
                   </div>
                 </div>
@@ -754,7 +786,7 @@ function VaultPageContent() {
                       alt="REVS" 
                       className="h-4 w-4 object-contain rounded-full" 
                     />
-                    {data.vaultConfig?.airdropAsset || 'REVS'}
+                    {vaultConfig?.airdropAsset || 'REVS'}
                   </div>
                 </div>
               </div>
@@ -900,8 +932,8 @@ function VaultPageContent() {
                     </div>
             <div className="bg-white">
               <JupiterWidget 
-                tokenAddress={data?.vaultConfig?.tokenMint || 'So11111111111111111111111111111111111111112'}
-                tokenSymbol={data?.vaultConfig?.airdropAsset || 'REVS'}
+                tokenAddress={vaultConfig?.tokenMint || 'So11111111111111111111111111111111111111112'}
+                tokenSymbol={vaultConfig?.airdropAsset || 'REVS'}
               />
               </div>
           </div>
