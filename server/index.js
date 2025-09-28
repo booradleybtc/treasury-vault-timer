@@ -61,18 +61,30 @@ app.use(monitoring.requestMiddleware());
 
 // CORS middleware for API
 app.use(cors({ 
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://localhost:5173', 
-    'https://treasury-vault-timer-backend.onrender.com',
-    'https://treasury-vault-timer.vercel.app',
-    'https://frontend-mmnkk83lq-booradleybtcs-projects.vercel.app',
-    'https://frontend-aiuwqs319-booradleybtcs-projects.vercel.app',
-    'https://*.vercel.app',
-    'https://*.onrender.com'
-  ], 
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    if (origin.startsWith('http://localhost:')) return callback(null, true);
+    
+    // Allow all Vercel domains
+    if (origin.includes('.vercel.app')) return callback(null, true);
+    
+    // Allow all Render domains
+    if (origin.includes('.onrender.com')) return callback(null, true);
+    
+    // Allow specific domains
+    const allowedOrigins = [
+      'https://treasury-vault-timer-backend.onrender.com',
+      'https://treasury-vault-timer.vercel.app',
+      'https://frontend-hc1uf0dom-booradleybtcs-projects.vercel.app'
+    ];
+    
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
