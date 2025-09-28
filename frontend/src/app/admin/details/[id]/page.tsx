@@ -21,8 +21,12 @@ export default function VaultDetails() {
           const js = await res.json();
           setVault(js.vault);
           setFormData(js.vault);
+        } else {
+          console.error('Failed to load vault:', res.status, res.statusText);
         }
-      } catch {}
+      } catch (error) {
+        console.error('Error loading vault:', error);
+      }
     };
     if (id) load();
   }, [id, BACKEND]);

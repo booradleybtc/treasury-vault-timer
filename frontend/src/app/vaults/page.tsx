@@ -93,6 +93,27 @@ export default function Page() {
     };
   }, []);
 
+  // Add error boundary for crashes
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('Global error caught:', error);
+      setError('An unexpected error occurred. Please refresh the page.');
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      setError('An unexpected error occurred. Please refresh the page.');
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   // Featured card rotation every 5 seconds
   useEffect(() => {
     if (vaults.length > 1) {
