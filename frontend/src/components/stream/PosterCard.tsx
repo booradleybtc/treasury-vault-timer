@@ -1,5 +1,5 @@
 "use client"
-import { Card } from "@/components/ui/card"
+import { Card } from "@/components/ui/Card"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 

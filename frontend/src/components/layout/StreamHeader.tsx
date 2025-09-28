@@ -1,8 +1,8 @@
 "use client"
 import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
+import { Input } from "@/components/ui/Input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/Button"
 import { Search } from "lucide-react"
 
 type Props = {
