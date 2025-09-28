@@ -65,7 +65,7 @@ export default function AdminIndex() {
         return 'View Details';
     }
   };
-  const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
+  const BACKEND = 'https://treasury-vault-timer-backend.onrender.com';
 
   useEffect(() => {
     const loadAllData = async () => {

@@ -77,10 +77,7 @@ function VaultsPageContent() {
   const [visibleVaults, setVisibleVaults] = useState(10); // Limit initial render for performance
   const [lastFetchTime, setLastFetchTime] = useState(0);
 
-  const BACKEND_URL = (typeof window !== 'undefined' 
-    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com')
-    : 'https://treasury-vault-timer-backend.onrender.com'
-  );
+  const BACKEND_URL = 'https://treasury-vault-timer-backend.onrender.com';
   
   // Cache duration: 5 seconds to reduce API calls
   const CACHE_DURATION = 5000;

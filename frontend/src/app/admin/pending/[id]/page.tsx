@@ -16,10 +16,7 @@ function PendingContent() {
   const [isClient, setIsClient] = useState(false);
   const [timePending, setTimePending] = useState<string>('');
 
-  const BACKEND = (typeof window !== 'undefined' 
-    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com')
-    : 'https://treasury-vault-timer-backend.onrender.com'
-  ).replace(/\/$/, '');
+  const BACKEND = 'https://treasury-vault-timer-backend.onrender.com';
 
   useEffect(() => {
     setIsClient(true);

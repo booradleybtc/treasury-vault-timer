@@ -16,10 +16,7 @@ function ActiveVaultContent() {
   const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
 
-  const BACKEND = (typeof window !== 'undefined' 
-    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com')
-    : 'https://treasury-vault-timer-backend.onrender.com'
-  ).replace(/\/$/, '');
+  const BACKEND = 'https://treasury-vault-timer-backend.onrender.com';
 
   useEffect(() => {
     setIsClient(true);

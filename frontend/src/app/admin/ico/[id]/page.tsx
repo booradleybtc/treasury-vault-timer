@@ -17,10 +17,7 @@ function ICOContent() {
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [treasuryBalance, setTreasuryBalance] = useState<any>(null);
 
-  const BACKEND = (typeof window !== 'undefined' 
-    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com')
-    : 'https://treasury-vault-timer-backend.onrender.com'
-  ).replace(/\/$/, '');
+  const BACKEND = 'https://treasury-vault-timer-backend.onrender.com';
 
   useEffect(() => {
     setIsClient(true);
