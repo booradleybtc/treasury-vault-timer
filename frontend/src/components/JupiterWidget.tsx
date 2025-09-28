@@ -18,36 +18,19 @@ interface JupiterWidgetProps {
 }
 
 export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidgetProps) {
-  // Safety check to prevent useRef errors and ensure client-side only
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return (
-      <div className="w-full">
-        <div className="bg-transparent p-6">
-          <div className="flex items-center justify-center h-96 bg-transparent">
-            <p className="text-white/70">Loading trading widget...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Ensure React hooks are available
-  if (!useRef || !useState || !useEffect) {
-    return (
-      <div className="w-full">
-        <div className="bg-transparent p-6">
-          <div className="flex items-center justify-center h-96 bg-transparent">
-            <p className="text-white/70">Widget temporarily unavailable</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    // Safety check to prevent useRef errors and ensure client-side only
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    // Ensure React hooks are available
+    if (!useRef || !useState || !useEffect) {
+      return;
+    }
     // Only load if we have a valid container
     if (!containerRef.current) return;
 
@@ -116,6 +99,32 @@ export default function JupiterWidget({ tokenAddress, tokenSymbol }: JupiterWidg
       // Keep script cached; just hide container on unmount
     };
   }, []);
+
+  // Safety check to prevent useRef errors and ensure client-side only
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return (
+      <div className="w-full">
+        <div className="bg-transparent p-6">
+          <div className="flex items-center justify-center h-96 bg-transparent">
+            <p className="text-white/70">Loading trading widget...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure React hooks are available
+  if (!useRef || !useState || !useEffect) {
+    return (
+      <div className="w-full">
+        <div className="bg-transparent p-6">
+          <div className="flex items-center justify-center h-96 bg-transparent">
+            <p className="text-white/70">Widget temporarily unavailable</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
