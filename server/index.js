@@ -3279,3 +3279,4 @@ server.listen(PORT, async () => {
   console.log('⏰ Initializing ICO schedules...');
   await initializeICOSchedules();
 });
+// FORCE RENDER REDEPLOY - Sat Sep 27 22:32:53 EDT 2025
