@@ -4,7 +4,7 @@ services:
     env: node
     plan: pro
     rootDir: .
-    buildCommand: cd server && npm ci
+    buildCommand: npm ci && npm run build && cd server && npm ci
     startCommand: npm run server:start
     autoDeploy: true
     envVars:
