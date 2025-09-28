@@ -226,7 +226,7 @@ export function TokenSelector({
 
         {/* Dropdown */}
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-[99999] max-h-80 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-[999999] max-h-80 overflow-y-auto">
             {loading ? (
               <div className="p-4 text-center text-gray-600">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400 mx-auto mb-2"></div>

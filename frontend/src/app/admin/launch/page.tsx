@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TokenSelector } from '@/components/ui/TokenSelector';
 
@@ -12,7 +12,7 @@ export default function LaunchWizardPage() {
     description: '',
     ticker: '',
     treasuryWallet: '',
-    icoAsset: 'So11111111111111111111111111111111111111112', // SOL address
+    icoAsset: '', // Will be selected by user
     icoProposedAt: '',
     supplyIntended: '',
     bidMultiplier: 100,
@@ -23,7 +23,7 @@ export default function LaunchWizardPage() {
     minHoldAmount: 0,
     airdropInterval: 3600,
     airdropMode: 'rewards', // rewards | jackpot | lottery | powerball | none
-    vaultAsset: 'So11111111111111111111111111111111111111112', // SOL address
+    vaultAsset: '', // Will be selected by user
     airdropAsset: '', // Will be populated by user
     // Trade Fee
     totalTradeFee: 5, // Default 5%
@@ -41,10 +41,27 @@ export default function LaunchWizardPage() {
     // File uploads
     logoFile: null as File | null,
     bannerFile: null as File | null,
+    // Custom token data
+    customTokenData: {} as any,
   });
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
+
+  // Load saved form data from localStorage when component mounts
+  useEffect(() => {
+    const savedData = localStorage.getItem('vaultWizardData');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setFormData(prev => ({ ...prev, ...parsedData }));
+        // Clear the saved data after loading
+        localStorage.removeItem('vaultWizardData');
+      } catch (e) {
+        console.error('Failed to parse saved vault data:', e);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +96,7 @@ export default function LaunchWizardPage() {
         minHoldAmount: Number(formData.minHoldAmount),
         vaultAsset: formData.vaultAsset,
         airdropAsset: formData.airdropAsset,
-        status: 'pre_ico',
+        status: 'draft',
         meta: {
           stage: 'stage1',
           ticker: formData.ticker?.slice(0, 10),
@@ -105,30 +122,17 @@ export default function LaunchWizardPage() {
             x: formData.xUrl,
             website: formData.websiteUrl,
           },
-          icoThresholdUsd: 1000,
+          icoThresholdUsd: 10000,
+          customTokenData: formData.customTokenData,
         }
       };
 
-      const res = await fetch(`${BACKEND_URL}/api/admin/vaults`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        throw new Error(`${res.status} ${detail}`);
-      }
-
-      const json = await res.json();
-      if (json?.vault?.id) {
-        // Add a small delay to ensure vault is fully created
-        setTimeout(() => {
-          router.push(`/admin/preview/${json.vault.id}`);
-        }, 1000);
-      } else {
-        router.push('/admin/index');
-      }
+      // Store vault data in localStorage for preview instead of creating immediately
+      const previewId = `preview-${id}`;
+      localStorage.setItem('vaultPreviewData', JSON.stringify(payload));
+      
+      // Navigate to preview page
+      router.push(`/admin/preview/${previewId}`);
     } catch (e) {
       alert(`Failed to create vault. ${e instanceof Error ? e.message : ''}`);
     } finally {
@@ -260,7 +264,13 @@ export default function LaunchWizardPage() {
                 <TokenSelector
                   label="ICO Raise Asset"
                   value={formData.icoAsset}
-                  onChange={(address) => setFormData(prev => ({ ...prev, icoAsset: address }))}
+                  onChange={(address, tokenData) => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      icoAsset: address,
+                      customTokenData: tokenData ? { ...prev.customTokenData, icoAsset: tokenData } : prev.customTokenData
+                    }));
+                  }}
                   placeholder="Select token for ICO raise..."
                 />
               </div>
@@ -401,7 +411,13 @@ export default function LaunchWizardPage() {
                 <TokenSelector
                   label="Vault Asset"
                   value={formData.vaultAsset}
-                  onChange={(address) => setFormData(prev => ({ ...prev, vaultAsset: address }))}
+                  onChange={(address, tokenData) => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      vaultAsset: address,
+                      customTokenData: tokenData ? { ...prev.customTokenData, vaultAsset: tokenData } : prev.customTokenData
+                    }));
+                  }}
                   placeholder="Select vault asset token..."
                 />
               </div>
@@ -409,7 +425,13 @@ export default function LaunchWizardPage() {
                 <TokenSelector
                   label="Airdrop Asset"
                   value={formData.airdropAsset}
-                  onChange={(address) => setFormData(prev => ({ ...prev, airdropAsset: address }))}
+                  onChange={(address, tokenData) => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      airdropAsset: address,
+                      customTokenData: tokenData ? { ...prev.customTokenData, airdropAsset: tokenData } : prev.customTokenData
+                    }));
+                  }}
                   placeholder="Select airdrop asset token..."
                 />
               </div>
