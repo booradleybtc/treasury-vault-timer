@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "echo 'Frontend build skipped - using backend embeds only'",
+    "build": "echo 'Frontend build skipped - using backend embeds only' && cd server && npm ci",
     "preview": "vite preview",
     "server:dev": "cd server && npm run dev",
     "server:start": "cd server && npm start",
