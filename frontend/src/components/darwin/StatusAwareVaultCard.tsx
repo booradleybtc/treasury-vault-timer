@@ -259,6 +259,7 @@ export function StatusAwareVaultCard({
           showTimer: true,
           showICOInfo: true,
           disabledTrade: false,
+          buttonText: 'View Vault',
           showVaultStagePill: true
         };
       case 'ico_pending':
@@ -269,9 +270,11 @@ export function StatusAwareVaultCard({
           badgeClass: 'bg-yellow-500 text-black',
           showTimer: false,
           showICOInfo: false,
-          disabledTrade: false // Allow clicking for overlay
+          disabledTrade: false, // Allow clicking for overlay
+          buttonText: 'View Vault'
         };
       case 'pre_launch':
+      case 'prelaunch':
         return {
           subtitle: 'Pre-Launch • Launch Countdown',
           timerValue: vault.startDate ? formatCountdown(vault.startDate) : '—',
@@ -279,7 +282,8 @@ export function StatusAwareVaultCard({
           badgeClass: 'bg-purple-500 text-white',
           showTimer: true,
           showICOInfo: false,
-          disabledTrade: false // Allow clicking for overlay
+          disabledTrade: false, // Allow clicking for overlay
+          buttonText: 'View Vault'
         };
       case 'live':
         return {
@@ -289,7 +293,8 @@ export function StatusAwareVaultCard({
           badgeClass: 'bg-emerald-500 text-black',
           showTimer: true,
           showICOInfo: false,
-          disabledTrade: false
+          disabledTrade: false,
+          buttonText: 'View Vault'
         };
       case 'winner_confirmation':
         return {
@@ -299,7 +304,8 @@ export function StatusAwareVaultCard({
           badgeClass: 'bg-purple-500 text-white',
           showTimer: false,
           showICOInfo: false,
-          disabledTrade: false // Allow clicking for overlay
+          disabledTrade: false, // Allow clicking for overlay
+          buttonText: 'View Vault'
         };
       case 'endgame_processing':
         return {
@@ -309,7 +315,8 @@ export function StatusAwareVaultCard({
           badgeClass: 'bg-orange-500 text-white',
           showTimer: false,
           showICOInfo: false,
-          disabledTrade: false // Allow clicking for overlay
+          disabledTrade: false, // Allow clicking for overlay
+          buttonText: 'View Vault'
         };
       case 'extinct':
         return {
@@ -319,7 +326,8 @@ export function StatusAwareVaultCard({
           badgeClass: 'bg-red-500 text-white',
           showTimer: false,
           showICOInfo: false,
-          disabledTrade: false // Allow clicking for overlay
+          disabledTrade: false, // Allow clicking for overlay
+          buttonText: 'View Vault'
         };
       default:
         return {
@@ -329,7 +337,8 @@ export function StatusAwareVaultCard({
           badgeClass: 'bg-gray-500 text-white',
           showTimer: false,
           showICOInfo: false,
-          disabledTrade: false // Allow clicking for overlay
+          disabledTrade: false, // Allow clicking for overlay
+          buttonText: 'View Vault'
         };
     }
   };
@@ -429,7 +438,7 @@ export function StatusAwareVaultCard({
             buttonText={status === 'ico' ? 'Participate in ICO' : (config.buttonText || 'Trade')}
             showVaultStagePill={config.showVaultStagePill}
             icoDate={status === 'pre_ico' && meta.icoProposedAt ? formatICODate(meta.icoProposedAt) : (status === 'ico' ? 'Time Remaining in ICO' : undefined)}
-            timer={status === 'ico' ? { value: icoCountdown || '23:59:59' } : { value: config.timerValue }}
+            timer={status === 'ico' ? { value: icoCountdown || '23:59:59' } : (status === 'pre_ico' ? { value: 'Launch Imminent' } : { value: config.timerValue })}
             icoTreasuryAddress={status === 'ico' ? vault.treasuryWallet : undefined}
             icoAsset={status === 'ico' ? (finalICOCustomMetadata?.symbol || icoAssetMetadata?.metadata?.symbol || 'SOL') : undefined}
             icoThreshold={status === 'ico' ? meta.icoThresholdUsd || 10000 : undefined}

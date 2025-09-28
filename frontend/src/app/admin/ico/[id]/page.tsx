@@ -64,10 +64,11 @@ function ICOContent() {
   }, [vault, id, BACKEND]);
 
   useEffect(() => {
-    if (!vault?.meta?.icoProposedAt) return;
+    if (!vault?.meta?.icoStartedAt && !vault?.meta?.icoProposedAt) return;
 
     const updateCountdown = () => {
-      const icoStartTime = new Date(vault.meta.icoProposedAt);
+      // Use icoStartedAt if available (when ICO actually started), otherwise use icoProposedAt
+      const icoStartTime = new Date(vault.meta.icoStartedAt || vault.meta.icoProposedAt);
       const icoEndTime = new Date(icoStartTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
       const now = new Date();
       const diff = icoEndTime.getTime() - now.getTime();
