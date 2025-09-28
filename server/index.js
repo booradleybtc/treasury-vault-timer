@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import dotenv from 'dotenv';
 import web3 from '@solana/web3.js';
 import path from 'path';
@@ -415,7 +415,7 @@ async function handleICOEnd(vaultId) {
     console.log(`⏰ ICO period ended for vault ${vaultId} - checking threshold...`);
     
     // Get current vault data
-    const vault = await db.getVaultById(vaultId);
+    const vault = await db.getVault(vaultId);
     if (!vault) {
       console.error(`❌ Vault ${vaultId} not found during ICO end`);
       return;
@@ -782,7 +782,7 @@ app.post('/webhook/helius', async (req, res) => {
 // Check treasury balance for a single vault (triggered by webhook)
 async function checkSingleVaultTreasuryBalance(vaultId) {
   try {
-    const vault = await db.getVaultById(vaultId);
+    const vault = await db.getVault(vaultId);
     if (!vault || !vault.treasuryWallet) return;
     
     let totalUSDValue = 0;
@@ -1049,7 +1049,7 @@ async function handleTimerExpiration(vaultId, monitorState) {
     };
     
     // Update vault meta with winner info
-    const vault = await db.getVaultById(vaultId);
+    const vault = await db.getVault(vaultId);
     const updatedMeta = {
       ...vault.meta,
       winner: winnerInfo
@@ -1813,7 +1813,7 @@ async function fetchWalletBalances() {
         
         // Get SOL balance
         const solBalance = await connection.getBalance(publicKey);
-        const solAmount = solBalance / web3.LAMPORTS_PER_SOL;
+        const solAmount = solBalance / LAMPORTS_PER_SOL;
         
         // Add delay between requests
         await new Promise(resolve => setTimeout(resolve, 1000));
