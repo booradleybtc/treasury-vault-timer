@@ -48,6 +48,7 @@ jobs:
     name: Deploy Frontend to Vercel
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    # Remove dependency on backend to avoid timing conflicts
     
     steps:
       - name: Checkout code
