@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: '/Users/bradleysullivan/treasury-vault-timer/frontend',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -10,6 +9,12 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     // Enable experimental features if needed
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'source-map'];
+    }
+    return config;
   },
 };
 
