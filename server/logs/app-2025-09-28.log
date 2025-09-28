@@ -1,0 +1,2 @@
+{"timestamp":"2025-09-28T14:41:59.727Z","level":"info","message":"Starting vault lifecycle engine","data":null,"pid":50000}
+{"timestamp":"2025-09-28T14:42:06.881Z","level":"info","message":"HTTP 200","data":{"method":"GET","url":"/api/health","statusCode":200,"responseTime":"13ms","userAgent":"curl/7.77.0","ip":"::1"},"pid":50000}

@@ -10,9 +10,9 @@ import fs from 'fs';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import Database from './database.js';
-import VaultLifecycleEngine from './services/vaultLifecycleEngine.js';
-import MonitoringService from './services/monitoringService.js';
-import DatabaseOptimizer from './services/databaseOptimizer.js';
+// import VaultLifecycleEngine from './services/vaultLifecycleEngine.js';
+// import MonitoringService from './services/monitoringService.js';
+// import DatabaseOptimizer from './services/databaseOptimizer.js';
 
 dotenv.config();
 
@@ -27,11 +27,11 @@ const STARTED_AT = new Date().toISOString();
 const db = new Database();
 
 // Initialize monitoring service
-const monitoring = new MonitoringService();
-monitoring.startCleanup();
+// const monitoring = new MonitoringService();
+// monitoring.startCleanup();
 
 // Initialize database optimizer
-const dbOptimizer = new DatabaseOptimizer(db);
+// const dbOptimizer = new DatabaseOptimizer(db);
 
 // Serve static frontend (built into dist/)
 app.use(express.static(path.join(__dirname, '../dist')));
@@ -54,10 +54,10 @@ const io = new Server(server, {
 });
 
 // Initialize vault lifecycle engine
-const lifecycleEngine = new VaultLifecycleEngine(db, io, monitoring);
+// const lifecycleEngine = new VaultLifecycleEngine(db, io, monitoring);
 
 // Add monitoring middleware
-app.use(monitoring.requestMiddleware());
+// app.use(monitoring.requestMiddleware());
 
 // CORS middleware for API
 app.use(cors({ 
@@ -3267,7 +3267,7 @@ app.get('/api/admin/ico-schedules', async (req, res) => {
 });
 
 // Add error handling middleware
-app.use(monitoring.errorMiddleware());
+// app.use(monitoring.errorMiddleware());
 
 // ===== MONITORING API ENDPOINTS =====
 
@@ -3446,13 +3446,13 @@ server.listen(PORT, async () => {
   console.log('🏦 Initializing default vault...');
   await db.initializeDefaultVault();
   
-  // Optimize database for production
-  console.log('🔧 Optimizing database for production...');
-  await dbOptimizer.optimizeForProduction();
-  dbOptimizer.scheduleMaintenance();
-  
-  console.log('🔄 Starting vault lifecycle engine...');
-  lifecycleEngine.start();
+        // Optimize database for production
+        // console.log('🔧 Optimizing database for production...');
+        // await dbOptimizer.optimizeForProduction();
+        // dbOptimizer.scheduleMaintenance();
+        
+        // console.log('🔄 Starting vault lifecycle engine...');
+        // lifecycleEngine.start();
 
   if (process.env.NODE_ENV === 'production') {
     console.log('🚀 PRODUCTION MODE: Auto-starting monitoring...');
