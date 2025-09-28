@@ -39,6 +39,7 @@ const io = new Server(server, {
       'http://localhost:3001', 
       'http://localhost:5173',
       'https://treasury-vault-timer.vercel.app',
+      'https://frontend-aiuwqs319-booradleybtcs-projects.vercel.app',
       'https://*.onrender.com',
       'https://*.vercel.app'
     ],
@@ -57,6 +58,7 @@ app.use(cors({
     'https://treasury-vault-timer-backend.onrender.com',
     'https://treasury-vault-timer.vercel.app',
     'https://frontend-mmnkk83lq-booradleybtcs-projects.vercel.app',
+    'https://frontend-aiuwqs319-booradleybtcs-projects.vercel.app',
     'https://*.vercel.app',
     'https://*.onrender.com'
   ], 
