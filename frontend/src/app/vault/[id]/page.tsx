@@ -117,26 +117,56 @@ function VaultPageContent() {
   // const vaultAssetMetadata = useTokenMetadata(vaultConfig?.vaultAsset || '');
   // const airdropAssetMetadata = useTokenMetadata(vaultConfig?.airdropAsset || '');
 
-  const fetchData = async () => {
+  const fetchVaultData = async () => {
     try {
-      const response = await fetch(`${BACKEND}/api/dashboard`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        setData(result);
-        setCurrentTime(result.timer.timeLeft);
-        setError(null);
-      } else {
-        console.error('Failed to fetch data:', response.statusText);
-        setError(`Failed to fetch dashboard data: ${response.status} ${response.statusText}`);
+      if (!idParam) {
+        setError('No vault ID provided');
+        return;
       }
+
+      // Fetch vault configuration
+      const vaultRes = await fetch(`${BACKEND}/api/vault/${idParam}/config`);
+      if (!vaultRes.ok) {
+        throw new Error(`Failed to fetch vault config: ${vaultRes.status}`);
+      }
+      const vaultData = await vaultRes.json();
+      setVaultConfig(vaultData.vault);
+
+      // Fetch treasury balance and timer data for live vaults
+      if (vaultData.vault.status === 'active' && vaultData.vault.treasuryWallet) {
+        const [treasuryRes, timerRes] = await Promise.all([
+          fetch(`${BACKEND}/api/admin/vaults/${idParam}/treasury-balance`),
+          fetch(`${BACKEND}/api/vaults/${idParam}/timer`)
+        ]);
+        
+        const treasuryData = treasuryRes.ok ? await treasuryRes.json() : { totalUSDValue: 0, assetBalances: {} };
+        const timerData = timerRes.ok ? await timerRes.json() : { timeLeft: 3600, isActive: true };
+        
+        setData({
+          timer: {
+            isActive: timerData.isActive,
+            timeLeft: timerData.timeLeft,
+            lastReset: timerData.lastPurchaseTime || new Date().toISOString()
+          },
+          treasury: {
+            totalValue: treasuryData.totalUSDValue || 0,
+            assets: treasuryData.assetBalances || {}
+          },
+          airdrops: {
+            totalAirdropped: 1230000, // This should come from real data
+            apy: 164, // This should come from real data
+            nextDrop: 3600 // This should come from real data
+          }
+        });
+        
+        // Set the current time for the timer display
+        setCurrentTime(timerData.timeLeft);
+      }
+
+      setError(null);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      setError(`Failed to fetch dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error fetching vault data:', error);
+      setError(`Failed to fetch vault data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -163,18 +193,17 @@ function VaultPageContent() {
   };
 
   useEffect(() => {
-    fetchData();
-    fetchVaultConfig();
-    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    fetchVaultData();
+    const interval = setInterval(fetchVaultData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, [idParam]);
 
   useEffect(() => {
-    if (data?.timer.isActive) {
+    if (vaultConfig?.status === 'active' && data?.timer.isActive) {
       const timer = setInterval(() => {
         setCurrentTime(prev => {
           if (prev <= 0) {
-            fetchData(); // Refresh when timer hits 0
+            fetchVaultData(); // Refresh when timer hits 0
             return 0;
           }
           return prev - 1;
@@ -182,7 +211,7 @@ function VaultPageContent() {
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [data?.timer.isActive]);
+  }, [vaultConfig?.status, data?.timer.isActive]);
 
   useEffect(() => {
     // Hourly airdrop countdown
@@ -232,8 +261,7 @@ function VaultPageContent() {
                 onClick={() => {
                   setError(null);
                   setLoading(true);
-                  fetchData();
-                  fetchVaultConfig();
+                  fetchVaultData();
                 }}
                 className="w-full"
               >
@@ -264,7 +292,7 @@ function VaultPageContent() {
     );
   }
 
-  const recentBuys = data.buyLog.slice(0, 3);
+  const recentBuys = data?.buyLog?.slice(0, 3) || [];
 
   // For non-live vaults, use VaultPagePreview component
   if (vaultConfig?.status && vaultConfig.status !== 'active') {
@@ -450,7 +478,7 @@ function VaultPageContent() {
                   <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-3 py-1 text-sm text-white/90 rounded-[8px]">
                     {vaultConfig?.status === 'pre_ico' ? 
                       `ICO Begins in ${Math.floor((new Date(vaultConfig?.meta?.icoProposedAt || Date.now()).getTime() - new Date().getTime()) / (1000 * 60 * 60))} hours` :
-                      `Endgame ${data.vault.endgame.daysLeft} Days`
+                      `Endgame ${vaultConfig?.meta?.vaultLifespanDays || 100} Days`
                     }
                   </div>
                 </div>
@@ -622,8 +650,12 @@ function VaultPageContent() {
                     <div className="flex items-center gap-3">
                       <img src="/images/token.png" alt="REVS" className="h-10 w-10 rounded-full object-cover" />
                       <div className="flex flex-col">
-                        <div className="text-2xl font-bold text-white">{Number(data.vault.treasury.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {data.vaultConfig?.airdropAsset || 'REVS'}</div>
-                        <div className="text-sm text-white/70">${(data.vault.treasury.amount * 0.0007).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold text-white">
+                          {data?.treasury?.assets?.[vaultConfig?.airdropAsset]?.amount?.toFixed(2) || '0.00'} {vaultConfig?.airdropAsset || 'REVS'}
+                        </div>
+                        <div className="text-sm text-white/70">
+                          ${data?.treasury?.assets?.[vaultConfig?.airdropAsset]?.usd?.toFixed(2) || '0.00'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -631,8 +663,12 @@ function VaultPageContent() {
                     <div className="flex items-center gap-3">
                       <img src="/images/Solana_logo.png" alt="SOL" className="h-10 w-10 rounded-full object-contain" />
                       <div className="flex flex-col">
-                        <div className="text-2xl font-bold text-white">87.39 SOL</div>
-                        <div className="text-sm text-white/70">$12,345.00</div>
+                        <div className="text-2xl font-bold text-white">
+                          {data?.treasury?.assets?.SOL?.amount?.toFixed(2) || '0.00'} SOL
+                        </div>
+                        <div className="text-sm text-white/70">
+                          ${data?.treasury?.totalValue?.toFixed(2) || '0.00'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -648,7 +684,9 @@ function VaultPageContent() {
                 </div>
                 <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
                   <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">BID:WIN</div>
-                  <div className="text-base font-semibold text-white tabular-nums">{data.vault.potentialWinnings.multiplier}x</div>
+                  <div className="text-base font-semibold text-white tabular-nums">
+                    {data?.treasury?.totalValue ? (data.treasury.totalValue / 2 / 0.0007).toFixed(0) : '0'}x
+                  </div>
                 </div>
                 <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
                   <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">WINNER'S TAKE</div>
@@ -656,15 +694,17 @@ function VaultPageContent() {
                 </div>
                 <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
                   <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">TRADE FEE</div>
-                  <div className="text-base font-semibold text-white">10%</div>
+                  <div className="text-base font-semibold text-white">{vaultConfig?.meta?.totalTradeFee || 5}%</div>
                 </div>
                 <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
                   <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">ENDGAME</div>
-                  <div className="text-base font-semibold text-white">{data.vault.endgame.daysLeft} Days</div>
+                  <div className="text-base font-semibold text-white">{vaultConfig?.meta?.vaultLifespanDays || 7} Days</div>
                 </div>
                 <div className="bg-black/20 ring-1 ring-white/10 p-3 text-center">
                   <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1">TIMER</div>
-                  <div className="text-base font-semibold text-white">1 Hour</div>
+                  <div className="text-base font-semibold text-white">
+                    {vaultConfig?.timerDuration ? `${Math.floor(vaultConfig.timerDuration / 60)} Min` : '1 Hour'}
+                  </div>
                 </div>
               </div>
 
