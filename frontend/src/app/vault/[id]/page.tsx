@@ -11,6 +11,7 @@ import { ArrowLeft, Clock, CurrencyDollar, Gift, ChartBar, CloudArrowDown } from
 import dynamic from 'next/dynamic';
 import { useTokenMetadata } from '@/hooks/useTokenMetadata';
 import { VaultPagePreview } from '@/components/darwin/VaultPagePreview';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Helper function to get token symbol from address
 const getTokenSymbol = (address: string): string => {
@@ -98,7 +99,7 @@ interface VaultData {
   } | null;
 }
 
-export default function VaultPage() {
+function VaultPageContent() {
   const router = useRouter();
   const routeParams = useParams();
   const idParam = Array.isArray(routeParams?.id) ? routeParams.id[0] : (routeParams?.id as string);
@@ -108,6 +109,7 @@ export default function VaultPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [airdropTime, setAirdropTime] = useState(0);
   const [showHuntModal, setShowHuntModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://treasury-vault-timer-backend.onrender.com').replace(/\/$/, '');
 
@@ -127,11 +129,14 @@ export default function VaultPage() {
         const result = await response.json();
         setData(result);
         setCurrentTime(result.timer.timeLeft);
+        setError(null);
       } else {
         console.error('Failed to fetch data:', response.statusText);
+        setError(`Failed to fetch dashboard data: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      setError(`Failed to fetch dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -139,14 +144,21 @@ export default function VaultPage() {
 
   const fetchVaultConfig = async () => {
     try {
-      if (!idParam) return;
+      if (!idParam) {
+        setError('No vault ID provided');
+        return;
+      }
       const res = await fetch(`${BACKEND}/api/vault/${idParam}/config`);
       if (res.ok) {
         const js = await res.json();
         setVaultConfig(js.vault);
+        setError(null);
+      } else {
+        setError(`Failed to load vault config: ${res.status} ${res.statusText}`);
       }
     } catch (e) {
       console.error('Failed to load vault config', e);
+      setError(`Failed to load vault config: ${e instanceof Error ? e.message : 'Unknown error'}`);
     }
   };
 
@@ -203,6 +215,39 @@ export default function VaultPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading vault data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Vault</h2>
+            <p className="text-red-600 mb-4">{error}</p>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                  fetchData();
+                  fetchVaultConfig();
+                }}
+                className="w-full"
+              >
+                Retry
+              </Button>
+              <Button 
+                onClick={() => router.push('/vaults')}
+                variant="outline"
+                className="w-full"
+              >
+                Back to Vaults
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -823,5 +868,13 @@ export default function VaultPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function VaultPage() {
+  return (
+    <ErrorBoundary>
+      <VaultPageContent />
+    </ErrorBoundary>
   );
 }
