@@ -2,7 +2,7 @@ services:
   - type: web
     name: treasury-vault-timer-backend
     env: node
-    plan: starter
+    plan: pro
     buildCommand: npm ci
     startCommand: npm start
     rootDir: server

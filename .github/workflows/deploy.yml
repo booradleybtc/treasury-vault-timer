@@ -42,6 +42,7 @@ jobs:
         with:
           service-id: ${{ secrets.RENDER_SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
+          # Let Render handle the build automatically using render.yaml
 
   # Deploy Frontend to Vercel
   deploy-frontend:
