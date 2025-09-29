@@ -135,7 +135,15 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
-app.use('/uploads', express.static(uploadsDir, { maxAge: '1y', immutable: true }));
+// Serve uploads with CORS + cache headers
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Cache-Control', 'public, max-age=86400, immutable');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+}, express.static(uploadsDir, { maxAge: '1y', immutable: true }));
 
 // Solana RPC (Helius)
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '';
@@ -3486,9 +3494,13 @@ server.listen(PORT, async () => {
   console.log(`⏰ Global timer started at ${globalTimer.timeLeft} seconds`);
   console.log(`🌐 Frontend served from: ${path.join(__dirname, '../dist')}`);
 
-  // Initialize default vault and start lifecycle engine
-  console.log('🏦 Initializing default vault...');
-  await db.initializeDefaultVault();
+  // Initialize default vault (optional) and start lifecycle engine
+  if (process.env.SEED_DEFAULT_VAULT === 'true') {
+    console.log('🏦 SEED_DEFAULT_VAULT enabled - initializing default vault...');
+    await db.initializeDefaultVault();
+  } else {
+    console.log('⏭️ Skipping default vault seeding (SEED_DEFAULT_VAULT not true)');
+  }
   
         // Optimize database for production
         console.log('🔧 Optimizing database for production...');

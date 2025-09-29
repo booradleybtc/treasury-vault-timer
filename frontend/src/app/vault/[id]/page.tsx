@@ -191,8 +191,8 @@ function VaultPageContent() {
         }
       };
 
-      // Fetch treasury balance and timer data for live vaults only
-      if (vaultData.vault.status === 'active' && vaultData.vault.treasuryWallet) {
+           // Fetch treasury balance and timer data for live vaults only
+           if (vaultData.vault.status === 'active' && vaultData.vault.treasuryWallet) {
         console.log(`🔄 Fetching live vault data for active vault: ${idParam}`);
         
         try {
@@ -232,10 +232,11 @@ function VaultPageContent() {
           console.error(`❌ Error fetching live vault data:`, liveDataError);
           // Continue with default data structure
         }
-      } else {
-        console.log(`ℹ️ Vault ${idParam} is not active (status: ${vaultData.vault.status})`);
-      }
+           } else {
+             console.log(`ℹ️ Vault ${idParam} is not active (status: ${vaultData.vault.status}) - skipping live endpoints`);
+           }
 
+      // Always set data structure, even for non-active vaults
       // Always set data structure, even for non-active vaults
       setData(vaultDataStructure);
 

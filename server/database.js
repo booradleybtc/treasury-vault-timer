@@ -13,7 +13,7 @@ class Database {
   }
 
   init() {
-    // Use persistent storage path in production, local path in development
+    // Use persistent storage path in production (Render mount /data), local path in development
     const dbPath = process.env.DATABASE_PATH || (process.env.NODE_ENV === 'production' ? '/data/vaults.db' : path.join(__dirname, 'vaults.db'));
     
     // Ensure the directory exists for persistent storage

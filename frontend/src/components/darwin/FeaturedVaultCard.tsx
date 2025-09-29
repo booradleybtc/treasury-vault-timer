@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Copy, ExternalLink } from "lucide-react";
 import { formatTimerLength } from "@/lib/utils";
 import { cn } from "./cn";
+import { normalizeBackendUrl } from "@/lib/utils";
 
 type Stat = { label: string; value: string };
 
@@ -104,7 +105,7 @@ export function FeaturedVaultCard({
             aspect === "21/9" ? "aspect-[21/9]" : aspect === "16/9" ? "aspect-[16/9]" : "aspect-[3/1]"
           )}
         >
-          <img src={imageUrl} alt={title} className="h-full w-full object-cover" loading="lazy" />
+          <img src={normalizeBackendUrl(imageUrl) || imageUrl} alt={title} className="h-full w-full object-cover" loading="lazy" />
 
           {/* overlays */}
           <div className="pointer-events-none absolute inset-0">
@@ -117,7 +118,7 @@ export function FeaturedVaultCard({
           {/* top-left: pfp cluster + ticker + X icon */}
           <div className="absolute left-5 top-4 flex items-start gap-4 text-white">
             {tokenPfpUrl ? (
-              <img src={tokenPfpUrl} alt={tokenTicker} className="h-16 w-16 rounded-lg object-cover" loading="lazy" />
+              <img src={normalizeBackendUrl(tokenPfpUrl) || tokenPfpUrl} alt={tokenTicker} className="h-16 w-16 rounded-lg object-cover" loading="lazy" />
             ) : (
               <div
                 className={cn(

@@ -1,6 +1,7 @@
 import React from "react";
 import { Copy } from "lucide-react";
 import { cn } from "./cn";
+import { normalizeBackendUrl } from "@/lib/utils";
 import { formatTimerLength } from "@/lib/utils";
 
 const GRID = "grid grid-cols-[1.7fr_.6fr_.6fr_.6fr_.6fr_.6fr_.6fr_minmax(92px,max-content)]";
@@ -78,7 +79,7 @@ export function VaultRow(props: VaultRowProps) {
     <div className={cn(GRID, "gap-1 items-center rounded-none ring-1 ring-white/10 bg-white/5 backdrop-blur-[10px] px-5 py-4")}> 
       {/* Vault + timer */}
       <div className="flex items-center gap-4">
-            <img src={pfp} alt={name} className="h-16 w-16 rounded-md object-cover" />
+            <img src={normalizeBackendUrl(pfp) || pfp} alt={name} className="h-16 w-16 rounded-md object-cover" />
         <div>
           <div className="flex items-center gap-2 font-bold text-white leading-tight text-base sm:text-lg">
             {name}

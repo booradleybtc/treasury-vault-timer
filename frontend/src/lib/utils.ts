@@ -25,5 +25,16 @@ export function formatTimerLength(seconds: number): string {
   }
 }
 
+// Normalize backend relative urls like "/uploads/xyz.png" to absolute
+export function normalizeBackendUrl(pathOrUrl?: string, backendBase?: string) {
+  if (!pathOrUrl) return undefined;
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const base = backendBase || 'https://treasury-vault-timer-backend.onrender.com';
+  // If it already starts with /uploads, keep; else assume uploads path
+  const cleaned = pathOrUrl.replace(/^\/*/, '');
+  const prefixed = cleaned.startsWith('uploads/') ? cleaned : `uploads/${cleaned}`;
+  return `${base}/${prefixed}`;
+}
+
 
 
