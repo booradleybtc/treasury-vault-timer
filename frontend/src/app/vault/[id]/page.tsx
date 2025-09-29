@@ -319,7 +319,7 @@ function VaultPageContent() {
             <div className="bg-red-900/50 border border-red-500/50 rounded-lg p-6 backdrop-blur-sm">
               <h2 className="text-lg font-semibold text-red-300 mb-2">Error Loading Vault</h2>
               <p className="text-red-200 mb-4">{error}</p>
-            <div className="space-y-2">
+              <div className="space-y-2">
               <Button 
                 onClick={() => {
                   setError(null);
@@ -337,6 +337,7 @@ function VaultPageContent() {
               >
                 Back to Vaults
               </Button>
+              </div>
             </div>
           </div>
         </div>
