@@ -173,7 +173,25 @@ function VaultPageContent() {
       console.log(`✅ Vault config loaded:`, vaultData.vault);
       setVaultConfig(vaultData.vault);
 
-      // Fetch treasury balance and timer data for live vaults
+      // Set default data structure for all vaults
+      let vaultDataStructure = {
+        timer: {
+          isActive: false,
+          timeLeft: 0,
+          lastReset: new Date().toISOString()
+        },
+        treasury: {
+          totalValue: 0,
+          assets: {}
+        },
+        airdrops: {
+          totalAirdropped: 0,
+          apy: 0,
+          nextDrop: 0
+        }
+      };
+
+      // Fetch treasury balance and timer data for live vaults only
       if (vaultData.vault.status === 'active' && vaultData.vault.treasuryWallet) {
         console.log(`🔄 Fetching live vault data for active vault: ${idParam}`);
         
@@ -191,7 +209,7 @@ function VaultPageContent() {
           console.log(`💰 Treasury data:`, treasuryData);
           console.log(`⏰ Timer data:`, timerData);
           
-          setData({
+          vaultDataStructure = {
             timer: {
               isActive: timerData.isActive,
               timeLeft: timerData.timeLeft,
@@ -206,17 +224,20 @@ function VaultPageContent() {
               apy: 164, // This should come from real data
               nextDrop: 3600 // This should come from real data
             }
-          });
+          };
           
           // Set the current time for the timer display
           setCurrentTime(timerData.timeLeft);
         } catch (liveDataError) {
           console.error(`❌ Error fetching live vault data:`, liveDataError);
-          // Don't throw here, just log the error and continue with basic vault data
+          // Continue with default data structure
         }
       } else {
         console.log(`ℹ️ Vault ${idParam} is not active (status: ${vaultData.vault.status})`);
       }
+
+      // Always set data structure, even for non-active vaults
+      setData(vaultDataStructure);
 
       setError(null);
     } catch (error) {
@@ -345,16 +366,7 @@ function VaultPageContent() {
     );
   }
 
-  if (!data) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Failed to load vault data</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
-        </div>
-      </div>
-    );
-  }
+  // Remove this check since data is always set now
 
   const recentBuys = data?.buyLog?.slice(0, 3) || [];
 
