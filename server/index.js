@@ -1917,10 +1917,10 @@ setInterval(() => {
   trackTotalAirdroppedSOL();
 }, 600000); // 10 minutes
 
-// Check for vault status transitions every minute
-setInterval(() => {
-  checkVaultStatusTransitions();
-}, 60000); // 1 minute
+// Check for vault status transitions every minute - DEPRECATED: Now handled by VaultLifecycleEngine
+// setInterval(() => {
+//   checkVaultStatusTransitions();
+// }, 60000); // 1 minute
 
 // Admin controls (dev only)
 const isAdmin = (socket) => {
