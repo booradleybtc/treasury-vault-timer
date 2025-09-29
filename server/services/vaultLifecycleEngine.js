@@ -1,10 +1,11 @@
 import Database from '../database.js';
 
 class VaultLifecycleEngine {
-  constructor(database, io, monitoring = null) {
+  constructor(database, io, monitoring = null, onTransition = null) {
     this.db = database;
     this.io = io;
     this.monitoring = monitoring;
+    this.onTransition = onTransition; // Callback for post-transition actions
     this.isRunning = false;
     this.checkInterval = null;
     
@@ -210,7 +211,8 @@ class VaultLifecycleEngine {
         return meta.stage2 && meta.stage2.completed;
       
       case 'vaultLaunchDateReached':
-        return meta.stage2?.vaultLaunchDate && now >= new Date(meta.stage2.vaultLaunchDate);
+        const launchDate = meta.stage2?.vaultLaunchDate || vault.startDate;
+        return launchDate && now >= new Date(launchDate);
       
       case 'timerExpired':
         return vault.currentTimerEndsAt && now >= new Date(vault.currentTimerEndsAt);
@@ -403,6 +405,15 @@ class VaultLifecycleEngine {
       });
       
       console.log(`✅ Vault ${vault.id} successfully transitioned to ${newStatus}`);
+      
+      // Call post-transition callback if provided
+      if (this.onTransition) {
+        try {
+          await this.onTransition(vault.id, vault.status, newStatus, updateData.meta);
+        } catch (error) {
+          console.error(`❌ Error in post-transition callback for vault ${vault.id}:`, error);
+        }
+      }
       
       // Log the transition
       await this.logTransition(vault.id, vault.status, newStatus, updateData.meta);

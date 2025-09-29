@@ -53,8 +53,36 @@ const io = new Server(server, {
   }
 });
 
-// Initialize vault lifecycle engine
-const lifecycleEngine = new VaultLifecycleEngine(db, io, monitoring);
+// Post-transition callback for lifecycle engine
+async function handleVaultTransition(vaultId, fromStatus, toStatus, meta) {
+  console.log(`🔄 Post-transition callback: ${vaultId} from ${fromStatus} to ${toStatus}`);
+  
+  // Start vault monitoring when transitioning to active
+  if (toStatus === 'active') {
+    try {
+      const vault = await db.getVault(vaultId);
+      if (vault && vault.tokenMint) {
+        await startVaultMonitoring(vault);
+        console.log(`🚀 Started monitoring for active vault ${vaultId}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error starting monitoring for vault ${vaultId}:`, error);
+    }
+  }
+  
+  // Stop vault monitoring when transitioning away from active
+  if (fromStatus === 'active' && toStatus !== 'active') {
+    try {
+      await stopVaultMonitoring(vaultId);
+      console.log(`⏹️ Stopped monitoring for vault ${vaultId} (transitioned to ${toStatus})`);
+    } catch (error) {
+      console.error(`❌ Error stopping monitoring for vault ${vaultId}:`, error);
+    }
+  }
+}
+
+// Initialize vault lifecycle engine with transition callback
+const lifecycleEngine = new VaultLifecycleEngine(db, io, monitoring, handleVaultTransition);
 
 // Add monitoring middleware
 app.use(monitoring.requestMiddleware());
@@ -209,6 +237,8 @@ async function checkVaultStatusTransitions() {
         if (now >= icoStartTime) {
           newStatus = VAULT_STATUS.ICO;
           shouldUpdate = true;
+          // Set icoStartedAt to track when ICO actually started
+          meta.icoStartedAt = now.toISOString();
           console.log(`🔄 Auto-transitioning vault ${vault.id} from pre_ico to ico`);
         }
       }
@@ -951,33 +981,10 @@ app.get('/api/admin/vaults/:id/treasury-balance', async (req, res) => {
   }
 });
 
-// Prelaunch monitoring - check if vaults should go live
+// Prelaunch monitoring - DEPRECATED: Now handled by VaultLifecycleEngine
+// This function is kept for reference but no longer called
 async function checkPrelaunchVaults() {
-  try {
-    const vaults = await db.getAllVaults();
-    
-    for (const vault of vaults) {
-      if (vault.status === VAULT_STATUS.PRELAUNCH) {
-        const launchDate = new Date(vault.meta?.stage2?.vaultLaunchDate);
-        const now = new Date();
-        
-        if (now >= launchDate) {
-          // Launch date reached - activate vault and start monitoring
-          await db.updateVault(vault.id, {
-            status: VAULT_STATUS.ACTIVE,
-            updatedAt: new Date().toISOString()
-          });
-          
-          // Start dynamic monitoring for this vault's token
-          await startVaultMonitoring(vault);
-          
-          console.log(`🚀 Vault ${vault.id} launched! Timer is now active for token ${vault.tokenMint}.`);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error checking prelaunch vaults:', error);
-  }
+  console.log('⚠️ checkPrelaunchVaults is deprecated - use VaultLifecycleEngine instead');
 }
 
 // Start monitoring for a specific vault's token
@@ -1202,7 +1209,7 @@ function stopVaultMonitoring(vaultId) {
 }
 
 // Check prelaunch vaults every minute
-setInterval(checkPrelaunchVaults, 60 * 1000);
+// setInterval(checkPrelaunchVaults, 60 * 1000); // DEPRECATED: Now handled by VaultLifecycleEngine
 
 // Endgame monitoring - check if active vaults have reached end of lifespan
 async function checkEndgameVaults() {
@@ -2130,6 +2137,31 @@ app.get('/api/status', (req, res) => {
 
 app.get('/api/timer', (req, res) => {
   res.json({ ...globalTimer, isMonitoring: monitoringState.isMonitoring });
+});
+
+// Get timer state for a specific vault
+app.get('/api/vaults/:id/timer', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const monitorState = vaultMonitors.get(id);
+    
+    if (!monitorState) {
+      return res.status(404).json({ error: 'Vault not found or not active' });
+    }
+    
+    res.json({
+      vaultId: id,
+      timeLeft: monitorState.timeLeft,
+      timerDuration: monitorState.timerDuration,
+      isActive: monitorState.isActive,
+      lastPurchaseTime: monitorState.lastPurchaseTime,
+      lastBuyerAddress: monitorState.lastBuyerAddress,
+      lastPurchaseAmount: monitorState.lastPurchaseAmount
+    });
+  } catch (error) {
+    console.error('❌ Error getting vault timer state:', error);
+    res.status(500).json({ error: 'Failed to get timer state' });
+  }
 });
 
 // Recent purchases (last 3)
