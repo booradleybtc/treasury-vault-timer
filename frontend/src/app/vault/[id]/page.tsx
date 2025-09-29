@@ -153,46 +153,69 @@ function VaultPageContent() {
     try {
       if (!idParam) {
         setError('No vault ID provided');
+        setLoading(false);
         return;
       }
 
+      console.log(`🔍 Fetching vault data for ID: ${idParam}`);
+      
       // Fetch vault configuration
       const vaultRes = await fetch(`${BACKEND}/api/vault/${idParam}/config`);
+      console.log(`📡 Vault config response: ${vaultRes.status} ${vaultRes.statusText}`);
+      
       if (!vaultRes.ok) {
-        throw new Error(`Failed to fetch vault config: ${vaultRes.status}`);
+        const errorText = await vaultRes.text();
+        console.error(`❌ Vault config error: ${errorText}`);
+        throw new Error(`Failed to fetch vault config: ${vaultRes.status} - ${errorText}`);
       }
+      
       const vaultData = await vaultRes.json();
+      console.log(`✅ Vault config loaded:`, vaultData.vault);
       setVaultConfig(vaultData.vault);
 
       // Fetch treasury balance and timer data for live vaults
       if (vaultData.vault.status === 'active' && vaultData.vault.treasuryWallet) {
-        const [treasuryRes, timerRes] = await Promise.all([
-          fetch(`${BACKEND}/api/admin/vaults/${idParam}/treasury-balance`),
-          fetch(`${BACKEND}/api/vaults/${idParam}/timer`)
-        ]);
+        console.log(`🔄 Fetching live vault data for active vault: ${idParam}`);
         
-        const treasuryData = treasuryRes.ok ? await treasuryRes.json() : { totalUSDValue: 0, assetBalances: {} };
-        const timerData = timerRes.ok ? await timerRes.json() : { timeLeft: 3600, isActive: true };
-        
-        setData({
-          timer: {
-            isActive: timerData.isActive,
-            timeLeft: timerData.timeLeft,
-            lastReset: timerData.lastPurchaseTime || new Date().toISOString()
-          },
-          treasury: {
-            totalValue: treasuryData.totalUSDValue || 0,
-            assets: treasuryData.assetBalances || {}
-          },
-          airdrops: {
-            totalAirdropped: 1230000, // This should come from real data
-            apy: 164, // This should come from real data
-            nextDrop: 3600 // This should come from real data
-          }
-        });
-        
-        // Set the current time for the timer display
-        setCurrentTime(timerData.timeLeft);
+        try {
+          const [treasuryRes, timerRes] = await Promise.all([
+            fetch(`${BACKEND}/api/admin/vaults/${idParam}/treasury-balance`),
+            fetch(`${BACKEND}/api/vaults/${idParam}/timer`)
+          ]);
+          
+          console.log(`📊 Treasury response: ${treasuryRes.status}, Timer response: ${timerRes.status}`);
+          
+          const treasuryData = treasuryRes.ok ? await treasuryRes.json() : { totalUSDValue: 0, assetBalances: {} };
+          const timerData = timerRes.ok ? await timerRes.json() : { timeLeft: 3600, isActive: true };
+          
+          console.log(`💰 Treasury data:`, treasuryData);
+          console.log(`⏰ Timer data:`, timerData);
+          
+          setData({
+            timer: {
+              isActive: timerData.isActive,
+              timeLeft: timerData.timeLeft,
+              lastReset: timerData.lastPurchaseTime || new Date().toISOString()
+            },
+            treasury: {
+              totalValue: treasuryData.totalUSDValue || 0,
+              assets: treasuryData.assetBalances || {}
+            },
+            airdrops: {
+              totalAirdropped: 1230000, // This should come from real data
+              apy: 164, // This should come from real data
+              nextDrop: 3600 // This should come from real data
+            }
+          });
+          
+          // Set the current time for the timer display
+          setCurrentTime(timerData.timeLeft);
+        } catch (liveDataError) {
+          console.error(`❌ Error fetching live vault data:`, liveDataError);
+          // Don't throw here, just log the error and continue with basic vault data
+        }
+      } else {
+        console.log(`ℹ️ Vault ${idParam} is not active (status: ${vaultData.vault.status})`);
       }
 
       setError(null);
@@ -272,10 +295,15 @@ function VaultPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading vault data...</p>
+      <div className="min-h-screen w-full relative" style={{
+        background: "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png') center 70% / cover fixed",
+      }}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-white">Loading vault data...</p>
+            <p className="text-white/60 text-sm mt-2">Fetching vault configuration...</p>
+          </div>
         </div>
       </div>
     );
@@ -283,11 +311,14 @@ function VaultPageContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Vault</h2>
-            <p className="text-red-600 mb-4">{error}</p>
+      <div className="min-h-screen w-full relative" style={{
+        background: "linear-gradient(180deg, rgba(8,12,24,.55) 0%, rgba(8,12,20,.65) 45%, rgba(6,10,16,.85) 100%), url('/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png') center 70% / cover fixed",
+      }}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center max-w-md mx-auto p-6">
+            <div className="bg-red-900/50 border border-red-500/50 rounded-lg p-6 backdrop-blur-sm">
+              <h2 className="text-lg font-semibold text-red-300 mb-2">Error Loading Vault</h2>
+              <p className="text-red-200 mb-4">{error}</p>
             <div className="space-y-2">
               <Button 
                 onClick={() => {

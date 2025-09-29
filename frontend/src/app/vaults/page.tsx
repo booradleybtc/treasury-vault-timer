@@ -89,8 +89,13 @@ function VaultsPageContent() {
   useEffect(() => {
     if (!isClient) return;
     
-    loadVaults();
-    loadDashboardData();
+    // Only load data if cache is expired
+    const now = Date.now();
+    if (now - lastFetchTime > CACHE_DURATION) {
+      loadVaults();
+      loadDashboardData();
+      setLastFetchTime(now);
+    }
     
     // Listen for mobile menu How it Works trigger
     const handleShowHowItWorks = () => setShowHowItWorksModal(true);
@@ -99,7 +104,7 @@ function VaultsPageContent() {
     return () => {
       window.removeEventListener('showHowItWorks', handleShowHowItWorks);
     };
-  }, [isClient]);
+  }, [isClient, lastFetchTime]);
 
   // Add error boundary for crashes
   useEffect(() => {
