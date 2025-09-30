@@ -1383,8 +1383,7 @@ app.post('/api/admin/vaults/:id/force-launch', async (req, res) => {
       updatedAt: new Date().toISOString()
     });
     
-    // Start monitoring
-    await startVaultMonitoring(vault);
+    // Monitoring will start via lifecycle engine post-transition callback
     
     console.log(`🚀 Admin forced launch for vault ${id}`);
     

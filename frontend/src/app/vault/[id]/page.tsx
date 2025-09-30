@@ -715,7 +715,7 @@ function VaultPageContent() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <h3 className="text-sm font-semibold text-white/90">Total Vault Value</h3>
-                    <span className="text-base font-semibold text-white/85">${(data.vault.treasury.amount * 0.0007).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</span>
+                    <span className="text-base font-semibold text-white/85">${(data?.treasury?.totalValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-[10px] ring-1 ring-white/10 px-2.5 py-0.5 text-xs text-white/85 rounded-[8px]">Total Assets <strong className="font-semibold">2</strong></span>
@@ -946,8 +946,8 @@ function VaultPageContent() {
                   pfp="/images/token.png"
                   price={"$0.0007"}
                   baseAsset={i % 2 === 0 ? "SOL" : "REVS"}
-                  treasury={`$${(data.vault.treasury.amount/1000000).toFixed(1)}M`}
-                  potentialWin={`${data.vault.potentialWinnings.multiplier}×`}
+                  treasury={`$${((data?.treasury?.totalValue || 0)/1000000).toFixed(1)}M`}
+                  potentialWin={`${data?.treasury?.totalValue ? (data.treasury.totalValue / 2 / 0.0007).toFixed(0) : '0'}×`}
                   apy="N/A"
                   endgame={`${data.vault.endgame.daysLeft}d`}
                   onTrade={() => {}}
