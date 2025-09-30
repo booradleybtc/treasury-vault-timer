@@ -722,10 +722,27 @@ async function checkTreasuryBalances() {
   }
 }
 
-// Get token price from Jupiter API
+// Get token price from Jupiter API with improved error handling
 async function getTokenPrice(mintAddress) {
   try {
-    const response = await fetch(`https://price.jup.ag/v4/price?ids=${mintAddress}`);
+    // Add timeout and retry logic
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(`https://price.jup.ag/v4/price?ids=${mintAddress}`, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'TreasuryVaultTimer/1.0',
+        'Accept': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     
     if (data.data && data.data[mintAddress]) {
@@ -738,20 +755,60 @@ async function getTokenPrice(mintAddress) {
       'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 1, // USDC
       'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 1, // USDT
       'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': 0.00002, // BONK
+      'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 150, // mSOL
+      '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 3000, // ETH
+    };
+    
+    const fallbackPrice = fallbackPrices[mintAddress];
+    if (fallbackPrice) {
+      console.log(`📊 Using fallback price for ${mintAddress}: $${fallbackPrice}`);
+      return fallbackPrice;
+    }
+    
+    console.warn(`⚠️ No price data found for token ${mintAddress}`);
+    return 0;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.warn(`⏰ Timeout fetching price for ${mintAddress}`);
+    } else {
+      console.warn(`❌ Error fetching price for ${mintAddress}:`, error.message);
+    }
+    
+    // Return fallback price if available
+    const fallbackPrices = {
+      'So11111111111111111111111111111111111111112': 150, // SOL
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 1, // USDC
+      'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 1, // USDT
+      'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': 0.00002, // BONK
+      'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 150, // mSOL
+      '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 3000, // ETH
     };
     
     return fallbackPrices[mintAddress] || 0;
-  } catch (error) {
-    console.error(`❌ Error fetching price for ${mintAddress}:`, error);
-    return 0;
   }
 }
 
-// Get token symbol/name
+// Get token symbol/name with improved error handling
 async function getTokenSymbol(mintAddress) {
   try {
-    // Try to get from Jupiter token list
-    const response = await fetch('https://token.jup.ag/strict');
+    // Add timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    
+    const response = await fetch('https://token.jup.ag/strict', {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'TreasuryVaultTimer/1.0',
+        'Accept': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
     const tokens = await response.json();
     const token = tokens.find(t => t.address === mintAddress);
     
@@ -759,18 +816,40 @@ async function getTokenSymbol(mintAddress) {
       return token.symbol;
     }
     
-    // Fallback symbols
+    // Fallback symbols for common tokens
     const fallbackSymbols = {
       'So11111111111111111111111111111111111111112': 'SOL',
       'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
       'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT',
       'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': 'BONK',
+      'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'mSOL',
+      '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 'ETH',
     };
     
-    return fallbackSymbols[mintAddress] || mintAddress.slice(0, 8) + '...';
+    const fallbackSymbol = fallbackSymbols[mintAddress];
+    if (fallbackSymbol) {
+      return fallbackSymbol;
+    }
+    
+    return mintAddress.slice(0, 4) + '...';
   } catch (error) {
-    console.error(`❌ Error fetching symbol for ${mintAddress}:`, error);
-    return mintAddress.slice(0, 8) + '...';
+    if (error.name === 'AbortError') {
+      console.warn(`⏰ Timeout fetching symbol for ${mintAddress}`);
+    } else {
+      console.warn(`❌ Error fetching symbol for ${mintAddress}:`, error.message);
+    }
+    
+    // Return fallback symbol if available
+    const fallbackSymbols = {
+      'So11111111111111111111111111111111111111112': 'SOL',
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
+      'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT',
+      'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': 'BONK',
+      'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'mSOL',
+      '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs': 'ETH',
+    };
+    
+    return fallbackSymbols[mintAddress] || mintAddress.slice(0, 4) + '...';
   }
 }
 

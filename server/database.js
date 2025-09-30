@@ -338,14 +338,24 @@ class Database {
         if (key === 'meta') {
           if (allowedFields.includes('meta')) {
             updateFields.push('meta = ?');
-            values.push(JSON.stringify(updates.meta || {}));
+            // Handle case where meta is already a string (to prevent double-encoding)
+            if (typeof updates.meta === 'string') {
+              values.push(updates.meta);
+            } else {
+              values.push(JSON.stringify(updates.meta || {}));
+            }
           }
           return;
         }
         if (key === 'customTokenData') {
           if (allowedFields.includes('custom_token_data')) {
             updateFields.push('custom_token_data = ?');
-            values.push(JSON.stringify(updates.customTokenData || null));
+            // Handle case where customTokenData is already a string (to prevent double-encoding)
+            if (typeof updates.customTokenData === 'string') {
+              values.push(updates.customTokenData);
+            } else {
+              values.push(JSON.stringify(updates.customTokenData || null));
+            }
           }
           return;
         }
@@ -493,12 +503,48 @@ class Database {
 
   // Helper method to map database row to vault object
   mapRowToVault(row) {
+    let meta = {};
+    let customTokenData = null;
+    
+    try {
+      // Handle corrupted meta data - if it's a stringified object with numeric keys, it's corrupted
+      if (row.meta) {
+        const parsed = JSON.parse(row.meta);
+        // Check if this is corrupted data (has numeric string keys)
+        if (typeof parsed === 'object' && Object.keys(parsed).some(key => /^\d+$/.test(key))) {
+          console.warn(`⚠️ Detected corrupted meta data for vault ${row.id}, using empty object`);
+          meta = {};
+        } else {
+          meta = parsed;
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Failed to parse meta data for vault ${row.id}:`, error.message);
+      meta = {};
+    }
+    
+    try {
+      if (row.custom_token_data) {
+        const parsed = JSON.parse(row.custom_token_data);
+        // Check if this is corrupted data
+        if (typeof parsed === 'object' && Object.keys(parsed).some(key => /^\d+$/.test(key))) {
+          console.warn(`⚠️ Detected corrupted custom token data for vault ${row.id}, using null`);
+          customTokenData = null;
+        } else {
+          customTokenData = parsed;
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Failed to parse custom token data for vault ${row.id}:`, error.message);
+      customTokenData = null;
+    }
+    
     return {
       id: row.id,
       name: row.name,
       description: row.description,
-      meta: row.meta ? JSON.parse(row.meta) : {},
-      customTokenData: row.custom_token_data ? JSON.parse(row.custom_token_data) : null,
+      meta,
+      customTokenData,
       tokenMint: row.token_mint,
       distributionWallet: row.distribution_wallet,
       treasuryWallet: row.treasury_wallet,
