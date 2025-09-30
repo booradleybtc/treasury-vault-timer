@@ -3505,7 +3505,8 @@ server.listen(PORT, async () => {
         // Optimize database for production
         console.log('🔧 Optimizing database for production...');
         await dbOptimizer.optimizeForProduction();
-        dbOptimizer.scheduleMaintenance();
+        // Temporarily disable scheduled maintenance until reindex noise is confirmed resolved
+        // dbOptimizer.scheduleMaintenance();
         
         console.log('🔄 Starting vault lifecycle engine...');
         lifecycleEngine.start();
