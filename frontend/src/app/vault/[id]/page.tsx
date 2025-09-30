@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import { useTokenMetadata } from '@/hooks/useTokenMetadata';
 import { VaultPagePreview } from '@/components/darwin/VaultPagePreview';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { normalizeBackendUrl } from '@/lib/utils';
 
 // Helper function to get token symbol from address, using custom token data if available
 const getTokenSymbol = (address: string, vaultConfig?: any): string => {
@@ -49,13 +50,13 @@ const getTokenImage = (address: string, vaultConfig?: any): string => {
     const customData = vaultConfig.meta.customTokenData;
     // Check if this address has custom data
     if (customData.vaultAsset?.logoURI && customData.vaultAsset.address === address) {
-      return customData.vaultAsset.logoURI;
+      return normalizeBackendUrl(customData.vaultAsset.logoURI, BACKEND);
     }
     if (customData.airdropAsset?.logoURI && customData.airdropAsset.address === address) {
-      return customData.airdropAsset.logoURI;
+      return normalizeBackendUrl(customData.airdropAsset.logoURI, BACKEND);
     }
     if (customData.icoAsset?.logoURI && customData.icoAsset.address === address) {
-      return customData.icoAsset.logoURI;
+      return normalizeBackendUrl(customData.icoAsset.logoURI, BACKEND);
     }
   }
   
@@ -436,7 +437,7 @@ function VaultPageContent() {
             <div 
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{
-                backgroundImage: vaultConfig?.meta?.bannerUrl ? `url('${vaultConfig.meta.bannerUrl}')` : "url('/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png')"
+                backgroundImage: vaultConfig?.meta?.bannerUrl ? `url('${normalizeBackendUrl(vaultConfig.meta.bannerUrl, BACKEND)}')` : "url('/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png')"
               }}
             />
             {/* Overlay */}
@@ -482,7 +483,7 @@ function VaultPageContent() {
                 <div className="flex-1 text-center lg:text-left">
                   <div className="flex flex-col lg:flex-row items-center gap-6 mb-4">
                     <img 
-                      src={vaultConfig?.meta?.logoUrl || "/images/token.png"} 
+                      src={vaultConfig?.meta?.logoUrl ? normalizeBackendUrl(vaultConfig.meta.logoUrl, BACKEND) : "/images/token.png"} 
                       alt={vaultConfig?.meta?.ticker || "REVS"} 
                       className="h-20 w-20 rounded-[8px] object-cover ring-2 ring-white/20 bg-white p-1" 
                     />
@@ -949,7 +950,7 @@ function VaultPageContent() {
                   treasury={`$${((data?.treasury?.totalValue || 0)/1000000).toFixed(1)}M`}
                   potentialWin={`${data?.treasury?.totalValue ? (data.treasury.totalValue / 2 / 0.0007).toFixed(0) : '0'}×`}
                   apy="N/A"
-                  endgame={`${data.vault.endgame.daysLeft}d`}
+                  endgame={`${data?.vault?.endgame?.daysLeft || 0}d`}
                   onTrade={() => {}}
                 />
               ))}

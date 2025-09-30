@@ -2,10 +2,13 @@ import React, { useMemo } from 'react';
 import { FeaturedVaultCard } from './FeaturedVaultCard';
 import { TallVaultCard } from './TallVaultCard';
 import { VaultRow } from './VaultRow';
-import { formatTimerLength } from '@/lib/utils';
+import { formatTimerLength, normalizeBackendUrl } from '@/lib/utils';
 import { Copy, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { splTokenService } from '@/services/splTokenService';
 import { useState, useEffect } from 'react';
+
+// Backend URL for image normalization
+const BACKEND = 'https://treasury-vault-timer-backend.onrender.com';
 
 // Helper function to get token symbol from address
 const getTokenSymbol = (address: string): string => {
@@ -274,7 +277,6 @@ export function StatusAwareVaultCard({
           buttonText: 'View Vault'
         };
       case 'pre_launch':
-      case 'prelaunch':
         return {
           subtitle: 'Pre-Launch • Launch Countdown',
           timerValue: vault.startDate ? formatCountdown(vault.startDate) : '—',
@@ -344,8 +346,8 @@ export function StatusAwareVaultCard({
   };
 
   const config = getStatusConfig(status);
-  const imageUrl = meta.bannerUrl || '/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png';
-  const logoUrl = meta.logoUrl || '/images/token.png';
+  const imageUrl = meta.bannerUrl ? normalizeBackendUrl(meta.bannerUrl, BACKEND) || '/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png' : '/images/ChatGPT Image Aug 13, 2025, 05_54_57 PM.png';
+  const logoUrl = meta.logoUrl ? normalizeBackendUrl(meta.logoUrl, BACKEND) || '/images/token.png' : '/images/token.png';
 
   // Helper functions
   function formatTimeToICO(icoDate: string): string {
@@ -411,7 +413,7 @@ export function StatusAwareVaultCard({
     tokenTicker: meta.ticker || finalCustomAirdropMetadata?.symbol || finalAirdropAssetMetadata?.symbol || '—',
     addressShort: vault.tokenMint ? `${vault.tokenMint.slice(0,6)}...${vault.tokenMint.slice(-4)}` : '—',
     imageUrl,
-    pfp: meta.logoUrl || '/images/token.png',
+    pfp: logoUrl,
     price: status === 'live' ? '$0.0000' : 'N/A',
     baseAsset: finalCustomVaultMetadata?.symbol || finalVaultAssetMetadata?.symbol || 'SOL',
     treasury: status === 'live' ? '$12.2M' : 'N/A',
@@ -443,9 +445,9 @@ export function StatusAwareVaultCard({
             icoAsset={status === 'ico' ? (finalICOCustomMetadata?.symbol || icoAssetMetadata?.metadata?.symbol || 'SOL') : undefined}
             icoThreshold={status === 'ico' ? meta.icoThresholdUsd || 10000 : undefined}
             icoProgress={status === 'ico' ? 0 : undefined}
-            tokenPfpUrl={meta.logoUrl || '/images/token.png'}
-            vaultAssetLogo={finalCustomVaultMetadata?.logoURI || finalVaultAssetMetadata?.logoURI || '/images/token.png'}
-            airdropAssetLogo={finalCustomAirdropMetadata?.logoURI || finalAirdropAssetMetadata?.logoURI || '/images/token.png'}
+            tokenPfpUrl={logoUrl}
+            vaultAssetLogo={finalCustomVaultMetadata?.logoURI ? normalizeBackendUrl(finalCustomVaultMetadata.logoURI, BACKEND) : (finalVaultAssetMetadata?.logoURI ? normalizeBackendUrl(finalVaultAssetMetadata.logoURI, BACKEND) : '/images/token.png')}
+            airdropAssetLogo={finalCustomAirdropMetadata?.logoURI ? normalizeBackendUrl(finalCustomAirdropMetadata.logoURI, BACKEND) : (finalAirdropAssetMetadata?.logoURI ? normalizeBackendUrl(finalAirdropAssetMetadata.logoURI, BACKEND) : '/images/token.png')}
             xUrl={meta.links?.x}
             websiteUrl={meta.links?.website}
             stats={status === 'pre_ico' ? [
@@ -488,8 +490,8 @@ export function StatusAwareVaultCard({
           icoProgress={status === 'ico' ? 0 : undefined}
           buttonText={status === 'ico' ? 'View ICO' : (config.buttonText || 'Trade')}
           airdropAsset={finalCustomAirdropMetadata?.symbol || finalAirdropAssetMetadata?.symbol || '—'}
-          airdropAssetLogo={finalCustomAirdropMetadata?.logoURI || finalAirdropAssetMetadata?.logoURI || '/images/token.png'}
-          vaultAssetLogo={finalCustomVaultMetadata?.logoURI || finalVaultAssetMetadata?.logoURI || '/images/token.png'}
+          airdropAssetLogo={finalCustomAirdropMetadata?.logoURI ? normalizeBackendUrl(finalCustomAirdropMetadata.logoURI, BACKEND) : (finalAirdropAssetMetadata?.logoURI ? normalizeBackendUrl(finalAirdropAssetMetadata.logoURI, BACKEND) : '/images/token.png')}
+          vaultAssetLogo={finalCustomVaultMetadata?.logoURI ? normalizeBackendUrl(finalCustomVaultMetadata.logoURI, BACKEND) : (finalVaultAssetMetadata?.logoURI ? normalizeBackendUrl(finalVaultAssetMetadata.logoURI, BACKEND) : '/images/token.png')}
           tradeFee={status === 'pre_ico' ? `${meta.totalTradeFee || 5}%` : (status === 'ico' ? `${meta.totalTradeFee || 5}%` : '5%')}
         />
             </div>
@@ -510,8 +512,8 @@ export function StatusAwareVaultCard({
           icoProgress={status === 'ico' ? 0 : undefined}
           buttonText={status === 'ico' ? 'View ICO' : (config.buttonText || 'Trade')}
           airdropAsset={finalCustomAirdropMetadata?.symbol || finalAirdropAssetMetadata?.symbol || '—'}
-          airdropAssetLogo={finalCustomAirdropMetadata?.logoURI || finalAirdropAssetMetadata?.logoURI || '/images/token.png'}
-          vaultAssetLogo={finalCustomVaultMetadata?.logoURI || finalVaultAssetMetadata?.logoURI || '/images/token.png'}
+          airdropAssetLogo={finalCustomAirdropMetadata?.logoURI ? normalizeBackendUrl(finalCustomAirdropMetadata.logoURI, BACKEND) : (finalAirdropAssetMetadata?.logoURI ? normalizeBackendUrl(finalAirdropAssetMetadata.logoURI, BACKEND) : '/images/token.png')}
+          vaultAssetLogo={finalCustomVaultMetadata?.logoURI ? normalizeBackendUrl(finalCustomVaultMetadata.logoURI, BACKEND) : (finalVaultAssetMetadata?.logoURI ? normalizeBackendUrl(finalVaultAssetMetadata.logoURI, BACKEND) : '/images/token.png')}
           tradeFee={status === 'pre_ico' ? `${meta.totalTradeFee || 5}%` : (status === 'ico' ? `${meta.totalTradeFee || 5}%` : '5%')}
         />
         </div>
